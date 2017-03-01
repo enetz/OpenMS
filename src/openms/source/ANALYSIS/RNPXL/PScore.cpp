@@ -280,15 +280,11 @@ namespace OpenMS
       {
         coeff = boost::math::binomial_coefficient<double>((unsigned int)N, (unsigned int)k);
       }
-      catch (boost::exception const& e)
+      catch (std::overflow_error const& e)
       {
-        std::cout << "Warning: Binomial coefficient for Pscore has overflowed! Setting value to the maximal double value." << std::endl;
-        std::cout << "boost::math::binomial_coefficient was called with N = " << N << " and k = " << k << std::endl;
+        std::cout << "Warning: Binomial coefficient for PScore has overflowed! Setting value to the maximal double value." << std::endl;
+        std::cout << "binomial_coefficient was called with N = " << N << " and k = " << k << std::endl;
         coeff = std::numeric_limits<double>::max();
-      }
-      catch (...)
-      {
-        std::cout << "Warning: Exception thrown by boost::math::binomial_coefficient in PScore score! Setting value to 0." << std::endl;
       }
 
       double pow1 = pow((double)p, (int)k);
