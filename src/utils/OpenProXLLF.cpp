@@ -538,7 +538,7 @@ protected:
 
     // TODO use this again, when PScore is used
     // for PScore, precompute ranks
-//    vector<vector<Size> > rankMap = PScore::calculateRankMap(spectra);
+    vector<vector<Size> > rankMap = PScore::calculateRankMap(spectra);
 
     // TODO test variables, can be removed, or set to be used in debug mode?
     double pScoreMax = 0;
@@ -905,18 +905,18 @@ protected:
 
 //########################### TESTING SCORES ##############################################
 
-//        map<Size, PeakSpectrum> peak_level_spectra = PScore::calculatePeakLevelSpectra(spectrum, rankMap[scan_index]);
-//        csm.PScoreCommon = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_common);
-//        csm.PScoreXlink = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_xlinks);
-//        csm.PScoreBoth = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec);
-//        csm.PScoreAlpha = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_alpha);
-//        csm.PScoreBeta = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_beta);
+        map<Size, PeakSpectrum> peak_level_spectra = PScore::calculatePeakLevelSpectra(spectrum, rankMap[scan_index]);
+        csm.PScoreCommon = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_common);
+        csm.PScoreXlink = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_xlinks);
+        csm.PScoreBoth = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec);
+        csm.PScoreAlpha = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_alpha);
+        csm.PScoreBeta = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_beta);
 
-//        csm.HyperCommon = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_common);
-//        csm.HyperAlpha = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_alpha);
-//        csm.HyperBeta = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_beta);
-//        csm.HyperXlink = HyperScore::compute(fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_xlinks);
-//        csm.HyperBoth = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec);
+        csm.HyperCommon = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_common);
+        csm.HyperAlpha = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_alpha);
+        csm.HyperBeta = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_beta);
+        csm.HyperXlink = HyperScore::compute(fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_xlinks);
+        csm.HyperBoth = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec);
 
 //########################### END TESTING SCORES ###########################################
 
