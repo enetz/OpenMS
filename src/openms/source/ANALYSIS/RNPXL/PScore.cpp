@@ -176,7 +176,7 @@ namespace OpenMS
     return best_pscore;
   }
 
-  double PScore::computePScore(double fragment_mass_tolerance, bool fragment_mass_tolerance_unit_ppm, const map<Size, PeakSpectrum>& peak_level_spectra, const RichPeakSpectrum & theo_spectrum, double mz_window)
+  double PScore::computePScore(double fragment_mass_tolerance, bool fragment_mass_tolerance_unit_ppm, const map<Size, PeakSpectrum>& peak_level_spectra, const PeakSpectrum & theo_spectrum, double mz_window)
   {
     AScore a_score_algorithm; // TODO: make the cumulative score function static
 
@@ -191,7 +191,7 @@ namespace OpenMS
       const PeakSpectrum& exp_spectrum = l_it->second;
 
       Size matched_peaks(0);
-      for (RichPeakSpectrum::ConstIterator theo_peak_it = theo_spectrum.begin(); theo_peak_it != theo_spectrum.end(); ++theo_peak_it)
+      for (PeakSpectrum::ConstIterator theo_peak_it = theo_spectrum.begin(); theo_peak_it != theo_spectrum.end(); ++theo_peak_it)
       {
         const double& theo_mz = theo_peak_it->getMZ();
 

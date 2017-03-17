@@ -60,22 +60,38 @@ namespace OpenMS
     }
   }
 
-  double HyperScore::compute(double fragment_mass_tolerance, bool fragment_mass_tolerance_unit_ppm, const PeakSpectrum& exp_spectrum, const RichPeakSpectrum& theo_spectrum)
+  double HyperScore::compute(double fragment_mass_tolerance, bool fragment_mass_tolerance_unit_ppm, const PeakSpectrum& exp_spectrum, const PeakSpectrum& theo_spectrum)
   {
     double dot_product = 0.0;
     UInt y_ion_count = 0;
     UInt b_ion_count = 0;
 
-    for (MSSpectrum<RichPeak1D>::ConstIterator theo_peak_it = theo_spectrum.begin(); theo_peak_it != theo_spectrum.end(); ++theo_peak_it)
+    vector<PeakSpectrum::StringDataArray> string_arrays = theo_spectrum.getStringDataArrays();
+    PeakSpectrum::StringDataArray ion_names;
+
+    if (string_arrays.size() > 0)
     {
-      if (!theo_peak_it->metaValueExists("IonName"))
-      {
+      ion_names = string_arrays[0];
+    }
+    else
+    {
         std::cout << "Error: Theoretical spectrum without IonName annotation provided." << std::endl;
         return 0.0;
-      }
+    }
 
-      const double& theo_mz = theo_peak_it->getMZ();
-      const double& theo_intensity = theo_peak_it->getIntensity();
+
+//    for (MSSpectrum<Peak1D>::ConstIterator theo_peak_it = theo_spectrum.begin(); theo_peak_it != theo_spectrum.end(); ++theo_peak_it)
+    for (Size i = 0; i < theo_spectrum.size(); ++i)
+    {
+
+//      if (!theo_peak_it->metaValueExists("IonName"))
+//      {
+//        std::cout << "Error: Theoretical spectrum without IonName annotation provided." << std::endl;
+//        return 0.0;
+//      }
+
+      const double& theo_mz = theo_spectrum[i].getMZ();
+      const double& theo_intensity = theo_spectrum[i].getIntensity();
 
       double max_dist_dalton = fragment_mass_tolerance_unit_ppm ? theo_mz * fragment_mass_tolerance * 1e-6 : fragment_mass_tolerance;
 
@@ -87,18 +103,18 @@ namespace OpenMS
       if (std::abs(theo_mz - exp_mz) < max_dist_dalton)
       {
         dot_product += exp_spectrum[index].getIntensity() * theo_intensity;
-        if (theo_peak_it->getMetaValue("IonName").toString()[0] == 'y')
+        if (ion_names[i].hasSubstring("$y"))
         {
-          #ifdef DEBUG_HYPERSCORE
-            std::cout << theo_peak_it->getMetaValue("IonName").toString() << " intensity: " << exp_spectrum[index].getIntensity() << std::endl;
-          #endif
+//          #ifdef DEBUG_HYPERSCORE
+//            std::cout << theo_peak_it->getMetaValue("IonName").toString() << " intensity: " << exp_spectrum[index].getIntensity() << std::endl;
+//          #endif
           ++y_ion_count;
         }
-        else if (theo_peak_it->getMetaValue("IonName").toString()[0] == 'b')
+        else if (ion_names[i].hasSubstring("$b"))
         {
-          #ifdef DEBUG_HYPERSCORE
-            std::cout << theo_peak_it->getMetaValue("IonName").toString() << " intensity: " << exp_spectrum[index].getIntensity() << std::endl;
-          #endif
+//          #ifdef DEBUG_HYPERSCORE
+//            std::cout << theo_peak_it->getMetaValue("IonName").toString() << " intensity: " << exp_spectrum[index].getIntensity() << std::endl;
+//          #endif
           ++b_ion_count;
         }       
       }
