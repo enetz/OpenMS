@@ -1396,6 +1396,11 @@ namespace OpenMS
         // skip peptides with invalid AAs // TODO is this necessary?
         if (cit->getString().has('B') || cit->getString().has('O') || cit->getString().has('U') || cit->getString().has('X') || cit->getString().has('Z')) continue;
 
+	if (cit->getString().size() > 50)
+	{
+	  continue;
+	}	
+	      
         OpenProXLUtils::PeptidePosition position = OpenProXLUtils::INTERNAL;
         if (fasta_db[fasta_index].sequence.hasPrefix(cit->getString()))
         {
