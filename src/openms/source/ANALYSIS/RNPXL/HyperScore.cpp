@@ -69,14 +69,20 @@ namespace OpenMS
     vector<PeakSpectrum::StringDataArray> string_arrays = theo_spectrum.getStringDataArrays();
     PeakSpectrum::StringDataArray ion_names;
 
+    if (theo_spectrum.size() < 1 || exp_spectrum.size() < 1)
+    {
+      std::cout << "Error: HyperScore called with empty Spectrum" << std::endl;
+      return 0.0;
+    }
+
     if (string_arrays.size() > 0)
     {
       ion_names = string_arrays[0];
     }
     else
     {
-        std::cout << "Error: Theoretical spectrum without IonName annotation provided." << std::endl;
-        return 0.0;
+      std::cout << "Error: Theoretical spectrum without IonName annotation provided." << std::endl;
+      return 0.0;
     }
 
 
