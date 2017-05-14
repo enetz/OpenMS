@@ -3,7 +3,11 @@ set(directory source/ANALYSIS/XLMS)
 
 ### list all filenames of the directory here
 set(sources_list
-OpenProXLUtils.cpp
+OPXLDataStructs.cpp
+OPXLHelper.cpp
+OPXLSpectrumProcessingAlgorithms.cpp
+XQuestScores.cpp
+XQuestXML.cpp
 )
 
 ### add path to the filenames

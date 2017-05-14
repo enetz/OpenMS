@@ -33,7 +33,11 @@
 // $Authors: Eugen Netz $
 // --------------------------------------------------------------------------
 
-#include <OpenMS/ANALYSIS/XLMS/OpenProXLUtils.h>
+#include <OpenMS/ANALYSIS/XLMS/OPXLDataStructs.h>
+#include <OpenMS/ANALYSIS/XLMS/OPXLHelper.h>
+#include <OpenMS/ANALYSIS/XLMS/OPXLSpectrumProcessingAlgorithms.h>
+#include <OpenMS/ANALYSIS/XLMS/XQuestScores.h>
+#include <OpenMS/ANALYSIS/XLMS/XQuestXML.h>
 #include <OpenMS/KERNEL/StandardTypes.h>
 #include <OpenMS/FORMAT/FASTAFile.h>
 #include <OpenMS/FORMAT/MzMLFile.h>
@@ -83,11 +87,56 @@ using namespace OpenMS;
 //-------------------------------------------------------------
 
 /**
-    @page UTILS_OpenProXLLF OpenProXLLF
+  @page UTILS_OpenProXLLF OpenProXLLF
 
-    @brief Perform protein-protein cross-linking experiment search.
+  @brief Search for cross-linked peptide pairs in tandem MS spectra
 
-    <CENTER>
+  This tool performs a search for cross-links in the given mass spectra.
+
+  It executes the following steps in order:
+  <ul>
+    <li>Reading of MS2 spectra from the given mzML file, MS1 spectra are ignored for now</li>
+    <li>Processing of spectra: deisotoping and filtering</li>
+    <li>Digesting and preprocessing the protein database, building a peptide pair index dependent on the precursor masses of the MS2 spectra</li>
+    <li>Generating theoretical spectra of cross-linked peptides and aligning the experimental spectra against those</li>
+    <li>Scoring of cross-link spectrum matches</li>
+    <li>Using PeptideIndexer to map the peptides to all possible source proteins</li>
+    <li>Writing out the results in mzid according to mzIdentML 1.2 specifications and/or in the xQuest output format</li>
+  </ul>
+
+  See below or have a look at the INI file (via "OpenProXLLF -write_ini myini.ini") for available parameters and more functionality.
+
+  <h3>Input: MS2 spectra and fasta database of proteins expected to be cross-linked in the sample</h3>
+  The spectra should be provided as one mzML file. If you have multiple files, e.g. for multiple fractions, you should run this tool on each
+  file separately.
+  The database can either be provided as one merged file containing targets and decoys or as two separate files.
+
+  <h3>Parameters</h3>
+  The parameters for fixed and variable modifications refer to additional modifications beside the cross-linker.
+  The linker used in the experiment has to be described using the cross-linker specific parameters.
+  Only one mass is allowed for a cross-linker that links two peptides, while multiple masses are possible for mono-links of the same cross-linking reagent.
+  Mono-links are cross-linkers, that are linked to one peptide by one of their two reactive groups.
+  To search for isotopically labeled pairs of cross-linkers see the tool OpenProXL.
+  The parameters -cross_linker:residue1 and -cross_linker:residue2 are used to enumerate the amino acids,
+  that each end of the linker can react with. This way any heterobifunctional cross-linker can be defined.
+  To define a homobifunctional cross-linker, these two parameters should have the same value.
+  The parameter -cross_linker:name is used to solve ambiguities caused by different cross-linkers with the same mass
+  after the linking reaction (see section on output for clarification).
+
+  <h3>Output: XL-MS Identifications with scores and linked positions in the proteins</h3>
+  There are three file formats for output of data possible. idXML is the internal format of OpenMS, but is not recommended for now,
+  since OpenMS does not yet contain any tools for post-processing of XL-MS ID data. The second format is the output format of xQuest,
+  which is a popular XL-MS ID tool. This format is compatible with a number of post-processing and visulization tools,
+  like xProphet for FDR estimation (Leitner, A. et al., 2014, Nature protocols)
+  or XlinkAnalyzer for visualization and analysis using protein structures (Kosinski, J. et al., 2015, Journal of structural biology).
+  The third format is mzIdentML according to the specifications for XL-MS ID data in version 1.2.
+  This is a standardized format and will be compatible with complete submissions to the PRIDE database, which is part of the ProteomeXchange consortium.
+  The specification includes the XLMOD database of cross-linking reagents, and if the provided cross-link mass matches one from the
+  database, its accession and name are used. If the name is provided with the -cross_linker:name parameter, it is used
+  to solve ambiguities arising from different cross-linkers having the same mass after the linking reaction (e.g. DSS and BS3).
+  It is also used as the name of the linker, if no matching masses are found in the database.
+
+  <CENTER>
     <table>
         <tr>
             <td ALIGN = "center" BGCOLOR="#EBEBEB"> pot. predecessor tools </td>
@@ -99,12 +148,12 @@ using namespace OpenMS;
             <td VALIGN="middle" ALIGN = "center" ROWSPAN=1> - </td>
         </tr>
     </table>
-</CENTER>
+  </CENTER>
 
-    <B>The command line parameters of this tool are:</B>
-    @verbinclude UTILS_OpenProXLLF.cli
-    <B>INI file documentation of this tool:</B>
-    @htmlinclude UTILS_OpenProXLLF.html
+  <B>The command line parameters of this tool are:</B>
+  @verbinclude UTILS_OpenProXLLF.cli
+  <B>INI file documentation of this tool:</B>
+  @htmlinclude UTILS_OpenProXLLF.html
 */
 
 class TOPPOpenProXLLF :
@@ -193,6 +242,9 @@ protected:
     registerOutputFile_("out_xquestxml", "<file>", "", "Results in the xquest.xml format (at least one of these output parameters should be set, otherwise you will not have any results).", false);
     setValidFormats_("out_xquestxml", ListUtils::create<String>("xml"));
 
+    registerOutputFile_("out_xquest_specxml", "<file>", "", "Matched spectra in the xQuest .spec.xml format for spectra visualization in the xQuest results manager.", false, false);
+    setValidFormats_("out_xquest_specxml", ListUtils::create<String>("xml"));
+
     registerOutputFile_("out_idXML", "<file>", "", "Results in idXML format (at least one of these output parameters should be set, otherwise you will not have any results).", false);
     setValidFormats_("out_idXML", ListUtils::create<String>("idXML"));
 
@@ -262,12 +314,12 @@ protected:
       exp[exp_index].sortByPosition();
 
       // params:                                                                                                                       (PeakSpectrum,  min_charge, max_charge,  fragment_tol,                                 tol_unit_ppm,                              only_keep_deiso, min_iso_peaks, max_iso_peaks, make_single_charged);
-      PeakSpectrum deisotoped = OpenProXLUtils::deisotopeAndSingleChargeMSSpectrum(exp[exp_index], 1,                 7,                    fragment_mass_tolerance_xlinks, fragment_mass_tolerance_ppm, false,                    3,                      10,                     false);
+      PeakSpectrum deisotoped = OPXLSpectrumProcessingAlgorithms::deisotopeAndSingleChargeMSSpectrum(exp[exp_index], 1,                 7,                    fragment_mass_tolerance_xlinks, fragment_mass_tolerance_ppm, false,                    3,                      10,                     false);
 
       // only consider spectra, that have at least as many peaks as two times the minimal peptide size after deisotoping
       if (deisotoped.size() > peptide_min_size * 2)
       {
-        OpenProXLUtils::nLargestSpectrumFilter(deisotoped, 500);
+        OPXLSpectrumProcessingAlgorithms::nLargestSpectrumFilter(deisotoped, 500);
         deisotoped.sortByPosition();
 
 #ifdef _OPENMP
@@ -289,6 +341,7 @@ protected:
     const string in_decoy_fasta(getStringOption_("decoy_database"));
     const string out_idXML(getStringOption_("out_idXML"));
     const string out_xquest = getStringOption_("out_xquestxml");
+    const string out_xquest_specxml = getStringOption_("out_xquest_specxml");
     const string out_mzIdentML = getStringOption_("out_mzIdentML");
 
     const bool decoy_prefix(getFlag_("decoy_prefix"));
@@ -454,13 +507,13 @@ protected:
     }
 
     // lookup for processed peptides. must be defined outside of omp section and synchronized
-    vector<OpenProXLUtils::PeptideMass> peptide_masses;
+    vector<OPXLDataStructs::AASeqWithMass> peptide_masses;
 
     Size count_proteins = 0;
     Size count_peptides = 0;
 
     progresslogger.startProgress(0, 1, "Digesting peptides...");
-    peptide_masses = OpenProXLUtils::digestDatabase(fasta_db, digestor, min_peptide_length, cross_link_residue1, cross_link_residue2, fixed_modifications,  variable_modifications, max_variable_mods_per_peptide, count_proteins, count_peptides, n_term_linker, c_term_linker);
+    peptide_masses = OPXLHelper::digestDatabase(fasta_db, digestor, min_peptide_length, cross_link_residue1, cross_link_residue2, fixed_modifications,  variable_modifications, max_variable_mods_per_peptide, count_proteins, count_peptides, n_term_linker, c_term_linker);
     progresslogger.endProgress();
 
     // create spectrum generator
@@ -489,7 +542,7 @@ protected:
     search_params.setMetaValue("MS:1001029", peptide_masses.size()); // number of sequences searched = MS:1001029
     protein_ids[0].setSearchParameters(search_params);
 
-    vector<OpenProXLUtils::XLPrecursor> enumerated_cross_link_masses;
+    vector<OPXLDataStructs::XLPrecursor> enumerated_cross_link_masses;
 
     // Collect precursor MZs for filtering enumerated peptide pairs
     vector< double > spectrum_precursors;
@@ -503,7 +556,7 @@ protected:
     sort(spectrum_precursors.begin(), spectrum_precursors.end());
     cout << "Number of precursor masses in the spectra: " << spectrum_precursors.size() << endl;
 
-    sort(peptide_masses.begin(), peptide_masses.end());
+    sort(peptide_masses.begin(), peptide_masses.end(), OPXLDataStructs::AASeqWithMassComparator());
     // The largest peptides given a fixed maximal precursor mass are possible with loop links
     // Filter peptides using maximal loop link mass first
     double max_precursor_mass = spectrum_precursors[spectrum_precursors.size()-1];
@@ -524,21 +577,21 @@ protected:
     cout << "Filtering peptides with precursors" << endl;
 
     // search for the first mass greater than the maximim, cut off everything larger
-    vector<OpenProXLUtils::PeptideMass>::iterator last = upper_bound(peptide_masses.begin(), peptide_masses.end(), max_peptide_mass);
-	vector<OpenProXLUtils::PeptideMass> filtered_peptide_masses;
+    vector<OPXLDataStructs::AASeqWithMass>::iterator last = upper_bound(peptide_masses.begin(), peptide_masses.end(), max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+	vector<OPXLDataStructs::AASeqWithMass> filtered_peptide_masses;
     filtered_peptide_masses.assign(peptide_masses.begin(), last);
 
     progresslogger.startProgress(0, 1, "Enumerating cross-links...");
-    enumerated_cross_link_masses = OpenProXLUtils::enumerateCrossLinksAndMasses_(filtered_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2,
+    enumerated_cross_link_masses = OPXLHelper::enumerateCrossLinksAndMasses_(filtered_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2,
                                                                                                                                                   spectrum_precursors, precursor_mass_tolerance, precursor_mass_tolerance_unit_ppm);
     progresslogger.endProgress();
     cout << "Enumerated cross-links: " << enumerated_cross_link_masses.size() << endl;
-    sort(enumerated_cross_link_masses.begin(), enumerated_cross_link_masses.end());
+    sort(enumerated_cross_link_masses.begin(), enumerated_cross_link_masses.end(), OPXLDataStructs::XLPrecursorComparator());
     cout << "Sorting of enumerated precursors finished" << endl;
 
     // TODO use this again, when PScore is used
     // for PScore, precompute ranks
-    vector<vector<Size> > rankMap = PScore::calculateRankMap(spectra);
+//    vector<vector<Size> > rankMap = PScore::calculateRankMap(spectra);
 
     // TODO test variables, can be removed, or set to be used in debug mode?
     double pScoreMax = 0;
@@ -553,7 +606,7 @@ protected:
 
     // iterate over all spectra
     progresslogger.startProgress(0, 1, "Matching to theoretical spectra and scoring...");
-    vector< vector< CrossLinkSpectrumMatch > > all_top_csms;
+    vector< vector< OPXLDataStructs::CrossLinkSpectrumMatch > > all_top_csms;
 
     Size spectrum_counter = 0;
 
@@ -578,15 +631,15 @@ protected:
       const double precursor_mz = spectrum.getPrecursors()[0].getMZ();
       const double precursor_mass = (precursor_mz * static_cast<double>(precursor_charge)) - (static_cast<double>(precursor_charge) * Constants::PROTON_MASS_U);
 
-      vector< CrossLinkSpectrumMatch > top_csms_spectrum;
+      vector< OPXLDataStructs::CrossLinkSpectrumMatch > top_csms_spectrum;
 
       // determine candidates
-      vector< OpenProXLUtils::XLPrecursor > candidates;
+      vector< OPXLDataStructs::XLPrecursor > candidates;
       double allowed_error = 0;
 
       // determine MS2 precursors that match to the current peptide mass
-      vector< OpenProXLUtils::XLPrecursor >::const_iterator low_it;
-      vector< OpenProXLUtils::XLPrecursor >::const_iterator up_it;
+      vector< OPXLDataStructs::XLPrecursor >::const_iterator low_it;
+      vector< OPXLDataStructs::XLPrecursor >::const_iterator up_it;
 
       if (precursor_mass_tolerance_unit_ppm) // ppm
       {
@@ -600,8 +653,8 @@ protected:
 #pragma omp critical (enumerated_cross_link_masses_access)
 #endif
       {
-        low_it = lower_bound(enumerated_cross_link_masses.begin(), enumerated_cross_link_masses.end(), precursor_mass - allowed_error);
-        up_it =  upper_bound(enumerated_cross_link_masses.begin(), enumerated_cross_link_masses.end(), precursor_mass + allowed_error);
+        low_it = lower_bound(enumerated_cross_link_masses.begin(), enumerated_cross_link_masses.end(), precursor_mass - allowed_error, OPXLDataStructs::XLPrecursorComparator());
+        up_it =  upper_bound(enumerated_cross_link_masses.begin(), enumerated_cross_link_masses.end(), precursor_mass + allowed_error, OPXLDataStructs::XLPrecursorComparator());
       }
 
       if (low_it != up_it) // no matching precursor in data
@@ -618,11 +671,11 @@ protected:
       cout << "Number of candidates for this spectrum: " << candidates.size() << endl;
 
       // Find all positions of lysine (K) in the peptides (possible scross-linking sites), create cross_link_candidates with all combinations
-      vector <ProteinProteinCrossLink> cross_link_candidates = OpenProXLUtils::buildCandidates(candidates, peptide_masses, cross_link_residue1, cross_link_residue2, cross_link_mass, cross_link_mass_mono_link, precursor_mass, allowed_error, cross_link_name, n_term_linker, c_term_linker);
+      vector <OPXLDataStructs::ProteinProteinCrossLink> cross_link_candidates = OPXLHelper::buildCandidates(candidates, peptide_masses, cross_link_residue1, cross_link_residue2, cross_link_mass, cross_link_mass_mono_link, precursor_mass, allowed_error, cross_link_name, n_term_linker, c_term_linker);
 
       // lists for one spectrum, to determine best match to the spectrum
-      vector< CrossLinkSpectrumMatch > prescore_csms_spectrum;
-      vector< CrossLinkSpectrumMatch > all_csms_spectrum;
+      vector< OPXLDataStructs::CrossLinkSpectrumMatch > prescore_csms_spectrum;
+      vector< OPXLDataStructs::CrossLinkSpectrumMatch > all_csms_spectrum;
 
 #ifdef _OPENMP
 #pragma omp critical (max_subscore_variable_access)
@@ -636,9 +689,9 @@ protected:
 
       for (Size i = 0; i < cross_link_candidates.size(); ++i)
       {
-        ProteinProteinCrossLink cross_link_candidate = cross_link_candidates[i];
+        OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate = cross_link_candidates[i];
 
-        CrossLinkSpectrumMatch csm;
+        OPXLDataStructs::CrossLinkSpectrumMatch csm;
         csm.cross_link = cross_link_candidate;
 
         PeakSpectrum theoretical_spec_common_alpha;
@@ -646,8 +699,8 @@ protected:
 //        PeakSpectrum theoretical_spec_xlinks_alpha;
 //        PeakSpectrum theoretical_spec_xlinks_beta;
 
-        bool type_is_cross_link = cross_link_candidate.getType() == ProteinProteinCrossLink::CROSS;
-        bool type_is_loop = cross_link_candidate.getType() == ProteinProteinCrossLink::LOOP;
+        bool type_is_cross_link = cross_link_candidate.getType() == OPXLDataStructs::CROSS;
+        bool type_is_loop = cross_link_candidate.getType() == OPXLDataStructs::LOOP;
         Size link_pos_B = 0;
         if (type_is_loop)
         {
@@ -671,17 +724,17 @@ protected:
           continue;
         }
 
-        PeakSpectrum theoretical_spec_common = OpenProXLUtils::mergeAnnotatedSpectra(theoretical_spec_common_alpha, theoretical_spec_common_beta);;
+        PeakSpectrum theoretical_spec_common = OPXLSpectrumProcessingAlgorithms::mergeAnnotatedSpectra(theoretical_spec_common_alpha, theoretical_spec_common_beta);;
 
         vector< pair< Size, Size > > matched_spec_common;
 //        vector< pair< Size, Size > > matched_spec_common_beta;
 //        vector< pair< Size, Size > > matched_spec_xlinks_alpha;
 //        vector< pair< Size, Size > > matched_spec_xlinks_beta;
 
-        OpenProXLUtils::getSpectrumAlignment(matched_spec_common, theoretical_spec_common, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
-//        OpenProXLUtils::getSpectrumAlignment(matched_spec_common_beta, theoretical_spec_common_beta, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
-//        OpenProXLUtils::getSpectrumAlignment(matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
-//        OpenProXLUtils::getSpectrumAlignment(matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_common, theoretical_spec_common, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
+//        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_common_beta, theoretical_spec_common_beta, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
+//        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
+//        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
 
         // Pre-Score calculations
         Size matched_common_count = matched_spec_common.size();
@@ -693,7 +746,7 @@ protected:
         }
         // Simplified pre-Score
         double pre_score = 0;
-        pre_score = OpenProXLUtils::preScore(matched_common_count, theor_common_count);
+        pre_score = XQuestScores::preScore(matched_common_count, theor_common_count);
 
 
         // store pre_score, take top 100 for further computations
@@ -717,8 +770,8 @@ protected:
       sort(prescore_csms_spectrum.rbegin(), prescore_csms_spectrum.rend());
 
       // needed farther down in the scoring, but only needs to be computed once for a spectrum
-      vector< double > aucorrx = OpenProXLUtils::xCorrelation(spectrum, spectrum, 5, 0.3);
-      vector< double > aucorrc = OpenProXLUtils::xCorrelation(spectrum, spectrum, 5, 0.2);
+      vector< double > aucorrx = XQuestScores::xCorrelation(spectrum, spectrum, 5, 0.3);
+      vector< double > aucorrc = XQuestScores::xCorrelation(spectrum, spectrum, 5, 0.2);
 
 //      for (Size i = 0; i < prescore_csms_spectrum.size(); ++i)
 //      {
@@ -732,13 +785,13 @@ protected:
 
       for (Size i = 0; i < last_candidate_index ; ++i)
       {
-        ProteinProteinCrossLink cross_link_candidate = prescore_csms_spectrum[i].cross_link;
+        OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate = prescore_csms_spectrum[i].cross_link;
         double candidate_mz = (cross_link_candidate.alpha.getMonoWeight() + cross_link_candidate.beta.getMonoWeight() +  cross_link_candidate.cross_linker_mass+ (static_cast<double>(precursor_charge) * Constants::PROTON_MASS_U)) / precursor_charge;
 
         LOG_DEBUG << "Pair: " << cross_link_candidate.alpha.toString() << "-" << cross_link_candidate.beta.toString() << " matched to light spectrum " << scan_index << "\t and heavy spectrum " << scan_index
             << " with m/z: " << precursor_mz << "\t" << "and candidate m/z: " << candidate_mz << "\tK Positions: " << cross_link_candidate.cross_link_position.first << "\t" << cross_link_candidate.cross_link_position.second << endl;
 
-        CrossLinkSpectrumMatch csm;
+        OPXLDataStructs::CrossLinkSpectrumMatch csm;
         csm.cross_link = cross_link_candidate;
 
         PeakSpectrum theoretical_spec_common_alpha;
@@ -746,8 +799,8 @@ protected:
         PeakSpectrum theoretical_spec_xlinks_alpha;
         PeakSpectrum theoretical_spec_xlinks_beta;
 
-        bool type_is_cross_link = cross_link_candidate.getType() == ProteinProteinCrossLink::CROSS;
-        bool type_is_loop = cross_link_candidate.getType() == ProteinProteinCrossLink::LOOP;
+        bool type_is_cross_link = cross_link_candidate.getType() == OPXLDataStructs::CROSS;
+        bool type_is_loop = cross_link_candidate.getType() == OPXLDataStructs::LOOP;
         Size link_pos_B = 0;
         if (type_is_loop)
         {
@@ -776,10 +829,10 @@ protected:
         vector< pair< Size, Size > > matched_spec_xlinks_alpha;
         vector< pair< Size, Size > > matched_spec_xlinks_beta;
 
-        OpenProXLUtils::getSpectrumAlignment(matched_spec_common_alpha, theoretical_spec_common_alpha, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
-        OpenProXLUtils::getSpectrumAlignment(matched_spec_common_beta, theoretical_spec_common_beta, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
-        OpenProXLUtils::getSpectrumAlignment(matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
-        OpenProXLUtils::getSpectrumAlignment(matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_common_alpha, theoretical_spec_common_alpha, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_common_beta, theoretical_spec_common_beta, spectrum, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm);
 
         LOG_DEBUG << "Spectrum sizes: " << spectrum.size() << " || " << theoretical_spec_common_alpha.size() <<  " | " << theoretical_spec_common_beta.size()
                               <<  " | " << theoretical_spec_xlinks_alpha.size() <<  " | " << theoretical_spec_xlinks_beta.size() << endl;
@@ -801,11 +854,11 @@ protected:
 //        double pre_score = 0;
 //        if (type_is_cross_link)
 //        {
-//          pre_score = OpenProXLUtils::preScore(matched_alpha_count, theor_alpha_count, matched_beta_count, theor_beta_count);
+//          pre_score = XQuestScores::preScore(matched_alpha_count, theor_alpha_count, matched_beta_count, theor_beta_count);
 //        }
 //        else
 //        {
-//          pre_score = OpenProXLUtils::preScore(matched_alpha_count, theor_alpha_count);
+//          pre_score = XQuestScores::preScore(matched_alpha_count, theor_alpha_count);
 //        }
 
 
@@ -815,7 +868,7 @@ protected:
 //        if (pre_score > pScoreMax) pScoreMax = pre_score;
 
         // compute intsum score
-        double intsum = OpenProXLUtils::total_matched_current(matched_spec_common_alpha, matched_spec_common_beta, matched_spec_xlinks_alpha, matched_spec_xlinks_beta, spectrum, spectrum);
+        double intsum = XQuestScores::totalMatchedCurrent(matched_spec_common_alpha, matched_spec_common_beta, matched_spec_xlinks_alpha, matched_spec_xlinks_beta, spectrum, spectrum);
 
         // Total ion intensity of light spectrum
         // sum over common and xlink ion spectra instead of unfiltered
@@ -832,11 +885,11 @@ protected:
         if (TIC > TICMax) TICMax = TIC;
 
         // TIC_alpha and _beta (total ion current)
-        double intsum_alpha = OpenProXLUtils::matched_current_chain(matched_spec_common_alpha, matched_spec_xlinks_alpha, spectrum, spectrum);
+        double intsum_alpha = XQuestScores::matchedCurrentChain(matched_spec_common_alpha, matched_spec_xlinks_alpha, spectrum, spectrum);
         double intsum_beta = 0;
         if (type_is_cross_link)
         {
-          intsum_beta = OpenProXLUtils::matched_current_chain(matched_spec_common_beta, matched_spec_xlinks_beta, spectrum, spectrum);
+          intsum_beta = XQuestScores::matchedCurrentChain(matched_spec_common_beta, matched_spec_xlinks_beta, spectrum, spectrum);
         }
 
         // normalize TIC_alpha and  _beta
@@ -847,7 +900,7 @@ protected:
         }
 
         // compute weighted TIC
-        double wTIC = OpenProXLUtils::weighted_TIC_score(cross_link_candidate.alpha.size(), cross_link_candidate.beta.size(), intsum_alpha, intsum_beta, intsum, total_current, type_is_cross_link);
+        double wTIC = XQuestScores::weightedTICScore(cross_link_candidate.alpha.size(), cross_link_candidate.beta.size(), intsum_alpha, intsum_beta, total_current, type_is_cross_link);
 
 #ifdef _OPENMP
 #pragma omp critical (max_subscore_variable_access)
@@ -862,13 +915,13 @@ protected:
         if (n_xlink_charges < 1) n_xlink_charges = 1;
 
         // compute match odds (unweighted), the 3 is the number of charge states in the theoretical spectra
-        double match_odds_c_alpha = OpenProXLUtils::match_odds_score(theoretical_spec_common_alpha, matched_spec_common_alpha, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, false);
-        double match_odds_x_alpha = OpenProXLUtils::match_odds_score(theoretical_spec_xlinks_alpha, matched_spec_xlinks_alpha, fragment_mass_tolerance_xlinks , fragment_mass_tolerance_unit_ppm, true, n_xlink_charges);
+        double match_odds_c_alpha = XQuestScores::matchOddsScore(theoretical_spec_common_alpha, matched_spec_common_alpha, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, false);
+        double match_odds_x_alpha = XQuestScores::matchOddsScore(theoretical_spec_xlinks_alpha, matched_spec_xlinks_alpha, fragment_mass_tolerance_xlinks , fragment_mass_tolerance_unit_ppm, true, n_xlink_charges);
         double match_odds = 0;
         if (type_is_cross_link)
         {
-          double match_odds_c_beta = OpenProXLUtils::match_odds_score(theoretical_spec_common_beta, matched_spec_common_beta, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, false);
-          double match_odds_x_beta = OpenProXLUtils::match_odds_score(theoretical_spec_xlinks_beta, matched_spec_xlinks_beta, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm, true, n_xlink_charges);
+          double match_odds_c_beta = XQuestScores::matchOddsScore(theoretical_spec_common_beta, matched_spec_common_beta, fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, false);
+          double match_odds_x_beta = XQuestScores::matchOddsScore(theoretical_spec_xlinks_beta, matched_spec_xlinks_beta, fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm, true, n_xlink_charges);
           match_odds = (match_odds_c_alpha + match_odds_x_alpha + match_odds_c_beta + match_odds_x_beta) / 4;
         }
         else
@@ -887,8 +940,8 @@ protected:
 
         if (type_is_cross_link)
         {
-          theoretical_spec_common = OpenProXLUtils::mergeAnnotatedSpectra(theoretical_spec_common_alpha, theoretical_spec_common_beta);
-          theoretical_spec_xlinks = OpenProXLUtils::mergeAnnotatedSpectra(theoretical_spec_xlinks_alpha, theoretical_spec_xlinks_beta);
+          theoretical_spec_common = OPXLSpectrumProcessingAlgorithms::mergeAnnotatedSpectra(theoretical_spec_common_alpha, theoretical_spec_common_beta);
+          theoretical_spec_xlinks = OPXLSpectrumProcessingAlgorithms::mergeAnnotatedSpectra(theoretical_spec_xlinks_alpha, theoretical_spec_xlinks_beta);
         }
         else
         {
@@ -896,15 +949,15 @@ protected:
           theoretical_spec_xlinks = theoretical_spec_xlinks_alpha;
         }
 
-        PeakSpectrum theoretical_spec = OpenProXLUtils::mergeAnnotatedSpectra(theoretical_spec_common, theoretical_spec_xlinks);
-        PeakSpectrum theoretical_spec_alpha = OpenProXLUtils::mergeAnnotatedSpectra(theoretical_spec_common_alpha, theoretical_spec_xlinks_alpha);
+        PeakSpectrum theoretical_spec = OPXLSpectrumProcessingAlgorithms::mergeAnnotatedSpectra(theoretical_spec_common, theoretical_spec_xlinks);
+        PeakSpectrum theoretical_spec_alpha = OPXLSpectrumProcessingAlgorithms::mergeAnnotatedSpectra(theoretical_spec_common_alpha, theoretical_spec_xlinks_alpha);
         PeakSpectrum theoretical_spec_beta;
         if (type_is_cross_link)
         {
-          theoretical_spec_beta = OpenProXLUtils::mergeAnnotatedSpectra(theoretical_spec_common_beta, theoretical_spec_xlinks_beta);
+          theoretical_spec_beta = OPXLSpectrumProcessingAlgorithms::mergeAnnotatedSpectra(theoretical_spec_common_beta, theoretical_spec_xlinks_beta);
         }
-        vector< double > xcorrx = OpenProXLUtils::xCorrelation(spectrum, theoretical_spec_xlinks, 5, 0.3);
-        vector< double > xcorrc = OpenProXLUtils::xCorrelation(spectrum, theoretical_spec_common, 5, 0.2);
+        vector< double > xcorrx = XQuestScores::xCorrelation(spectrum, theoretical_spec_xlinks, 5, 0.3);
+        vector< double > xcorrc = XQuestScores::xCorrelation(spectrum, theoretical_spec_common, 5, 0.2);
 
         double aucorr_sumx = accumulate(aucorrx.begin(), aucorrx.end(), 0.0);
         double aucorr_sumc = accumulate(aucorrc.begin(), aucorrc.end(), 0.0);
@@ -913,18 +966,32 @@ protected:
 
 //########################### TESTING SCORES ##############################################
 
-        map<Size, PeakSpectrum> peak_level_spectra = PScore::calculatePeakLevelSpectra(spectrum, rankMap[scan_index]);
-        csm.PScoreCommon = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_common);
-        csm.PScoreXlink = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_xlinks);
-        csm.PScoreBoth = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec);
-        csm.PScoreAlpha = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_alpha);
-        csm.PScoreBeta = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_beta);
+//        map<Size, PeakSpectrum> peak_level_spectra = PScore::calculatePeakLevelSpectra(spectrum, rankMap[scan_index]);
+//        csm.PScoreCommon = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_common);
+//        csm.PScoreXlink = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_xlinks);
+//        csm.PScoreBoth = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec);
+//        csm.PScoreAlpha = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_alpha);
+//        csm.PScoreBeta = PScore::computePScore(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, peak_level_spectra, theoretical_spec_beta);
 
-        csm.HyperCommon = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_common);
-        csm.HyperAlpha = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_alpha);
-        csm.HyperBeta = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_beta);
-        csm.HyperXlink = HyperScore::compute(fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_xlinks);
-        csm.HyperBoth = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec);
+//        csm.HyperCommon = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_common);
+//        csm.HyperAlpha = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_alpha);
+//        csm.HyperBeta = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_beta);
+//        csm.HyperXlink = HyperScore::compute(fragment_mass_tolerance_xlinks, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec_xlinks);
+//        csm.HyperBoth = HyperScore::compute(fragment_mass_tolerance, fragment_mass_tolerance_unit_ppm, spectrum, theoretical_spec);
+
+
+        // DELETE THESE LINES LATER
+        csm.PScoreCommon = 0;
+        csm.PScoreXlink = 0;
+        csm.PScoreBoth = 0;
+        csm.PScoreAlpha = 0;
+        csm.PScoreBeta = 0;
+
+        csm.HyperCommon = 0;
+        csm.HyperAlpha = 0;
+        csm.HyperBeta = 0;
+        csm.HyperXlink = 0;
+        csm.HyperBoth = 0;
 
 //########################### END TESTING SCORES ###########################################
 
@@ -968,10 +1035,10 @@ protected:
         LOG_DEBUG << "Start writing annotations" << endl;
         vector<PeptideHit::FragmentAnnotation> frag_annotations;
 
-        OpenProXLUtils::buildFragmentAnnotations(frag_annotations, matched_spec_common_alpha, theoretical_spec_common_alpha, spectrum);
-        OpenProXLUtils::buildFragmentAnnotations(frag_annotations, matched_spec_common_beta, theoretical_spec_common_beta, spectrum);
-        OpenProXLUtils::buildFragmentAnnotations(frag_annotations, matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum);
-        OpenProXLUtils::buildFragmentAnnotations(frag_annotations, matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum);
+        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_common_alpha, theoretical_spec_common_alpha, spectrum);
+        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_common_beta, theoretical_spec_common_beta, spectrum);
+        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum);
+        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum);
         LOG_DEBUG << "End writing annotations, size: " << frag_annotations.size() << endl;
 
         // make annotations unique
@@ -1001,7 +1068,7 @@ protected:
         LOG_DEBUG << "Score: " << all_csms_spectrum[max_position].score << "\t wTIC: " << all_csms_spectrum[max_position].wTIC << "\t xcorrx: " << all_csms_spectrum[max_position].xcorrx_max
                 << "\t xcorrc: " << all_csms_spectrum[max_position].xcorrc_max << "\t match-odds: " << all_csms_spectrum[max_position].match_odds << "\t Intsum: " << all_csms_spectrum[max_position].int_sum << endl;
 
-        if (all_csms_spectrum[max_position].cross_link.getType() == ProteinProteinCrossLink::CROSS)
+        if (all_csms_spectrum[max_position].cross_link.getType() == OPXLDataStructs::CROSS)
         {
           LOG_DEBUG << "Matched ions calpha , cbeta , xalpha , xbeta" << "\t" << all_csms_spectrum[max_position].matched_common_alpha << "\t" << all_csms_spectrum[max_position].matched_common_beta
                   << "\t" << all_csms_spectrum[max_position].matched_xlink_alpha <<  "\t" << all_csms_spectrum[max_position].matched_xlink_beta << endl;
@@ -1022,7 +1089,7 @@ protected:
       }
 
       // Write PeptideIdentifications and PeptideHits for n top hits
-      OpenProXLUtils::buildPeptideIDs(peptide_ids, top_csms_spectrum, all_top_csms, all_top_csms_current_index, spectra, scan_index, scan_index);
+      OPXLHelper::buildPeptideIDs(peptide_ids, top_csms_spectrum, all_top_csms, all_top_csms_current_index, spectra, scan_index, scan_index);
 
       LOG_DEBUG << "Next Spectrum ################################## \n";
     }
@@ -1057,7 +1124,8 @@ protected:
     {
       MzIdentMLFile().store(out_mzIdentML, protein_ids, peptide_ids);
     }
-    if (out_xquest.size() > 0)
+
+    if (out_xquest.size() > 0 || out_xquest_specxml.size() > 0)
     {
       vector<String> input_split_dir;
       vector<String> input_split;
@@ -1065,29 +1133,53 @@ protected:
       input_split_dir[input_split_dir.size()-1].split(String("."), input_split);
       String base_name = input_split[0];
 
-      Size found;
-      found = out_xquest.find_last_of("/\\");
-      // TODO "/" is Unix specific
-      String matched_spec_xml_name;
-      if (found == out_xquest.size())
+      if (out_xquest.size() > 0)
       {
-        matched_spec_xml_name = out_xquest.substr(0, found) + "/" + base_name + "_matched.spec.xml";
-      }
-      else
-      {
-        matched_spec_xml_name = base_name + "_matched.spec.xml";
-      }
-
-      String precursor_mass_tolerance_unit_string = precursor_mass_tolerance_unit_ppm ? "ppm" : "Da";
-      String fragment_mass_tolerance_unit_string = fragment_mass_tolerance_unit_ppm ? "ppm" : "Da";
-      double cross_link_mass_iso_shift = 0;
-      double cross_link_mass_light = cross_link_mass;
-      OpenProXLUtils::writeXQuestXML(out_xquest, base_name, peptide_ids, all_top_csms, spectra,
+        String precursor_mass_tolerance_unit_string = precursor_mass_tolerance_unit_ppm ? "ppm" : "Da";
+        String fragment_mass_tolerance_unit_string = fragment_mass_tolerance_unit_ppm ? "ppm" : "Da";
+        double cross_link_mass_iso_shift = 0;
+        double cross_link_mass_light = cross_link_mass;
+        XQuestXML::writeXQuestXML(out_xquest, base_name, peptide_ids, all_top_csms, spectra,
                                                             precursor_mass_tolerance_unit_string, fragment_mass_tolerance_unit_string, precursor_mass_tolerance, fragment_mass_tolerance, fragment_mass_tolerance_xlinks, cross_link_name,
                                                             cross_link_mass_light, cross_link_mass_mono_link, in_fasta, in_decoy_fasta, cross_link_residue1, cross_link_residue2, cross_link_mass_iso_shift, enzyme_name, missed_cleavages);
-
-      OpenProXLUtils::writeXQuestXMLSpec(matched_spec_xml_name, base_name, all_top_csms, spectra);
+      }
+      if (out_xquest_specxml.size() > 0)
+      {
+        XQuestXML::writeXQuestXMLSpec(out_xquest_specxml, base_name, all_top_csms, spectra);
+      }
     }
+
+//    if (out_xquest.size() > 0)
+//    {
+//      vector<String> input_split_dir;
+//      vector<String> input_split;
+//      getStringOption_("in").split(String("/"), input_split_dir);
+//      input_split_dir[input_split_dir.size()-1].split(String("."), input_split);
+//      String base_name = input_split[0];
+
+//      Size found;
+//      found = out_xquest.find_last_of("/\\");
+//      // TODO "/" is Unix specific
+//      String matched_spec_xml_name;
+//      if (found == out_xquest.size())
+//      {
+//        matched_spec_xml_name = out_xquest.substr(0, found) + "/" + base_name + "_matched.spec.xml";
+//      }
+//      else
+//      {
+//        matched_spec_xml_name = base_name + "_matched.spec.xml";
+//      }
+
+//      String precursor_mass_tolerance_unit_string = precursor_mass_tolerance_unit_ppm ? "ppm" : "Da";
+//      String fragment_mass_tolerance_unit_string = fragment_mass_tolerance_unit_ppm ? "ppm" : "Da";
+//      double cross_link_mass_iso_shift = 0;
+//      double cross_link_mass_light = cross_link_mass;
+//      XQuestXML::writeXQuestXML(out_xquest, base_name, peptide_ids, all_top_csms, spectra,
+//                                                            precursor_mass_tolerance_unit_string, fragment_mass_tolerance_unit_string, precursor_mass_tolerance, fragment_mass_tolerance, fragment_mass_tolerance_xlinks, cross_link_name,
+//                                                            cross_link_mass_light, cross_link_mass_mono_link, in_fasta, in_decoy_fasta, cross_link_residue1, cross_link_residue2, cross_link_mass_iso_shift, enzyme_name, missed_cleavages);
+
+//      XQuestXML::writeXQuestXMLSpec(matched_spec_xml_name, base_name, all_top_csms, spectra);
+//    }
     progresslogger.endProgress();
 
     return EXECUTION_OK;
