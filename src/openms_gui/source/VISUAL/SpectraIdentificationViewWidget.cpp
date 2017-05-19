@@ -559,7 +559,7 @@ namespace OpenMS
             item = table_widget_->itemPrototype()->clone();
             item->setTextAlignment(Qt::AlignLeft);
 
-            set<String> protein_accessions = ph.extractProteinAccessions();
+            set<String> protein_accessions = ph.extractProteinAccessionsSet();
             String accessions = ListUtils::concatenate(vector<String>(protein_accessions.begin(), protein_accessions.end()), ", ");
             addTextItemToBottomRow_(accessions.toQString(), 11, c);
 

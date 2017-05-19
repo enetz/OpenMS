@@ -52,28 +52,17 @@ param.setValue("add_first_prefix_ion", "false");
 specGen.setParameters(param);
 
 PeakSpectrum theo_spec_1, theo_spec_2, theo_spec_3, theo_spec_4;
-std::cout << "WTF0" << std::endl;
 specGen.getCommonIonSpectrum(theo_spec_1, AASequence::fromString("PEPTIDE"), 2, true);
-std::cout << "WTF1" << std::endl;
 specGen.getCommonIonSpectrum(theo_spec_2, AASequence::fromString("PEPTEDI"), 4, true);
-std::cout << "WTF2" << std::endl;
 specGen.getCommonIonSpectrum(theo_spec_3, AASequence::fromString("PEPTIDE"), 3, true);
-std::cout << "WTF3" << std::endl;
 specGen.getCommonIonSpectrum(theo_spec_4, AASequence::fromString("PEPTEDI"), 1, true);
-std::cout << "WTF4" << std::endl;
 std::vector <std::pair <Size, Size> > alignment1;
 std::vector <std::pair <Size, Size> > alignment2;
 
 OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(alignment1, theo_spec_1, theo_spec_2, 50, true);
 OPXLSpectrumProcessingAlgorithms::getSpectrumAlignment(alignment2, theo_spec_3, theo_spec_4, 50, true);
 
-START_SECTION(preScore())
-   /* @brief compute a simple and fast to compute pre-score for a cross-link spectrum match
-    * @param number of experimental peaks matched to theoretical common ions from the alpha peptide
-    * @param number of theoretical ions from the alpha peptide
-    * @param number of experimental peaks matched to theoretical common ions from the beta peptide
-    * @param number of theoretical ions from the beta peptide
-    */
+START_SECTION(static float preScore(Size matched_alpha, Size ions_alpha, Size matched_beta, Size ions_beta))
 	TEST_REAL_SIMILAR(XQuestScores::preScore(1, 1, 1, 1), 1.0)
 	TEST_REAL_SIMILAR(XQuestScores::preScore(2, 4, 3, 6), 0.5)
 	TEST_REAL_SIMILAR(XQuestScores::preScore(3, 2, 9, 6), 1.5) // more matched peaks, than theoretical peaks. practically impossible
@@ -90,7 +79,9 @@ START_SECTION(preScore())
 	TEST_REAL_SIMILAR(XQuestScores::preScore(2, 50, 2, 50), 0.04)
 	TEST_REAL_SIMILAR(XQuestScores::preScore(45, 50, 5, 50), 0.3)
 	TEST_REAL_SIMILAR(XQuestScores::preScore(25, 50, 25, 50), 0.5)
+END_SECTION
 
+START_SECTION(static float preScore(Size matched_alpha, Size ions_alpha))
 	TEST_REAL_SIMILAR(XQuestScores::preScore(1, 1), 1.0)
 	TEST_REAL_SIMILAR(XQuestScores::preScore(2, 1), 2.0)
 	TEST_REAL_SIMILAR(XQuestScores::preScore(0, 2), 0.0)
@@ -100,78 +91,40 @@ START_SECTION(preScore())
 	TEST_REAL_SIMILAR(XQuestScores::preScore(9, 18), 0.5)
 END_SECTION
 
-START_SECTION(matchOddsScore())
-   /* @brief compute the match-odds score, a score based on the probability of getting the given number of matched peaks by chance
-    * @param theoretical spectrum, sorted by position
-    * @param alignment between the theoretical and the experimental spectra
-    * @param fragment mass tolerance of the alignment
-    * @param fragment mass tolerance unit of the alignment, true = ppm, false = Da
-    * @param type of cross-link, true = cross-link, false = mono-link
-    * @param number of considered charges in the theoretical spectrum
-    */
+START_SECTION(static double matchOddsScore(const PeakSpectrum& theoretical_spec,  const std::vector< std::pair< Size, Size > >& matched_spec, double fragment_mass_tolerance, bool fragment_mass_tolerance_unit_ppm, bool is_xlink_spectrum, Size n_charges = 1))
         TEST_REAL_SIMILAR(XQuestScores::matchOddsScore(theo_spec_1, alignment1, 0.2, false, true, 1), 6.07050);
         TEST_REAL_SIMILAR(XQuestScores::matchOddsScore(theo_spec_1, alignment1, 0.2, false, true, 2), 7.42116);
         TEST_REAL_SIMILAR(XQuestScores::matchOddsScore(theo_spec_1, alignment1, 0.2, false, true, 3), 8.20397);
         TEST_REAL_SIMILAR(XQuestScores::matchOddsScore(theo_spec_1, alignment1, 0.2, false, false, 3), 6.07050);
 END_SECTION
 
-START_SECTION(weightedTICScore())
-   /* @brief compute the weighted total ion current score for a cross-link. Reimplementation from xQuest.
-    * @param sequence length of alpha peptide
-    * @param sequence length of beta peptide
-    * @param intensity sum of matched peaks from alpha peptide
-    * @param intensity sum of matched peaks from beta peptide
-    * @param type of cross-link, true = cross-link, false = mono-link
-    * @param sum of peak intensities of the experimental spectrum
-    * @param true = cross-link, false = mono-link. in case of a mono-link, beta_size and intsum_beta should be 0
-    */
+START_SECTION(static double weightedTICScoreXQuest(Size alpha_size, Size beta_size, double intsum_alpha, double intsum_beta, double total_current, bool type_is_cross_link))
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScoreXQuest(20, 10, 500.0, 500.0, 1500.0, true), 0.13636)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScoreXQuest(20, 10, 1000.0, 500.0, 1500.0, true), 0.18181)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScoreXQuest(20, 10, 500.0, 1000.0, 1500.0, true), 0.22727)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScoreXQuest(20, 10, 1450.0, 50.0, 1500.0, true), 0.14090)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScoreXQuest(20, 10, 50.0, 1450.0, 1500.0, true), 0.26818)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScoreXQuest(20, 0, 500.0, 0.0, 1500.0, false), 0.08333)
+END_SECTION
 
+START_SECTION(static double weightedTICScore(Size alpha_size, Size beta_size, double intsum_alpha, double intsum_beta, double total_current, bool type_is_cross_link))
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScore(20, 10, 500.0, 500.0, 1500.0, true), 0.5)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScore(20, 10, 1000.0, 500.0, 1500.0, true), 0.66666)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScore(20, 10, 500.0, 1000.0, 1500.0, true), 0.83333)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScore(20, 10, 1450.0, 50.0, 1500.0, true), 0.51666)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScore(20, 10, 50.0, 1450.0, 1500.0, true), 0.98333)
     TEST_REAL_SIMILAR(XQuestScores::weightedTICScore(20, 0, 500.0, 0.0, 1500.0, false), 0.33333)
-
 END_SECTION
 
-START_SECTION(matchedCurrentChain())
-   /* @brief computes sum of peak intensities of matched peaks for either the alpha or the beta peptide
-    * @param alignment between common alpha or beta ions and common experimental peaks
-    * @param alignment between xlink alpha or beta ions and xlink experimental peaks
-    * @param experimental common ion spectrum
-    * @param experimental xlink spectrum
-    */
+START_SECTION(static double matchedCurrentChain(const std::vector< std::pair< Size, Size > >& matched_spec_common, const std::vector< std::pair< Size, Size > >& matched_spec_xlinks, const PeakSpectrum& spectrum_common_peaks, const PeakSpectrum& spectrum_xlink_peaks))
     TEST_REAL_SIMILAR(XQuestScores::matchedCurrentChain(alignment1, alignment1, theo_spec_2, theo_spec_4), 4.0)
-
 END_SECTION
 
-START_SECTION(totalMatchedCurrent())
-   /* @brief computes sum of peak intensities of all matched peaks
-    * @param alignment between common alpha ions and common experimental peaks
-    * @param alignment between common beta ions and common experimental peaks
-    * @param alignment between xlink alpha ions and xlink experimental peaks
-    * @param alignment between xlink beta ions and xlink experimental peaks
-    * @param experimental common ion spectrum
-    * @param experimental xlink spectrum
-    */
+START_SECTION(static double totalMatchedCurrent(const std::vector< std::pair< Size, Size > >& matched_spec_common_alpha, const std::vector< std::pair< Size, Size > >& matched_spec_common_beta, const std::vector< std::pair< Size, Size > >& matched_spec_xlinks_alpha, const std::vector< std::pair< Size, Size > >& matched_spec_xlinks_beta, const PeakSpectrum& spectrum_common_peaks, const PeakSpectrum& spectrum_xlink_peaks))
     TEST_REAL_SIMILAR(XQuestScores::totalMatchedCurrent(alignment1, alignment2, alignment1, alignment2, theo_spec_2, theo_spec_4), 6.0)
 END_SECTION
 
-START_SECTION(xCorrelation())
-    // Cross-correlation, with shifting the second spectrum from -maxshift to +maxshift of tolerance bins (Tolerance in Da, a constant binsize)
-   /* @brief computes a crude cross-correlation between two spectra. Crude, because it uses a static binsize based on a tolerance in Da and it uses equal intensities for all peaks
-    * @param first spectrum
-    * @param second spectrum
-    * @param number of bins, that should be considered for shifting the second spectrum. the second spectrum is shifted from -maxshift to +maxshift of tolerance bins and a correlation is computed for each position.
-    * @param tolerance or binsize in Da
-    */
+START_SECTION(static std::vector< double > xCorrelation(const PeakSpectrum & spec1, const PeakSpectrum & spec2, Int maxshift, double tolerance))
     std::vector <double> xcorr_scores = XQuestScores::xCorrelation(theo_spec_1, theo_spec_3, 2, 0.2);
 
     TEST_EQUAL(xcorr_scores [0] < 1.0, true)

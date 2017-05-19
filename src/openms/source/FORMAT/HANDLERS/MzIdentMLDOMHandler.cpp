@@ -1291,7 +1291,7 @@ namespace OpenMS
               {
                 pep_id_->push_back(PeptideIdentification());
                 pep_id_->back().setHigherScoreBetter(false); //either a q-value or an e-value, only if neither available there will be another
-                pep_id_->back().setMetaValue("spectrum_reference", spectrumID); // TODO @mths consider SpectrumIDFormat to get just a index number here
+                pep_id_->back().setMetaValue("spectrum_reference", spectrumID);  // SpectrumIdentificationResult attribute spectrumID is taken from the mz_file and should correspond to MSSpectrum.nativeID, thus spectrum_reference will serve as reference. As the format of the 'reference' widely varies from vendor to vendor, spectrum_reference as string will serve best, indices are not recommended.
 
                 //fill pep_id_->back() with content
                 DOMElement* parent = dynamic_cast<xercesc::DOMElement*>(element_res->getParentNode());
@@ -1311,18 +1311,23 @@ namespace OpenMS
 
               // TODO @mths: setSignificanceThreshold, but from where?
 
-  //              String identi = si_pro_map_[id]->getSearchEngine()+"_"
-  //                      +si_pro_map_[id]->getDateTime().getDate()
-  //                      +"T"+si_pro_map_[id]->getDateTime().getTime();
               pep_id_->back().setIdentifier(pro_id_->at(si_pro_map_[id]).getIdentifier());
-              //pep_id_->back().setMetaValue("spectrum_reference", spectrumID); //String scannr = substrings.back().reverse().chop(5);
 
               pep_id_->back().sortByRank();
 
               //adopt cv s
               for (map<String, vector<CVTerm> >::const_iterator cvit =  params.first.getCVTerms().begin(); cvit != params.first.getCVTerms().end(); ++cvit)
               {
-              // check for retention time or scan time entry
+                // check for retention time or scan time entry
+                /* N.B.: MzIdentML does not impose the requirement to store
+                   'redundant' data (e.g. RT) as the identified spectrum is
+                   unambiguously referencable by the spectrumID (OpenMS
+                   internally spectrum_reference) and hence such data can be
+                   looked up in the mz file. For convenience, and as OpenMS
+                   relies on the smallest common denominator to reference a
+                   spectrum (RT/precursor MZ), we provide functionality to amend
+                   RT data to identifications and support reading such from mzid
+                */
                 if (cvit->first == "MS:1000894" || cvit->first == "MS:1000016") //TODO use subordinate terms which define units
                 {
                   double rt = cvit->second.front().getValue().toString().toDouble();
@@ -1694,17 +1699,6 @@ namespace OpenMS
       current_pep_id.setScoreType("OpenXQuest:combined score");
       current_pep_id.setHigherScoreBetter(true);
 
-      // correction for terminal modifications
-      if (alpha_pos == -1)
-      {
-        ++alpha_pos;
-      }
-      else if (alpha_pos == static_cast<SignedSize>((*pep_map_.find(peptides[alpha[0]])).second.size()))
-      {
-        --alpha_pos;
-      }
-
-
       vector<PeptideHit> phs;
       PeptideHit ph_alpha;
       ph_alpha.setSequence((*pep_map_.find(peptides[alpha[0]])).second);
@@ -1713,7 +1707,6 @@ namespace OpenMS
       ph_alpha.setRank(rank);
       ph_alpha.setMetaValue("spectrum_reference", spectrumIDs[0]);
       ph_alpha.setMetaValue("xl_chain", "MS:1002509"); // donor
-      ph_alpha.setMetaValue("xl_pos", alpha_pos);
 
       if (labeled)
       {
@@ -1764,6 +1757,23 @@ namespace OpenMS
         ph_alpha.setMetaValue("xl_mod", xl_mod_map_.at(peptides[alpha[0]]));
       }
 
+      // correction for terminal modifications
+      if (alpha_pos == -1)
+      {
+        ph_alpha.setMetaValue("xl_pos", ++alpha_pos);
+        ph_alpha.setMetaValue("xl_term_spec", "N_TERM");
+      }
+      else if (alpha_pos == static_cast<SignedSize>((*pep_map_.find(peptides[alpha[0]])).second.size()))
+      {
+        ph_alpha.setMetaValue("xl_pos", --alpha_pos);
+        ph_alpha.setMetaValue("xl_term_spec", "C_TERM");
+      }
+      else
+      {
+        ph_alpha.setMetaValue("xl_pos", alpha_pos);
+        ph_alpha.setMetaValue("xl_term_spec", "ANYWHERE");
+      }
+
       phs.push_back(ph_alpha);
 
       if (xl_type == "cross-link")
@@ -1771,22 +1781,13 @@ namespace OpenMS
         PeptideHit ph_beta;
         SignedSize beta_pos = xl_acceptor_pos_map_.at(xl_id_acceptor_map_.at(peptides[beta[0]]));
 
-        // correction for terminal modifications
-        if (beta_pos == -1)
-        {
-          ++beta_pos;
-        }
-        else if (beta_pos == static_cast<SignedSize>((*pep_map_.find(peptides[beta[0]])).second.size()))
-        {
-          --beta_pos;
-        }
         ph_beta.setSequence((*pep_map_.find(peptides[beta[0]])).second);
         ph_beta.setCharge(charge);
         ph_beta.setScore(score);
         ph_beta.setRank(rank);
         ph_beta.setMetaValue("spectrum_reference", spectrumIDs[0]);
         ph_beta.setMetaValue("xl_chain", "MS:1002510"); // receiver
-        ph_beta.setMetaValue("xl_pos", beta_pos);
+
 
         if (labeled)
         {
@@ -1814,6 +1815,23 @@ namespace OpenMS
           {
             ph_beta.setMetaValue(userParamNames_beta[i], userParamValues_beta[i]);
           }
+        }
+
+        // correction for terminal modifications
+        if (beta_pos == -1)
+        {
+          ph_beta.setMetaValue("xl_pos", ++beta_pos);
+          ph_beta.setMetaValue("xl_term_spec", "N_TERM");
+        }
+        else if (beta_pos == static_cast<SignedSize>((*pep_map_.find(peptides[beta[0]])).second.size()))
+        {
+          ph_beta.setMetaValue("xl_pos", --beta_pos);
+          ph_beta.setMetaValue("xl_term_spec", "C_TERM");
+        }
+        else
+        {
+          ph_beta.setMetaValue("xl_pos", beta_pos);
+          ph_beta.setMetaValue("xl_term_spec", "ANYWHERE");
         }
 
         phs.push_back(ph_beta);
@@ -2364,11 +2382,25 @@ namespace OpenMS
                     }
                     if (index == 0)
                     {
-                      aas.setNTerminalModification(cv.getName());
+                      try // does not work for cross-links yet, but the information is finally stored as MetaValues of the PeptideHit
+                      {
+                        aas.setNTerminalModification(cv.getName());
+                      }
+                      catch (...)
+                      {
+                        // TODO Residue and AASequence should use CrossLinksDB as well
+                      }
                     }
                     else if (index == static_cast<SignedSize>(aas.size() + 1))
                     {
-                      aas.setCTerminalModification(cv.getName());
+                      try // does not work for cross-links yet, but the information is finally stored as MetaValues of the PeptideHit
+                      {
+                        aas.setCTerminalModification(cv.getName());
+                      }
+                      catch (...)
+                      {
+                        // TODO Residue and AASequence should use CrossLinksDB as well
+                      }
                     }
                     else
                     {

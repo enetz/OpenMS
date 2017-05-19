@@ -1,0 +1,2064 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="https://www.openms.de/xml-stylesheet/IdXML.xsl" ?>
+<IdXML version="1.5" xsi:noNamespaceSchemaLocation="https://www.openms.de/xml-schema/IdXML_1_5.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<SearchParameters id="SP_0" db="/home/eugen/Development/OpenMS/src/tests/topp/OpenPepXLLF_input.fasta" db_version="" taxonomy="" mass_type="monoisotopic" charges="2,3,4,5,6" enzyme="trypsin" missed_cleavages="2" precursor_peak_tolerance="10" precursor_peak_tolerance_ppm="true" peak_mass_tolerance="20" peak_mass_tolerance_ppm="true" >
+				<UserParam type="string" name="input_mzML" value="/home/eugen/Development/OpenMS/src/tests/topp/OpenPepXLLF_input.mzML"/>
+				<UserParam type="string" name="input_decoys" value=""/>
+				<UserParam type="int" name="decoy_prefix" value="0"/>
+				<UserParam type="string" name="decoy_string" value="decoy"/>
+				<UserParam type="int" name="precursor:min_charge" value="3"/>
+				<UserParam type="int" name="precursor:max_charge" value="7"/>
+				<UserParam type="float" name="fragment:mass_tolerance_xlinks" value="20"/>
+				<UserParam type="int" name="peptide:min_size" value="5"/>
+				<UserParam type="stringList" name="cross_link:residue1" value="[K]"/>
+				<UserParam type="stringList" name="cross_link:residue2" value="[K]"/>
+				<UserParam type="float" name="cross_link:mass" value="138.0680796"/>
+				<UserParam type="floatList" name="cross_link:mass_monolink" value="[156.07864431, 155.094628715]"/>
+				<UserParam type="int" name="modifications:variable_max_per_peptide" value="2"/>
+				<UserParam type="int" name="MS:1001029" value="397"/>
+	</SearchParameters>
+	<IdentificationRun date="2017-05-16T21:55:56" search_engine="OpenXQuest" search_engine_version="2.1.0" search_parameters_ref="SP_0" >
+		<ProteinIdentification score_type="" higher_score_better="true" significance_threshold="0" >
+			<ProteinHit id="PH_0" accession="Protein1" score="0" sequence="" >
+				<UserParam type="string" name="target_decoy" value="target"/>
+			</ProteinHit>
+			<UserParam type="stringList" name="spectra_data" value="[file:///C:\MSData\LRRK2_DSG/GUA1354-S15-A-LRRK2_DSG_A4.raw]"/>
+			<UserParam type="string" name="SpectrumIdentificationProtocol" value="MS:1002494"/>
+		</ProteinIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="787.740356445313" RT="2175.3003" spectrum_reference="controllerType=0 controllerNumber=1 scan=2395" >
+			<PeptideHit score="0.995160545684687" sequence="IVEGLK(Xlink:DSS)FPNEFDELEIQGK" charge="3" aa_before="R" aa_after="L" start="2072" end="2090" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=2395"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="5"/>
+				<UserParam type="string" name="xl_type" value="mono-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.144357797223333"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0365179622514171"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.56221037512444"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.455574405379593"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0262537296550961"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.436584472656" RT="2689.413" spectrum_reference="controllerType=0 controllerNumber=1 scan=3604" >
+			<PeptideHit score="0.478838236620652" sequence="FIGNPGIQKCGLK" charge="3" aa_before="R" aa_after="V" start="552" end="564" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3604"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="8"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.211317706901857"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.023459367683501"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.33199421133167"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.105083806440234"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0023323247377396"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.478838236620652" sequence="KILLSK" charge="3" aa_before="R" aa_after="G" start="433" end="438" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3604"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.211317706901857"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.023459367683501"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.33199421133167"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.105083806440234"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0023323247377396"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.901794433594" RT="2692.12390000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=3610" >
+			<PeptideHit score="1.81889844007892" sequence="TEKLCGLIDCVHFLR" charge="4" aa_before="K" aa_after="E" start="2379" end="2393" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.280619653570291"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.024701987127522"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.98472028336108"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.176016150042415"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00621888373973358"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.81889844007892" sequence="KQCFKNDIHK" charge="4" aa_before="K" aa_after="L" start="534" end="543" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.280619653570291"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.024701987127522"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.98472028336108"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.176016150042415"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00621888373973358"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.901794433594" RT="2692.12390000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=3610" >
+			<PeptideHit score="1.02862690784573" sequence="KTEKLCGLIDCVHFLR" charge="4" aa_before="K" aa_after="E" start="2378" end="2393" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.289181612491425"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0140133554643008"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.88888497113395"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.188639963045716"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00614956865665599"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.02862690784573" sequence="QCFKNDIHK" charge="4" aa_before="K" aa_after="L" start="535" end="543" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.289181612491425"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0140133554643008"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.88888497113395"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.188639963045716"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00614956865665599"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.901794433594" RT="2692.12390000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=3610" >
+			<PeptideHit score="0.861633852458568" sequence="TEKLCGLIDCVHFLR" charge="4" aa_before="K" aa_after="E" start="2379" end="2393" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.278698759911288"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0135183767863396"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.5761374195382"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.135200278833508"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0042805077232572"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.861633852458568" sequence="KQCFKNDIHK" charge="4" aa_before="K" aa_after="L" start="534" end="543" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.278698759911288"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0135183767863396"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.5761374195382"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.135200278833508"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0042805077232572"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.901794433594" RT="2692.12390000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=3610" >
+			<PeptideHit score="0.598072872361047" sequence="KTEKLCGLIDCVHFLR" charge="4" aa_before="K" aa_after="E" start="2378" end="2393" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.275746628749586"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0328025946076097"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.91576920908874"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.188639963045716"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00614956865665599"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.598072872361047" sequence="QCFKNDIHK" charge="4" aa_before="K" aa_after="L" start="535" end="543" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=3610"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.275746628749586"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0328025946076097"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.91576920908874"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.188639963045716"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00614956865665599"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.059875488281" RT="3029.54959999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=4482" >
+			<PeptideHit score="1.83089554792197" sequence="FPKNYMSQYFK" charge="3" aa_before="K" aa_after="L" start="1640" end="1650" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=4482"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.164680604525246"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0414346455193293"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.64399044358685"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.132588859647512"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00283914491645028"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.83089554792197" sequence="FLSKK" charge="3" aa_before="K" aa_after="R" start="1633" end="1637" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=4482"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.164680604525246"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0414346455193293"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.64399044358685"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.132588859647512"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00283914491645028"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="787.416870117188" RT="3179.9553" spectrum_reference="controllerType=0 controllerNumber=1 scan=4889" >
+			<PeptideHit score="-1.68235757248138" sequence="EDTEFHHKLNMVKK" charge="4" aa_before="R" aa_after="Q" start="521" end="534" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=4889"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="7"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.338641255009755"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.156659148207917"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.21820603134362"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.342093918472528"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00553927378483982"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-1.68235757248138" sequence="HIGCKAKDIIR" charge="4" aa_before="K" aa_after="F" start="1309" end="1319" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=4889"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.338641255009755"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.156659148207917"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.21820603134362"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.342093918472528"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00553927378483982"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="787.416870117188" RT="3179.9553" spectrum_reference="controllerType=0 controllerNumber=1 scan=4889" >
+			<PeptideHit score="-1.87691438835986" sequence="EDTEFHHKLNMVKK" charge="4" aa_before="R" aa_after="Q" start="521" end="534" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=4889"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="7"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.360087683069934"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.168309861535245"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.21820603134362"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.342093918472528"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00553927378483982"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-1.87691438835986" sequence="HIGCKAKDIIR" charge="4" aa_before="K" aa_after="F" start="1309" end="1319" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=4889"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="6"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.360087683069934"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.168309861535245"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.21820603134362"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.342093918472528"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00553927378483982"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.909729003906" RT="3323.43280000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=5293" >
+			<PeptideHit score="1.66110109502292" sequence="TEKLCGLIDCVHFLR" charge="4" aa_before="K" aa_after="E" start="2379" end="2393" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5293"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.27615517454996"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0478839834606566"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.77396526339762"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.796948295086622"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.014112311739516"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.66110109502292" sequence="KQCFKNDIHK" charge="4" aa_before="K" aa_after="L" start="534" end="543" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5293"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.27615517454996"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0478839834606566"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.77396526339762"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.796948295086622"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.014112311739516"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.909729003906" RT="3323.43280000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=5293" >
+			<PeptideHit score="1.18257541171497" sequence="KAEEGDLLVNPDQPR" charge="4" aa_before="K" aa_after="L" start="1832" end="1846" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5293"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.282113661069408"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0105269009437066"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.19049375980788"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0667006224393845"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00136910136577055"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.18257541171497" sequence="DWPIQIRDKR" charge="4" aa_before="K" aa_after="K" start="1374" end="1383" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5293"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="8"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.282113661069408"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0105269009437066"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.19049375980788"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0667006224393845"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00136910136577055"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.050415039063" RT="3330.46669999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=5311" >
+			<PeptideHit score="1.84469213373663" sequence="FPKNYMSQYFK" charge="3" aa_before="K" aa_after="L" start="1640" end="1650" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5311"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.197256005996358"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0455786720426475"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.0230746455366"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0695972158573568"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00440160381364803"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.84469213373663" sequence="FLSKK" charge="3" aa_before="K" aa_after="R" start="1633" end="1637" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5311"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.197256005996358"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0455786720426475"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.0230746455366"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0695972158573568"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00440160381364803"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.050415039063" RT="3330.46669999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=5311" >
+			<PeptideHit score="0.166343546300523" sequence="GQAEVDAMKPWLFNIKAR" charge="3" aa_before="K" aa_after="A" start="1423" end="1440" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5311"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="8"/>
+				<UserParam type="string" name="xl_type" value="loop-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.225735390753157"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0272993819605051"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.5292245667043"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0112198870629072"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00097429179675686"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="int" name="xl_pos2" value="15"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.051696777344" RT="3356.87440000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=5386" >
+			<PeptideHit score="0.130941606053757" sequence="FPKNYMSQYFK" charge="3" aa_before="K" aa_after="L" start="1640" end="1650" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5386"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.185483175806833"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0466986084987977"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.20568065548622"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.268658952787519"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00459934323221745"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.130941606053757" sequence="FLSKK" charge="3" aa_before="K" aa_after="R" start="1633" end="1637" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5386"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.185483175806833"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0466986084987977"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.20568065548622"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.268658952787519"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00459934323221745"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.140380859375" RT="3425.39659999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=5587" >
+			<PeptideHit score="2.47828450422597" sequence="VEPSWLGPLFPDKTSNLR" charge="4" aa_before="K" aa_after="K" start="812" end="829" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="12"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.244696631982495"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0169458587153329"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.46054511984301"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="1.03294878266752"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00972078031578888"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="2.47828450422597" sequence="HIGCKAK" charge="4" aa_before="K" aa_after="D" start="1309" end="1315" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.244696631982495"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0169458587153329"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.46054511984301"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="1.03294878266752"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00972078031578888"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.140380859375" RT="3425.39659999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=5587" >
+			<PeptideHit score="1.7874070488924" sequence="VAMDDYLKNVMLER" charge="4" aa_before="K" aa_after="A" start="701" end="714" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="7"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.226852487037387"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00641667710472795"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.85287524032138"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.55841001868248"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0131820855557161"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.7874070488924" sequence="IFNKHTSLR" charge="4" aa_before="K" aa_after="L" start="1906" end="1914" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.226852487037387"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00641667710472795"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.85287524032138"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.55841001868248"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0131820855557161"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.140380859375" RT="3425.39659999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=5587" >
+			<PeptideHit score="0.843267375712873" sequence="GQAEVDAMKPWLFNIK" charge="4" aa_before="K" aa_after="A" start="1423" end="1438" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="8"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.266200527903813"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0232046305148507"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.06617455436573"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.290562238544226"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00351565283323063"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.843267375712873" sequence="DVEKFLSK" charge="4" aa_before="R" aa_after="K" start="1629" end="1636" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.266200527903813"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0232046305148507"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.06617455436573"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.290562238544226"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00351565283323063"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.140380859375" RT="3425.39659999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=5587" >
+			<PeptideHit score="0.422340779677974" sequence="FPKNYMSQYFKLLEK" charge="4" aa_before="K" aa_after="F" start="1640" end="1654" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.233385276714508"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0224843106772582"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.845341999655848"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.121132483705878"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00136793105288714"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.422340779677974" sequence="ELAEKMR" charge="4" aa_before="K" aa_after="R" start="2515" end="2521" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5587"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.233385276714508"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0224843106772582"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.845341999655848"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.121132483705878"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00136793105288714"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.137878417969" RT="3447.8262" spectrum_reference="controllerType=0 controllerNumber=1 scan=5657" >
+			<PeptideHit score="1.5821216661025" sequence="VAMDDYLKNVMLER" charge="4" aa_before="K" aa_after="A" start="701" end="714" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5657"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="7"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.248294837453481"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00866184101235273"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.2628277643077"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.483799802139401"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.011813625780529"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.5821216661025" sequence="IFNKHTSLR" charge="4" aa_before="K" aa_after="L" start="1906" end="1914" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5657"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.248294837453481"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00866184101235273"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.2628277643077"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.483799802139401"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.011813625780529"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.137878417969" RT="3447.8262" spectrum_reference="controllerType=0 controllerNumber=1 scan=5657" >
+			<PeptideHit score="0.0931188198080819" sequence="GQAEVDAMKPWLFNIK" charge="4" aa_before="K" aa_after="A" start="1423" end="1438" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5657"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="8"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.241199689662617"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0453542709279151"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.06617491318664"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.178684582002461"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00232736644161687"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.0931188198080819" sequence="DVEKFLSK" charge="4" aa_before="R" aa_after="K" start="1629" end="1636" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5657"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.241199689662617"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0453542709279151"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.06617491318664"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.178684582002461"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00232736644161687"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.617858886719" RT="3525.42280000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=5892" >
+			<PeptideHit score="0.901759714636597" sequence="MTDSVTCLYCNSFSKQSK" charge="4" aa_before="K" aa_after="Q" start="2240" end="2257" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5892"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="14"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.265468978882593"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0245310124277026"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.66679514650813"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.318336974829435"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00183819777706691"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.901759714636597" sequence="ELLNKR" charge="4" aa_before="K" aa_after="G" start="1471" end="1476" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=5892"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.265468978882593"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0245310124277026"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.66679514650813"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.318336974829435"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00183819777706691"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="737.420532226563" RT="3580.84909999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=6067" >
+			<PeptideHit score="1.3375705647269" sequence="KNTEGTQKQK" charge="3" aa_before="R" aa_after="E" start="2477" end="2486" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6067"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.203025022417409"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00805372536814894"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.759556578168916"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.467625856399536"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00671426702978995"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.3375705647269" sequence="KRHTLEK" charge="3" aa_before="K" aa_after="M" start="2233" end="2239" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6067"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.203025022417409"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00805372536814894"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.759556578168916"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.467625856399536"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00671426702978995"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="737.420532226563" RT="3580.84909999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=6067" >
+			<PeptideHit score="0.891387893414094" sequence="HPKGIISRR" charge="3" aa_before="K" aa_after="D" start="1620" end="1628" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6067"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.274267690864394"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0641594808399135"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.34260506985904"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.649493403732777"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0133222260215994"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.891387893414094" sequence="KACMSKITK" charge="3" aa_before="R" aa_after="E" start="1462" end="1470" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6067"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.274267690864394"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0641594808399135"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.34260506985904"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.649493403732777"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0133222260215994"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="876.158569335938" RT="3586.38880000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=6084" >
+			<PeptideHit score="2.37637226323733" sequence="YQMKSAVEEGTASGSDGNFSEDVLSK" charge="4" aa_before="R" aa_after="F" start="845" end="870" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6084"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.298520339564467"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0470428696457657"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.18588662537023"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.201929083094001"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0039416496299372"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="2.37637226323733" sequence="ESKHK" charge="4" aa_before="K" aa_after="M" start="2402" end="2406" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6084"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.298520339564467"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0470428696457657"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.18588662537023"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.201929083094001"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0039416496299372"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.750610351563" RT="3634.35730000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=6227" >
+			<PeptideHit score="-1.83308065472249" sequence="ESKHKMSYSGR" charge="3" aa_before="K" aa_after="V" start="2402" end="2412" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6227"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.224448587826687"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.123290550017091"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.39567538407891"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0400526029989123"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00158458560857916"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-1.83308065472249" sequence="KRHTLEK" charge="3" aa_before="K" aa_after="M" start="2233" end="2239" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6227"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.224448587826687"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.123290550017091"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.39567538407891"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0400526029989123"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00158458560857916"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.750610351563" RT="3634.35730000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=6227" >
+			<PeptideHit score="-2.04470252461222" sequence="QCFKNDIHK" charge="3" aa_before="K" aa_after="L" start="535" end="543" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6227"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.168079024340479"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.120596459943229"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.532751374995844"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0199154913425446"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00110421015234762"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-2.04470252461222" sequence="ILLDDLMKK" charge="3" aa_before="K" aa_after="A" start="1824" end="1832" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6227"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="7"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.168079024340479"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.120596459943229"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.532751374995844"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0199154913425446"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00110421015234762"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="786.750610351563" RT="3634.35730000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=6227" >
+			<PeptideHit score="-2.40087660209983" sequence="ESKHKMSYSGR" charge="3" aa_before="K" aa_after="V" start="2402" end="2412" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6227"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.255192922874665"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.153461395004192"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.37285095911698"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0400526029989123"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00158458560857916"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-2.40087660209983" sequence="KRHTLEK" charge="3" aa_before="K" aa_after="M" start="2233" end="2239" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=6227"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.255192922874665"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.153461395004192"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.37285095911698"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0400526029989123"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00158458560857916"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.122253417969" RT="4060.0914" spectrum_reference="controllerType=0 controllerNumber=1 scan=7599" >
+			<PeptideHit score="2.41641893431994" sequence="WALYSFNDGEEHQKILLDDLMK(Xlink:DSS)K" charge="4" aa_before="K" aa_after="A" start="1810" end="1832" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=7599"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="21"/>
+				<UserParam type="string" name="xl_type" value="mono-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.0674783449583071"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0823441751815559"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.75666467600189"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.140520532615483"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0052792643282632"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.122253417969" RT="4060.0914" spectrum_reference="controllerType=0 controllerNumber=1 scan=7599" >
+			<PeptideHit score="2.15406586065261" sequence="K(Xlink:DSS)WALYSFNDGEEHQKILLDDLMK" charge="4" aa_before="K" aa_after="K" start="1809" end="1831" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=7599"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_type" value="mono-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.0244310778398286"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0390895250979126"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.73544192584928"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.389114830642939"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0146187892030883"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.122253417969" RT="4060.0914" spectrum_reference="controllerType=0 controllerNumber=1 scan=7599" >
+			<PeptideHit score="2.02171663314962" sequence="KWALYSFNDGEEHQK(Xlink:DSS)ILLDDLMK" charge="4" aa_before="K" aa_after="K" start="1809" end="1831" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=7599"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="14"/>
+				<UserParam type="string" name="xl_type" value="mono-link"/>
+				<UserParam type="int" name="xl_rank" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.226161378674039"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0250397415734469"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.90629963614962"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.234698452055454"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00881746704750557"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.122253417969" RT="4060.0914" spectrum_reference="controllerType=0 controllerNumber=1 scan=7599" >
+			<PeptideHit score="-0.0225372913300018" sequence="GQAEVDAMKPWLFNIK" charge="4" aa_before="K" aa_after="A" start="1423" end="1438" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=7599"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="8"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.333267939776988"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0834395658489461"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.82093427293579"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.343895582482219"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00956404399742788"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-0.0225372913300018" sequence="HKMSYSGR" charge="4" aa_before="K" aa_after="V" start="2405" end="2412" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=7599"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.333267939776988"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0834395658489461"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.82093427293579"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.343895582482219"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00956404399742788"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="876.454895019531" RT="4140.7221" spectrum_reference="controllerType=0 controllerNumber=1 scan=7870" >
+			<PeptideHit score="-1.01805887944868" sequence="MSYSGRVKTLCLQK" charge="3" aa_before="K" aa_after="N" start="2407" end="2420" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=7870"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="7"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.28337202695983"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.121599925317019"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.15201131552263"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.272827979177237"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00453229668912843"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-1.01805887944868" sequence="ELAEKMR" charge="3" aa_before="K" aa_after="R" start="2515" end="2521" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=7870"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.28337202695983"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.121599925317019"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.15201131552263"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.272827979177237"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00453229668912843"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="876.442626953125" RT="4452.27109999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=8890" >
+			<PeptideHit score="0.674432307249742" sequence="EDTEFHHKLNMVKK" charge="3" aa_before="R" aa_after="Q" start="521" end="534" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=8890"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="12"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.160842698045552"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.000410792695371872"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.50858651398009"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.043101997114718"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00288971631016371"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.674432307249742" sequence="ENKESK" charge="3" aa_before="K" aa_after="H" start="2399" end="2404" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=8890"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.160842698045552"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.000410792695371872"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.50858651398009"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.043101997114718"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00288971631016371"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.165161132813" RT="4618.08310000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=9435" >
+			<PeptideHit score="3.72037744643674" sequence="KNVPIEFPVIDR" charge="4" aa_before="R" aa_after="K" start="1538" end="1549" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9435"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.32118849242854"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0748121119416199"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.89480019416744"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.328682454302907"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0271435895320624"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="3.72037744643674" sequence="LGCKALHVLFER" charge="4" aa_before="K" aa_after="V" start="178" end="189" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9435"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.32118849242854"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0748121119416199"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.89480019416744"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.328682454302907"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.0271435895320624"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.72900390625" RT="4706.7912" spectrum_reference="controllerType=0 controllerNumber=1 scan=9705" >
+			<PeptideHit score="2.15414768987129" sequence="IFSFSNDFTIQK(Xlink:DSS-NH2)LIETR" charge="3" aa_before="K" aa_after="T" start="2322" end="2338" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9705"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="11"/>
+				<UserParam type="string" name="xl_type" value="mono-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.250686329323455"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0462324365489063"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.76069700524752"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.107068945653737"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00606955199071478"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="876.445373535156" RT="4800.8751" spectrum_reference="controllerType=0 controllerNumber=1 scan=9986" >
+			<PeptideHit score="1.45548786566644" sequence="HTLEKMTDSVTCLYCNSFSKQSK" charge="4" aa_before="R" aa_after="Q" start="2235" end="2257" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="19"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.279263568315815"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0269499945898992"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.00033306068287"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0441194400191307"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.000605103649193742"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="1.45548786566644" sequence="AKDIIR" charge="4" aa_before="K" aa_after="F" start="1314" end="1319" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.279263568315815"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="0.0269499945898992"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.00033306068287"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0441194400191307"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.000605103649193742"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="876.445373535156" RT="4800.8751" spectrum_reference="controllerType=0 controllerNumber=1 scan=9986" >
+			<PeptideHit score="0.933364175558375" sequence="HTLEKMTDSVTCLYCNSFSKQSK" charge="4" aa_before="R" aa_after="Q" start="2235" end="2257" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.334118934572826"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00513219688400758"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.502175044381875"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0815135352313519"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00111796835149735"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="0.933364175558375" sequence="AKDIIR" charge="4" aa_before="K" aa_after="F" start="1314" end="1319" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.334118934572826"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.00513219688400758"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="0.502175044381875"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0815135352313519"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00111796835149735"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="876.445373535156" RT="4800.8751" spectrum_reference="controllerType=0 controllerNumber=1 scan=9986" >
+			<PeptideHit score="-0.648844286891858" sequence="VEPSWLGPLFPDKTSNLR" charge="4" aa_before="K" aa_after="K" start="812" end="829" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="12"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="3"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.375791000287624"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.110403757079075"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.08544494050768"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.198970636352897"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00769955661331305"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-0.648844286891858" sequence="ESKHKMSYSGR" charge="4" aa_before="K" aa_after="V" start="2402" end="2412" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="2"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.375791000287624"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.110403757079075"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="3.08544494050768"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.198970636352897"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00769955661331305"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="876.445373535156" RT="4800.8751" spectrum_reference="controllerType=0 controllerNumber=1 scan=9986" >
+			<PeptideHit score="-1.24357766269192" sequence="VEPSWLGPLFPDKTSNLR" charge="4" aa_before="K" aa_after="K" start="812" end="829" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="12"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.370169659531176"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.131284037205334"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.31503084631642"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.174967780709267"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00643761494882658"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-1.24357766269192" sequence="ESKHKMSYSGR" charge="4" aa_before="K" aa_after="V" start="2402" end="2412" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=9986"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="4"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.370169659531176"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.131284037205334"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.31503084631642"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.174967780709267"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00643761494882658"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="738.703552246094" RT="4952.02870000002" spectrum_reference="controllerType=0 controllerNumber=1 scan=10425" >
+			<PeptideHit score="0.94247247575831" sequence="LPDPVK(Xlink:DSS-NH2)EYGCAPWPMVEK" charge="3" aa_before="K" aa_after="L" start="2091" end="2108" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=10425"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="5"/>
+				<UserParam type="string" name="xl_type" value="mono-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.27323261591195"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="5.11275395914886e-05"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="2.41504305777641"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.00518364692106843"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.000837704748526459"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+		<PeptideIdentification score_type="OpenXQuest:combined score" higher_score_better="true" significance_threshold="0" MZ="737.82861328125" RT="5274.01189999998" spectrum_reference="controllerType=0 controllerNumber=1 scan=11395" >
+			<PeptideHit score="-0.235944744865945" sequence="MASGSCQGCEEDEETLK" charge="4" aa_before="[" aa_after="K" start="0" end="16" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=11395"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002509"/>
+				<UserParam type="int" name="xl_pos" value="0"/>
+				<UserParam type="string" name="xl_type" value="cross-link"/>
+				<UserParam type="int" name="xl_rank" value="1"/>
+				<UserParam type="string" name="xl_term_spec" value="N_TERM"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.30783958896678"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0568893137304201"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.13436598659655"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0412402739748359"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00163917474783345"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="xl_mod" value="DSS"/>
+				<UserParam type="float" name="xl_mass" value="138.0680796"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+			<PeptideHit score="-0.235944744865945" sequence="VEGCPKHPK" charge="4" aa_before="K" aa_after="G" start="1614" end="1622" protein_refs="PH_0" >
+				<UserParam type="string" name="spectrum_reference" value="controllerType=0 controllerNumber=1 scan=11395"/>
+				<UserParam type="string" name="xl_chain" value="MS:1002510"/>
+				<UserParam type="int" name="xl_pos" value="5"/>
+				<UserParam type="string" name="xl_term_spec" value="ANYWHERE"/>
+				<UserParam type="float" name="OpenXQuest:xcorr xlink" value="0.30783958896678"/>
+				<UserParam type="float" name="OpenXQuest:xcorr common" value="-0.0568893137304201"/>
+				<UserParam type="float" name="OpenXQuest:match-odds" value="1.13436598659655"/>
+				<UserParam type="float" name="OpenXQuest:intsum" value="0.0412402739748359"/>
+				<UserParam type="float" name="OpenXQuest:wTIC" value="0.00163917474783345"/>
+				<UserParam type="float" name="OpenPepXL:HyperCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:HyperBoth" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreCommon" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreXlink" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreAlpha" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBeta" value="0"/>
+				<UserParam type="float" name="OpenPepXL:PScoreBoth" value="0"/>
+				<UserParam type="string" name="selected" value="false"/>
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="string" name="protein_references" value="unique"/>
+			</PeptideHit>
+		</PeptideIdentification>
+	</IdentificationRun>
+</IdXML>

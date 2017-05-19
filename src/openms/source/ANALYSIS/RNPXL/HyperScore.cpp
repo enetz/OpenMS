@@ -127,7 +127,7 @@ namespace OpenMS
 //            std::cout << theo_peak_it->getMetaValue("IonName").toString() << " intensity: " << exp_spectrum[index].getIntensity() << std::endl;
 //          #endif
           ++b_ion_count;
-        }       
+        }
       }
     }
 
