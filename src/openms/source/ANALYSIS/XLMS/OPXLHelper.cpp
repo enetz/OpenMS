@@ -55,8 +55,15 @@ namespace OpenMS
     double min_precursor = spectrum_precursors[0];
     double max_precursor = spectrum_precursors[spectrum_precursors.size()-1];
 
+// #pragma omp declare reduction ( mergeVectors : std::vector<OPXLDataStructs::XLPrecursor> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()) )
+
+#pragma omp parallel
+    {
+    vector<OPXLDataStructs::XLPrecursor> mass_to_candidates_local;
+    vector<int> precursor_correction_positions_local;
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(guided)
+#pragma omp for schedule(dynamic)
 #endif
     for (SignedSize p1 = 0; p1 < static_cast<SignedSize>(peptides.size()); ++p1)
     {
@@ -79,7 +86,7 @@ namespace OpenMS
         // call function to compare with spectrum precursor masses
         // will only add this candidate, if the mass is within the given tolerance to any precursor in the spectra data
         // after the first monolink is added, stop enumerating masses (if other candidates fit within the same precursor, they will have exactly the same fragment matching)
-        if (filter_and_add_candidate(mass_to_candidates, spectrum_precursors, precursor_correction_positions, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor))
+        if (filter_and_add_candidate(mass_to_candidates_local, spectrum_precursors, precursor_correction_positions_local, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor))
         {
           break;
         }
@@ -120,7 +127,7 @@ namespace OpenMS
         precursor.beta_index = peptides.size() + 1; // an out-of-range index to represent an empty index
 
         // call function to compare with spectrum precursor masses
-        filter_and_add_candidate(mass_to_candidates, spectrum_precursors, precursor_correction_positions, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor);
+        filter_and_add_candidate(mass_to_candidates_local, spectrum_precursors, precursor_correction_positions_local, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor);
       }
 
       // check for minimal mass of second peptide, jump farther than current peptide if possible
@@ -165,9 +172,15 @@ namespace OpenMS
         precursor.beta_index = p2;
 
         // call function to compare with spectrum precursor masses
-        filter_and_add_candidate(mass_to_candidates, spectrum_precursors, precursor_correction_positions, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor);
+        filter_and_add_candidate(mass_to_candidates_local, spectrum_precursors, precursor_correction_positions_local, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor);
       }
     } // end of parallelized for-loop
+#pragma omp critical (mass_to_candidates_access)
+    {
+      mass_to_candidates.insert(mass_to_candidates.end(), std::make_move_iterator(mass_to_candidates_local.begin()), std::make_move_iterator(mass_to_candidates_local.end()));
+      precursor_correction_positions.insert(precursor_correction_positions.end(), std::make_move_iterator(precursor_correction_positions_local.begin()), std::make_move_iterator(precursor_correction_positions_local.end()));
+    }
+    } // end of parallel section
     return mass_to_candidates;
   }
 
@@ -195,7 +208,7 @@ namespace OpenMS
 
     if (low_it != up_it) // if they are not equal, there are matching precursors in the data
     {
-#pragma omp critical (mass_to_candidates_access)
+// #pragma omp critical (mass_to_candidates_access)
       {
         mass_to_candidates.push_back(precursor);
         // take the position of the highest matching precursor mass in the vector (prioritize smallest correction)
@@ -377,8 +390,12 @@ namespace OpenMS
 
     vector <OPXLDataStructs::ProteinProteinCrossLink> cross_link_candidates;
 
+#pragma omp parallel
+    {
+    vector <OPXLDataStructs::ProteinProteinCrossLink> cross_link_candidates_local;
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(guided)
+#pragma omp for schedule(dynamic)
 #endif
     for (SignedSize i = 0; i < static_cast<SignedSize>(candidates.size()); ++i)
     {
@@ -494,8 +511,8 @@ namespace OpenMS
           {
             cross_link_candidate.cross_linker_mass = cross_link_mass;
 
-#pragma omp critical (cross_link_candidates_access)
-            cross_link_candidates.push_back(cross_link_candidate);
+// #pragma omp critical (cross_link_candidates_access)
+            cross_link_candidates_local.push_back(cross_link_candidate);
           }
           else
           {
@@ -511,8 +528,8 @@ namespace OpenMS
               {
                 cross_link_candidate.cross_linker_mass = cross_link_mass_mono_link[k];
 
-#pragma omp critical (cross_link_candidates_access)
-                cross_link_candidates.push_back(cross_link_candidate);
+// #pragma omp critical (cross_link_candidates_access)
+                cross_link_candidates_local.push_back(cross_link_candidate);
               }
             }
           }
@@ -563,8 +580,8 @@ namespace OpenMS
             cross_link_candidate.cross_linker_name = cross_link_name;
             cross_link_candidate.precursor_correction = precursor_corrections[i];
 
-#pragma omp critical (cross_link_candidates_access)
-            cross_link_candidates.push_back(cross_link_candidate);
+// #pragma omp critical (cross_link_candidates_access)
+            cross_link_candidates_local.push_back(cross_link_candidate);
           }
         }
       }
@@ -615,8 +632,8 @@ namespace OpenMS
             {
               cross_link_candidate.cross_linker_mass = cross_link_mass;
 
-#pragma omp critical (cross_link_candidates_access)
-              cross_link_candidates.push_back(cross_link_candidate);
+// #pragma omp critical (cross_link_candidates_access)
+              cross_link_candidates_local.push_back(cross_link_candidate);
             }
             else
             {
@@ -632,8 +649,8 @@ namespace OpenMS
                 {
                   cross_link_candidate.cross_linker_mass = cross_link_mass_mono_link[k];
 
-#pragma omp critical (cross_link_candidates_access)
-                  cross_link_candidates.push_back(cross_link_candidate);
+// #pragma omp critical (cross_link_candidates_access)
+                  cross_link_candidates_local.push_back(cross_link_candidate);
                 }
               }
             }
@@ -641,6 +658,9 @@ namespace OpenMS
         }
       }
     } // end of parallelized for-loop
+#pragma omp critical (cross_link_candidates_access)
+      cross_link_candidates.insert(cross_link_candidates.end(), std::make_move_iterator(cross_link_candidates_local.begin()), std::make_move_iterator(cross_link_candidates_local.end()));
+    } // end of parallel section
     return cross_link_candidates;
   }
 

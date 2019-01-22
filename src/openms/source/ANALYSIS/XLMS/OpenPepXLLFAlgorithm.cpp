@@ -425,8 +425,12 @@ using namespace OpenMS;
 
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > mainscore_csms_spectrum;
 
+#pragma omp parallel
+      {
+      vector< OPXLDataStructs::CrossLinkSpectrumMatch > mainscore_csms_spectrum_local;
+
 #ifdef _OPENMP
-#pragma omp parallel for schedule(guided)
+#pragma omp for schedule(dynamic)
 #endif
       for (SignedSize i = 0; i < static_cast<SignedSize>(cross_link_candidates.size()); ++i)
       {
@@ -539,10 +543,13 @@ using namespace OpenMS;
         csm.match_odds_beta = match_odds_beta;
         csm.precursor_error_ppm = rel_error;
 
-#pragma omp critical (mainscore_csms_spectrum_access)
-        mainscore_csms_spectrum.push_back(csm);
+// #pragma omp critical (mainscore_csms_spectrum_access)
+        mainscore_csms_spectrum_local.push_back(csm);
 
-      }
+      } // end of parallelized for-loop
+#pragma omp critical (mainscore_csms_spectrum_access)
+      mainscore_csms_spectrum.insert(mainscore_csms_spectrum.end(), std::make_move_iterator(mainscore_csms_spectrum_local.begin()), std::make_move_iterator(mainscore_csms_spectrum_local.end()));
+      } // end of parallel section
       std::sort(mainscore_csms_spectrum.rbegin(), mainscore_csms_spectrum.rend(), OPXLDataStructs::CLSMScoreComparator());
 
       Size last_candidate_index = mainscore_csms_spectrum.size();
