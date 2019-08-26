@@ -90,6 +90,7 @@ namespace OpenMS
 
       // determine vector of ms file names (in order of appearance)
       vector<String> msfiles;
+      std::map<pair<UInt,UInt>, UInt> fractiongroup_label_to_sample_mapping;
       for (const auto &f : cm.getColumnHeaders())
       {
         if (std::find(msfiles.begin(), msfiles.end(), f.second.filename) == msfiles.end())
@@ -133,17 +134,21 @@ namespace OpenMS
 
         if (experiment_type == "label-free")
         {
+          //since lfq has no labels, samples are defined solely by fraction groups
           r.sample = r.fraction_group;
         }
-        else // MS1 or MS2 labeled
+        else // MS1 or MS2 labeled -> We create one sample for each fractiongroup/label combination
+        // this assumes that fractionation took place after labelling. Otherwise a design needs to be given.
         {
-          r.sample = r.label; //TODO why??
+          //check fractiongroup_label_to_sample_mapping and add if not present, otherwise use present
+          auto key = make_pair(r.fraction_group, r.label);
+          auto it = fractiongroup_label_to_sample_mapping.emplace(key, fractiongroup_label_to_sample_mapping.size()+1);
+          r.sample = it.first->second;
         }
 
         msfile_section.push_back(r);
         if (!sample_section.hasSample(r.sample))
           sample_section.addSample(r.sample);
-
 
       }
 
@@ -587,7 +592,7 @@ namespace OpenMS
       container.insert(item);
     }
 
-    void ExperimentalDesign::isValid_(bool labelfree)
+    void ExperimentalDesign::isValid_()
     {
       std::set< std::tuple< unsigned, unsigned, unsigned > > fractiongroup_fraction_label_set;
       std::set< std::tuple< std::string, unsigned > > path_label_set;
@@ -613,15 +618,11 @@ namespace OpenMS
         std::tuple<unsigned, unsigned> fractiongroup_label = std::make_tuple(row.fraction_group, row.label);
         fractiongroup_label_to_sample[fractiongroup_label].insert(row.sample);
 
-        if (fractiongroup_label_to_sample[fractiongroup_label].size() > 1 && labelfree)
+        //@todo infer if labelfree and/or silence this info. Or require it to be given
+        if (fractiongroup_label_to_sample[fractiongroup_label].size() > 1)
         {
-
-         OPENMS_LOG_INFO << "Please correct your experimental design if this is a label free experiment." << std::endl;
-         // throw Exception::MissingInformation(
-         //   __FILE__,
-         //   __LINE__,
-         //   OPENMS_PRETTY_FUNCTION,
-         //   "Multiple Samples encountered for the same fraction group and the same label");
+         OPENMS_LOG_INFO << "Multiple Samples encountered for the same fraction group and the same label"
+                            "Please correct your experimental design if this is a label free experiment." << std::endl;
         }
       }
     }

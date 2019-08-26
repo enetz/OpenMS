@@ -38,6 +38,8 @@
 #include <OpenMS/CONCEPT/UniqueIdIndexer.h>
 #include <OpenMS/KERNEL/RangeManager.h>
 #include <OpenMS/KERNEL/ConsensusFeature.h>
+#include <OpenMS/KERNEL/MSExperiment.h>
+
 #include <OpenMS/METADATA/DocumentIdentifier.h>
 #include <OpenMS/METADATA/MetaInfoInterface.h>
 
@@ -140,6 +142,8 @@ public:
         {
           if (experiment_type != "label-free")
           {
+            // TODO There seem to be files in our test data from the Multiplex toolset that do not annotate
+            //  a channel id but only add the "label" attribute with the SILAC modification. Add a fall-back here?
             OPENMS_LOG_WARN << "No channel id annotated in labelled consensusXML. Assuming only a single channel was used." << std::endl;
           }
           return 1;
@@ -290,6 +294,10 @@ public:
 
     /// set the file paths to the primary MS run (stored in ColumnHeaders)
     OPENMS_DLLAPI void setPrimaryMSRunPath(const StringList& s);
+
+    /// set the file path to the primary MS run using the mzML annotated in the MSExperiment @param e. 
+    /// If it doesn't exist, fallback to @param s.
+    OPENMS_DLLAPI void setPrimaryMSRunPath(const StringList& s, MSExperiment & e);
 
     /// returns the MS run path (stored in ColumnHeaders)
     OPENMS_DLLAPI void getPrimaryMSRunPath(StringList& toFill) const;
