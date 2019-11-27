@@ -160,19 +160,18 @@ namespace OpenMS
   void Tagger::getTag(const std::vector<double>& mzs, std::vector<std::string>& tags) const
   {
     // start peak
-    std::string tag;
     if (min_tag_length_ > mzs.size()) return; // avoid segfault
 
     // make one search for each charge
     for (size_t charge = min_charge_; charge <= max_charge_; ++charge)
     {
 #ifdef _OPENMP
-#pragma omp parallel for
+#pragma omp parallel for schedule(guided)
 #endif
       for (size_t i = 0; i < mzs.size() - min_tag_length_; ++i)
       {
+        std::string tag;
         getTag_(tag, mzs, i, tags, charge);
-        tag.clear();
       } // end of parallelized loop over starting peaks
     }
     // make tags unique
