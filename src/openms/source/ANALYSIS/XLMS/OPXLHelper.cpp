@@ -1462,9 +1462,10 @@ namespace OpenMS
     precursor_correction_positions = filtered_precursor_correction_positions;
   }
 
-  void OPXLHelper::filterPrecursorsByTagTrie(std::vector <OPXLDataStructs::XLPrecursor>& candidates, const std::vector<std::string>& tags)
+  void OPXLHelper::filterPrecursorsByTagTrie(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags)
   {
     std::vector <OPXLDataStructs::XLPrecursor> filtered_candidates;
+    std::vector< int > filtered_precursor_correction_positions;
 
     // prepare trie with forward and reverse tags
     AhoCorasickAmbiguous::PeptideDB tag_DB;
@@ -1481,26 +1482,29 @@ namespace OpenMS
     // init algorithm
     AhoCorasickAmbiguous fuzzyAC;
 
-    for (const OPXLDataStructs::XLPrecursor& candidate : candidates)
+    for (Size i = 0; i < candidates.size(); ++i)
+    // for (const OPXLDataStructs::XLPrecursor& candidate : candidates)
     {
-      fuzzyAC.setProtein(candidate.alpha_seq);
+      fuzzyAC.setProtein(candidates[i].alpha_seq);
       if (fuzzyAC.findNext(pattern))
       {
-        filtered_candidates.push_back(candidate);
+        filtered_candidates.push_back(candidates[i]);
+        filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
         continue;
       }
-      
-      if (candidate.beta_seq.size() > 0)
+
+      if (candidates[i].beta_seq.size() > 0)
       {
         // String beta = candidate.beta_seq;
-        fuzzyAC.setProtein(candidate.beta_seq);
+        fuzzyAC.setProtein(candidates[i].beta_seq);
         if (fuzzyAC.findNext(pattern))
         {
-          filtered_candidates.push_back(candidate);
-          continue;
+          filtered_candidates.push_back(candidates[i]);
+          filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
         }
       }
     }
     candidates = filtered_candidates;
+    precursor_correction_positions = filtered_precursor_correction_positions;
   }
 }

@@ -516,18 +516,18 @@ START_SECTION(filterPrecursorsByTags(std::vector <OPXLDataStructs::XLPrecursor>&
   // // with 30000 iterations: 126.80 sec
   // for (int i = 0; i < 30000; ++i)
   // {
-  //   OPXLHelper::filterPrecursorsByTags(precursors, tags);
+  //   OPXLHelper::filterPrecursorsByTags(precursors, spectrum_precursor_correction_positions, tags);
   // }
-  // TEST_EQUAL(precursors.size(), 4092);
+  // TEST_EQUAL(precursors.size(), 4047);
 
   // // trie method runtime benchmark: search those 210 candidates that do not contain the tags many times
   // // with 30000 iterations: Timeout after 1500.10 sec
   // // with 3000 iterations: 200.92 sec
   // for (int i = 0; i < 3000; ++i)
   // {
-  //   OPXLHelper::filterPrecursorsByTagTrie(precursors, tags);
+  //   OPXLHelper::filterPrecursorsByTagTrie(precursors, spectrum_precursor_correction_positions, tags);
   // }
-  // TEST_EQUAL(precursors.size(), 4092);
+  // TEST_EQUAL(precursors.size(), 4047);
 
 END_SECTION
 
