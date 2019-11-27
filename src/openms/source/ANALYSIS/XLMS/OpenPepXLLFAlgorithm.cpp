@@ -226,27 +226,27 @@ using namespace OpenMS;
 
     // Precursor Purity precalculation
     progresslogger.startProgress(0, 1, "Computing precursor purities...");
-    vector<PrecursorPurity::PurityScores> precursor_purities = PrecursorPurity::computePrecursorPurities(unprocessed_spectra, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_);
+    map<String, PrecursorPurity::PurityScores> precursor_purities = PrecursorPurity::computePrecursorPurities(unprocessed_spectra, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_);
     progresslogger.endProgress();
 
     // preprocess spectra (filter out 0 values, sort by position)
     progresslogger.startProgress(0, 1, "Filtering spectra...");
-    vector<Size> discarded_spectra;
-    spectra = OPXLSpectrumProcessingAlgorithms::preprocessSpectra(unprocessed_spectra, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, peptide_min_size_, min_precursor_charge_, max_precursor_charge_, discarded_spectra, deisotope, false);
+    // vector<Size> discarded_spectra;
+    spectra = OPXLSpectrumProcessingAlgorithms::preprocessSpectra(unprocessed_spectra, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, peptide_min_size_, min_precursor_charge_, max_precursor_charge_, deisotope, false);
     progresslogger.endProgress();
 
-    // discard the precursor purities of discarded spectra
-    if (precursor_purities.size() > 0)
-    {
-      // cout << "Discarded spectra: " << discarded_spectra.size() << " | ";
-      for (Size discarded_index : discarded_spectra)
-      {
-        // cout << discarded_index << " | ";
-        precursor_purities.erase(precursor_purities.begin()+discarded_index);
-      }
-      // cout << endl;
-    }
-    precursor_purities.shrink_to_fit();
+    // // discard the precursor purities of discarded spectra
+    // if (precursor_purities.size() > 0)
+    // {
+    //   // cout << "Discarded spectra: " << discarded_spectra.size() << " | ";
+    //   for (Size discarded_index : discarded_spectra)
+    //   {
+    //     // cout << discarded_index << " | ";
+    //     precursor_purities.erase(precursor_purities.begin()+discarded_index);
+    //   }
+    //   // cout << endl;
+    // }
+    // precursor_purities.shrink_to_fit();
 
     ProteaseDigestion digestor;
     digestor.setEnzyme(enzyme_name_);
@@ -805,11 +805,11 @@ using namespace OpenMS;
 
         if (precursor_purities.size() > 0)
         {
-          csm.precursor_total_intensity = precursor_purities[scan_index].total_intensity;
-          csm.precursor_target_intensity = precursor_purities[scan_index].target_intensity;
-          csm.precursor_signal_proportion = precursor_purities[scan_index].signal_proportion;
-          csm.precursor_target_peak_count = precursor_purities[scan_index].target_peak_count;
-          csm.precursor_residual_peak_count = precursor_purities[scan_index].residual_peak_count;
+          csm.precursor_total_intensity = precursor_purities[spectrum.getNativeID()].total_intensity;
+          csm.precursor_target_intensity = precursor_purities[spectrum.getNativeID()].target_intensity;
+          csm.precursor_signal_proportion = precursor_purities[spectrum.getNativeID()].signal_proportion;
+          csm.precursor_target_peak_count = precursor_purities[spectrum.getNativeID()].target_peak_count;
+          csm.precursor_residual_peak_count = precursor_purities[spectrum.getNativeID()].residual_peak_count;
         }
 
         // num_iso_peaks array from deisotoping
