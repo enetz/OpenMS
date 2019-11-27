@@ -401,9 +401,9 @@ using namespace OpenMS;
     OPENMS_LOG_DEBUG << "Spectra left after preprocessing and filtering: " << spectra.size() << " of " << unprocessed_spectra.size() << endl;
 #endif
 
-#ifdef _OPENMP
-#pragma omp parallel for schedule(guided)
-#endif
+// #ifdef _OPENMP
+// #pragma omp parallel for schedule(guided)
+// #endif
     for (SignedSize scan_index = 0; scan_index < static_cast<SignedSize>(spectra.size()); ++scan_index)
     {
       const PeakSpectrum& spectrum = spectra[scan_index];
@@ -448,9 +448,9 @@ using namespace OpenMS;
 
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > mainscore_csms_spectrum;
 
-// #ifdef _OPENMP
-// #pragma omp parallel for schedule(guided)
-// #endif
+#ifdef _OPENMP
+#pragma omp parallel for schedule(guided)
+#endif
       for (SignedSize i = 0; i < static_cast<SignedSize>(cross_link_candidates.size()); ++i)
       {
         OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate = cross_link_candidates[i];
@@ -565,7 +565,7 @@ using namespace OpenMS;
 #pragma omp critical (mainscore_csms_spectrum_access)
         mainscore_csms_spectrum.push_back(csm);
 
-      }
+      } // end of parallellized candidate loop
       std::sort(mainscore_csms_spectrum.rbegin(), mainscore_csms_spectrum.rend(), OPXLDataStructs::CLSMScoreComparator());
 
       Size last_candidate_index = mainscore_csms_spectrum.size();
@@ -1001,7 +1001,7 @@ using namespace OpenMS;
 #pragma omp critical (LOG_DEBUG_access)
       OPENMS_LOG_DEBUG << "Next Spectrum ##################################" << endl;
 #endif
-    } // end loop over spectra and parallelization
+    } // end loop over spectra
 
     std::cout << std::endl << "Total number of potential candidates searched: " << all_candidates_count << std::endl;
 
