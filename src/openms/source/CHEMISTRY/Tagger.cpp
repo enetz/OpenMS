@@ -38,6 +38,13 @@
 #include <OpenMS/CHEMISTRY/ModificationsDB.h>
 #include <OpenMS/MATH/MISC/MathFunctions.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#define NUMBER_OF_THREADS (omp_get_num_threads())
+#else
+#define NUMBER_OF_THREADS (1)
+#endif
+
 namespace OpenMS
 {
   char Tagger::getAAByMass_(double m) const
@@ -74,6 +81,7 @@ namespace OpenMS
 
       if (tag.size() >= min_tag_length_)
       {
+#pragma omp critical (tags_access)
         tags.push_back(tag);
       }
 
@@ -86,6 +94,7 @@ namespace OpenMS
         getTag_(tag, mzs, j, tags, charge);
         if (tag.size() >= min_tag_length_)
         {
+#pragma omp critical (tags_access)
           tags.push_back(tag);
         }
       }
@@ -157,11 +166,14 @@ namespace OpenMS
     // make one search for each charge
     for (size_t charge = min_charge_; charge <= max_charge_; ++charge)
     {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
       for (size_t i = 0; i < mzs.size() - min_tag_length_; ++i)
       {
         getTag_(tag, mzs, i, tags, charge);
         tag.clear();
-      }
+      } // end of parallelized loop over starting peaks
     }
     // make tags unique
     sort(tags.begin(), tags.end());
