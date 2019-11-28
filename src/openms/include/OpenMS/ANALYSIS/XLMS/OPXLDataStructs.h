@@ -268,8 +268,9 @@ namespace OpenMS
       struct AASeqWithMass
       {
         double peptide_mass;
-        AASequence peptide_seq;
         PeptidePosition position;
+        AASequence peptide_seq;
+        String unmodified_seq;
       };
 
       /**

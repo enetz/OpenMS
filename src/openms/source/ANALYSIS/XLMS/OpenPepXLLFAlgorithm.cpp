@@ -571,6 +571,9 @@ using namespace OpenMS;
       Size last_candidate_index = mainscore_csms_spectrum.size();
       last_candidate_index = std::min(last_candidate_index, Size(number_top_hits_));
 
+#ifdef _OPENMP
+#pragma omp parallel for schedule(guided)
+#endif
       for (Size i = 0; i < last_candidate_index ; ++i)
       {
         OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate = mainscore_csms_spectrum[i].cross_link;
@@ -967,8 +970,10 @@ using namespace OpenMS;
 
         csm.frag_annotations = frag_annotations;
 
+#pragma omp critical (all_csms_spectrum_access)
         all_csms_spectrum.push_back(csm);
-      } // candidates for peak finished, determine best matching candidate
+
+      } // parallel analysis of top X candidates for the current spectrum finished
 
       // collect top n matches to spectrum
       sort(all_csms_spectrum.rbegin(), all_csms_spectrum.rend(), OPXLDataStructs::CLSMScoreComparator());

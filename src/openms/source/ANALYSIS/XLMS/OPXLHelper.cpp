@@ -71,7 +71,7 @@ namespace OpenMS
     for (SignedSize p1 = 0; p1 < static_cast<SignedSize>(peptides.size()); ++p1)
     {
       // get the amino acid sequence of this peptide as a character string
-      String seq_first = peptides[p1].peptide_seq.toUnmodifiedString();
+      String seq_first = peptides[p1].unmodified_seq;
 
       // generate mono-links: one cross-linker with one peptide attached to one side
       for (Size i = 0; i < cross_link_mass_mono_link.size(); i++)
@@ -104,14 +104,14 @@ namespace OpenMS
       {
         for (Size i = 0; i < cross_link_residue1.size(); ++i)
         {
-          if (cross_link_residue1[i].size() == 1 && seq_first.substr(k, 1) == cross_link_residue1[i])
+          if (cross_link_residue1[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue1[i])
           {
             first_res = true;
           }
         }
         for (Size i = 0; i < cross_link_residue2.size(); ++i)
         {
-          if (cross_link_residue2[i].size() == 1 && seq_first.substr(k, 1) == cross_link_residue2[i])
+          if (cross_link_residue2[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue2[i])
           {
             second_res = true;
           }
@@ -176,7 +176,7 @@ namespace OpenMS
         precursor.alpha_index = p1;
         precursor.beta_index = p2;
         precursor.alpha_seq = seq_first;
-        precursor.beta_seq = peptides[p2].peptide_seq.toUnmodifiedString();
+        precursor.beta_seq = peptides[p2].unmodified_seq;
 
         // call function to compare with spectrum precursor masses
         filter_and_add_candidate(mass_to_candidates, spectrum_precursors, precursor_correction_positions, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor);
@@ -336,6 +336,7 @@ namespace OpenMS
           pep_mass.peptide_mass = candidate.getMonoWeight();
           pep_mass.peptide_seq = candidate;
           pep_mass.position = position;
+          pep_mass.unmodified_seq = cit->getString();
 
           processed_peptides.insert(pair<StringView, AASequence>(*cit, candidate));
           peptide_masses.push_back(pep_mass);
@@ -402,9 +403,9 @@ namespace OpenMS
         peptide_second = &(peptide_masses[candidate.beta_index].peptide_seq);
         peptide_pos_second = peptide_masses[candidate.beta_index].position;
       }
-      String seq_first = peptide_first->toUnmodifiedString();
+      String seq_first = candidate.alpha_seq;
       String seq_second;
-      if (peptide_second) { seq_second = peptide_second->toUnmodifiedString(); }
+      if (peptide_second) { seq_second = candidate.beta_seq; }
 
       // mono-links and loop-links with different masses can be generated for the same precursor mass, but only one of them can be valid each time.
       // Find out which is the case. But it should not happen often enough to slow down the tool significantly.
@@ -421,7 +422,8 @@ namespace OpenMS
       {
         for (Size x = 0; x < cross_link_residue1.size(); ++x)
         {
-          if (seq_first.substr(k, 1) == cross_link_residue1[x]) link_pos_first.push_back(k);
+          // if (seq_first.substr(k, 1) == cross_link_residue1[x]) link_pos_first.push_back(k);
+          if (string(1, seq_first[k]) == cross_link_residue1[x]) link_pos_first.push_back(k);
         }
       }
       if (candidate.beta_index < peptide_masses.size())
@@ -430,7 +432,7 @@ namespace OpenMS
         {
           for (Size x = 0; x < cross_link_residue2.size(); ++x)
           {
-            if (seq_second.substr(k, 1) == cross_link_residue2[x]) link_pos_second.push_back(k);
+            if (string(1, seq_second[k]) == cross_link_residue2[x]) link_pos_second.push_back(k);
           }
         }
       }
@@ -447,7 +449,7 @@ namespace OpenMS
           {
             for (Size x = 0; x < cross_link_residue2.size(); ++x)
             {
-              if (seq_first.substr(k, 1) == cross_link_residue2[x]) link_pos_second.push_back(k);
+              if (string(1, seq_first[k]) == cross_link_residue2[x]) link_pos_second.push_back(k);
             }
           }
         }
