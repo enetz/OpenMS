@@ -65,10 +65,47 @@ namespace OpenMS
     double min_precursor = spectrum_precursors[0];
     double max_precursor = spectrum_precursors[spectrum_precursors.size()-1];
 
+    SignedSize peptides_size = peptides.size();
+
+
+    // for (double precursor_mass : spectrum_precursors)
+    // {
+    //   vector<OPXLDataStructs::AASeqWithMass>::const_iterator low_it;
+    //   vector<OPXLDataStructs::AASeqWithMass>::const_iterator up_it;
+    //   // The largest peptides given a fixed maximal precursor mass are possible with loop links
+    //   // Filter peptides using maximal loop link mass first
+    //   //double max_precursor_mass = spectrum_precursors[spectrum_precursors.size()-1];
+    //   // compute absolute tolerance from relative, if necessary
+    //   // compute absolute tolerance from relative, if necessary
+    //   double allowed_error = 0;
+    //   if (precursor_mass_tolerance_unit_ppm) // ppm
+    //   {
+    //     allowed_error = precursor_mass * precursor_mass_tolerance * 1e-6;
+    //   }
+    //   else // Dalton
+    //   {
+    //     allowed_error = precursor_mass_tolerance;
+    //   }
+    //
+    //   double min_peptide_mass = precursor_mass - cross_link_mass -
+    //   double max_peptide_mass = precursor_mass - cross_link_mass_ + allowed_error;
+    //   // search for the first mass greater than the maximim, cut off everything larger
+    //   vector<OPXLDataStructs::AASeqWithMass>::iterator last = upper_bound(peptide_masses.begin(), peptide_masses.end(), max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+    //
+    //   vector<OPXLDataStructs::AASeqWithMass> filtered_peptide_masses;
+    //   filtered_peptide_masses.assign(peptide_masses.begin(), last);
+    //
+    //   // find precursor with m/z >= low end of range
+    //   low_it = lower_bound(peptides.begin(), peptides.end(), min_precursor - allowed_error);
+    //   // find precursor with m/z > (not equal to) high end of range
+    //   up_it =  upper_bound(peptides.begin(), peptides.end(), min_precursor + allowed_error);
+    //   // if these two are equal, there is no precursor within the range
+    // }
+
 #ifdef _OPENMP
 #pragma omp parallel for schedule(guided)
 #endif
-    for (SignedSize p1 = 0; p1 < static_cast<SignedSize>(peptides.size()); ++p1)
+    for (SignedSize p1 = 0; p1 < peptides_size; ++p1)
     {
       // get the amino acid sequence of this peptide as a character string
       String seq_first = peptides[p1].unmodified_seq;
@@ -84,7 +121,7 @@ namespace OpenMS
         OPXLDataStructs::XLPrecursor precursor;
         precursor.precursor_mass = cross_linked_pair_mass;
         precursor.alpha_index = p1;
-        precursor.beta_index = peptides.size() + 1; // an out-of-range index to represent an empty index
+        precursor.beta_index = peptides_size + 1; // an out-of-range index to represent an empty index
         precursor.alpha_seq = seq_first;
 
         // call function to compare with spectrum precursor masses
@@ -128,7 +165,7 @@ namespace OpenMS
         OPXLDataStructs::XLPrecursor precursor;
         precursor.precursor_mass = cross_linked_pair_mass;
         precursor.alpha_index = p1;
-        precursor.beta_index = peptides.size() + 1; // an out-of-range index to represent an empty index
+        precursor.beta_index = peptides_size + 1; // an out-of-range index to represent an empty index
         precursor.alpha_seq = seq_first;
 
         // call function to compare with spectrum precursor masses
@@ -155,7 +192,7 @@ namespace OpenMS
 
       // Generate cross-links: one cross-linker linking two separate peptides, the most important case
       // Loop over all p2 peptide candidates, that come after p1 in the list
-      for (Size p2 = p1; p2 < peptides.size(); ++p2)
+      for (Size p2 = p1; p2 < peptides_size; ++p2)
       {
         // skip peptides, that are too small in any case
         if (peptides[p2].peptide_mass < min_second_peptide_mass)
@@ -1342,20 +1379,19 @@ namespace OpenMS
     } // end correction mass loop
 
     std::vector< int > precursor_correction_positions;
-    candidates = OPXLHelper::enumerateCrossLinksAndMasses(filtered_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2, spectrum_precursor_vector, precursor_correction_positions, precursor_mass_tolerance, precursor_mass_tolerance_unit_ppm);
+    // if sequence tags are used and no tags were found, don't bother combining peptide pairs
+    if ( (use_sequence_tags && tags.size() > 0) ||
+         !use_sequence_tags)
+    {
+      candidates = OPXLHelper::enumerateCrossLinksAndMasses(filtered_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2, spectrum_precursor_vector, precursor_correction_positions, precursor_mass_tolerance, precursor_mass_tolerance_unit_ppm);
+    }
 
     // an empty vector of sequence tags implies no filtering should be done in this case
     if (use_sequence_tags)
     {
       Size candidates_size = candidates.size();
-      if (tags.size() > 0)
-      {
-        OPXLHelper::filterPrecursorsByTags(candidates, precursor_correction_positions, tags);
-      }
-      else
-      {
-        candidates.clear();
-      }
+      OPXLHelper::filterPrecursorsByTags(candidates, precursor_correction_positions, tags);
+
 #ifdef _OPENMP
 #pragma omp critical (LOG_DEBUG_access)
 #endif
