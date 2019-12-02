@@ -56,208 +56,190 @@ using namespace std;
 
 namespace OpenMS
 {
-  // Enumerate all pairs of peptides from the searched database and calculate their masses (inlcuding mono-links and loop-links)
   vector<OPXLDataStructs::XLPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::AASeqWithMass>& peptides, double cross_link_mass, const DoubleList& cross_link_mass_mono_link, const StringList& cross_link_residue1, const StringList& cross_link_residue2, const vector< double >& spectrum_precursors, vector< int >& precursor_correction_positions, double precursor_mass_tolerance, bool precursor_mass_tolerance_unit_ppm)
   {
     // initialize empty vector for the results
     vector<OPXLDataStructs::XLPrecursor> mass_to_candidates;
 
-    double min_precursor = spectrum_precursors[0];
     double max_precursor = spectrum_precursors[spectrum_precursors.size()-1];
 
-    SignedSize peptides_size = peptides.size();
+    Size peptides_size = peptides.size();
 
+    // compute a very conservative total upper bound, based on the heaviest possible linear peptide
+    // can be used instead of peptides.end() in all cases for this precursor mass
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator conservative_upper_bound = upper_bound(peptides.begin(), peptides.end(), max_precursor, OPXLDataStructs::AASeqWithMassComparator());
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_peptide = peptides.begin();
 
-    // for (double precursor_mass : spectrum_precursors)
-    // {
-    //   vector<OPXLDataStructs::AASeqWithMass>::const_iterator low_it;
-    //   vector<OPXLDataStructs::AASeqWithMass>::const_iterator up_it;
-    //   // The largest peptides given a fixed maximal precursor mass are possible with loop links
-    //   // Filter peptides using maximal loop link mass first
-    //   //double max_precursor_mass = spectrum_precursors[spectrum_precursors.size()-1];
-    //   // compute absolute tolerance from relative, if necessary
-    //   // compute absolute tolerance from relative, if necessary
-    //   double allowed_error = 0;
-    //   if (precursor_mass_tolerance_unit_ppm) // ppm
-    //   {
-    //     allowed_error = precursor_mass * precursor_mass_tolerance * 1e-6;
-    //   }
-    //   else // Dalton
-    //   {
-    //     allowed_error = precursor_mass_tolerance;
-    //   }
-    //
-    //   double min_peptide_mass = precursor_mass - cross_link_mass -
-    //   double max_peptide_mass = precursor_mass - cross_link_mass_ + allowed_error;
-    //   // search for the first mass greater than the maximim, cut off everything larger
-    //   vector<OPXLDataStructs::AASeqWithMass>::iterator last = upper_bound(peptide_masses.begin(), peptide_masses.end(), max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
-    //
-    //   vector<OPXLDataStructs::AASeqWithMass> filtered_peptide_masses;
-    //   filtered_peptide_masses.assign(peptide_masses.begin(), last);
-    //
-    //   // find precursor with m/z >= low end of range
-    //   low_it = lower_bound(peptides.begin(), peptides.end(), min_precursor - allowed_error);
-    //   // find precursor with m/z > (not equal to) high end of range
-    //   up_it =  upper_bound(peptides.begin(), peptides.end(), min_precursor + allowed_error);
-    //   // if these two are equal, there is no precursor within the range
-    // }
+    // initialize additional iterators
+    // the upper bounds for a precursor mass can be used as the lower bounds
+    // for the next heavier precursor mass, narrowing down the search space for new bounds
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_loop = peptides.begin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_loop = peptides.begin();
 
-#ifdef _OPENMP
-#pragma omp parallel for schedule(guided)
-#endif
-    for (SignedSize p1 = 0; p1 < peptides_size; ++p1)
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_mono = peptides.begin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_mono = peptides.begin();
+
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_alpha = peptides.begin();
+
+    for (Size pm = 0; pm < spectrum_precursors.size(); ++pm)
     {
-      // get the amino acid sequence of this peptide as a character string
-      String seq_first = peptides[p1].unmodified_seq;
-
-      // generate mono-links: one cross-linker with one peptide attached to one side
-      for (Size i = 0; i < cross_link_mass_mono_link.size(); i++)
-      {
-        // Monoisotopic weight of the peptide + cross-linker
-        double cross_linked_pair_mass = peptides[p1].peptide_mass + cross_link_mass_mono_link[i];
-
-        // Make sure it is clear only one peptide is considered here. Use an out-of-range value for the second peptide.
-        // to check: if(precursor.beta_index < peptides.size()) returns "false" for a mono-link
-        OPXLDataStructs::XLPrecursor precursor;
-        precursor.precursor_mass = cross_linked_pair_mass;
-        precursor.alpha_index = p1;
-        precursor.beta_index = peptides_size + 1; // an out-of-range index to represent an empty index
-        precursor.alpha_seq = seq_first;
-
-        // call function to compare with spectrum precursor masses
-        // will only add this candidate, if the mass is within the given tolerance to any precursor in the spectra data
-        // after the first monolink is added, stop enumerating masses (if other candidates fit within the same precursor, they will have exactly the same fragment matching)
-        if (filter_and_add_candidate(mass_to_candidates, spectrum_precursors, precursor_correction_positions, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor))
-        {
-          break;
-        }
-      }
-
-       // test if this peptide could have loop-links: one cross-link with both sides attached to the same peptide
-       // TODO check for distance between the two linked residues
-      bool first_res = false; // is there a residue the first side of the linker can attach to?
-      bool second_res = false; // is there a residue the second side of the linker can attach to?
-      for (Size k = 0; k < seq_first.size()-1; ++k)
-      {
-        for (Size i = 0; i < cross_link_residue1.size(); ++i)
-        {
-          if (cross_link_residue1[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue1[i])
-          {
-            first_res = true;
-          }
-        }
-        for (Size i = 0; i < cross_link_residue2.size(); ++i)
-        {
-          if (cross_link_residue2[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue2[i])
-          {
-            second_res = true;
-          }
-        }
-      }
-
-      // If both sides of a cross-linker can link to this peptide, generate the loop-link
-      if (first_res && second_res)
-      {
-        // Monoisotopic weight of the peptide + cross-linker
-        double cross_linked_pair_mass = peptides[p1].peptide_mass + cross_link_mass;
-
-        // also only one peptide
-        OPXLDataStructs::XLPrecursor precursor;
-        precursor.precursor_mass = cross_linked_pair_mass;
-        precursor.alpha_index = p1;
-        precursor.beta_index = peptides_size + 1; // an out-of-range index to represent an empty index
-        precursor.alpha_seq = seq_first;
-
-        // call function to compare with spectrum precursor masses
-        filter_and_add_candidate(mass_to_candidates, spectrum_precursors, precursor_correction_positions, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor);
-      }
-
-      // check for minimal mass of second peptide, jump farther than current peptide if possible
+      double precursor_mass = spectrum_precursors[pm];
+      // compute absolute tolerance from relative, if necessary
       double allowed_error = 0;
       if (precursor_mass_tolerance_unit_ppm) // ppm
       {
-        allowed_error = min_precursor * precursor_mass_tolerance * 1e-6;
+        allowed_error = precursor_mass * precursor_mass_tolerance * 1e-6;
       }
       else // Dalton
       {
         allowed_error = precursor_mass_tolerance;
       }
-      double min_second_peptide_mass = min_precursor - cross_link_mass - peptides[p1].peptide_mass - allowed_error;
 
-      if (precursor_mass_tolerance_unit_ppm) // ppm
-      {
-        allowed_error = max_precursor * precursor_mass_tolerance * 1e-6;
-      }
-      double max_second_peptide_mass = max_precursor - cross_link_mass - peptides[p1].peptide_mass + allowed_error;
+      // ################################ Enumerate Loop-Links #################
+      // The largest peptides given a fixed precursor mass are possible with loop links
+      double min_peptide_mass = precursor_mass - cross_link_mass - allowed_error;
+      double max_peptide_mass = precursor_mass - cross_link_mass + allowed_error;
 
-      // Generate cross-links: one cross-linker linking two separate peptides, the most important case
-      // Loop over all p2 peptide candidates, that come after p1 in the list
-      for (Size p2 = p1; p2 < peptides_size; ++p2)
+      first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+      last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+
+      Size first_index = first_loop - peptides.begin();
+      Size last_index = last_loop - peptides.begin();
+
+#pragma omp parallel for
+      for (Size p1 = first_index; p1 < last_index; ++p1)
       {
-        // skip peptides, that are too small in any case
-        if (peptides[p2].peptide_mass < min_second_peptide_mass)
+        const String& seq_first = peptides[p1].unmodified_seq;
+        // test if this peptide could have loop-links: one cross-link with both sides attached to the same peptide
+        bool first_res = false; // is there a residue the first side of the linker can attach to?
+        bool second_res = false; // is there a residue the second side of the linker can attach to?
+        for (Size k = 0; k < seq_first.size()-1; ++k)
+        {
+         for (Size i = 0; i < cross_link_residue1.size(); ++i)
+         {
+           if (cross_link_residue1[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue1[i])
+           {
+             first_res = true;
+           }
+         }
+         for (Size i = 0; i < cross_link_residue2.size(); ++i)
+         {
+           if (cross_link_residue2[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue2[i])
+           {
+             second_res = true;
+           }
+         }
+        }
+
+        // If both sides of a cross-linker can link to this peptide, generate the loop-link
+        if (first_res && second_res)
+        {
+         // Monoisotopic weight of the peptide + cross-linker
+         double cross_linked_peptide_mass = peptides[p1].peptide_mass + cross_link_mass;
+
+         // also only one peptide
+         OPXLDataStructs::XLPrecursor precursor;
+         precursor.precursor_mass = cross_linked_peptide_mass;
+         precursor.alpha_index = p1;
+         precursor.beta_index = peptides_size + 1; // an out-of-range index to represent an empty index
+         precursor.alpha_seq = seq_first;
+         precursor.beta_seq = "";
+
+#pragma omp critical (mass_to_candidates_access)
+         {
+           mass_to_candidates.push_back(precursor);
+           precursor_correction_positions.push_back(pm);
+         }
+        }
+      } // end of parallel loop over loop-link candidates
+
+      // ################################ Enumerate Mono-Links #################
+      for (Size i = 0; i < cross_link_mass_mono_link.size(); i++)
+      {
+        double mono_link_mass = cross_link_mass_mono_link[i];
+
+        min_peptide_mass = precursor_mass - mono_link_mass - allowed_error;
+        max_peptide_mass = precursor_mass - mono_link_mass + allowed_error;
+
+        // mono-link masses are sorted in descending order
+        // so we can use the results from the last search as a new lower bounds for both searches again
+        first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+        last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+
+        first_index = first_mono - peptides.begin();
+        last_index = last_mono - peptides.begin();
+
+#pragma omp parallel for
+        for (Size p1 = first_index; p1 < last_index; ++p1)
+        {
+          // Monoisotopic weight of the peptide + cross-linker
+          double cross_linked_peptide_mass = peptides[p1].peptide_mass + mono_link_mass;
+
+          // Make sure it is clear only one peptide is considered here. Use an out-of-range value for the second peptide.
+          OPXLDataStructs::XLPrecursor precursor;
+          precursor.precursor_mass = cross_linked_peptide_mass;
+          precursor.alpha_index = p1;
+          precursor.beta_index = peptides_size + 1; // an out-of-range index to represent an empty index
+          precursor.alpha_seq = peptides[p1].unmodified_seq;
+          precursor.beta_seq = "";
+
+#pragma omp critical (mass_to_candidates_access)
+         {
+           mass_to_candidates.push_back(precursor);
+           precursor_correction_positions.push_back(pm);
+         }
+        } // end of loop over candidates for a specific mono-link mass
+      } // end of loop over mono-link masses
+
+      // ################################ Enumerate Cross-Links #################
+      // constrain the conservative upper bound even more,
+      // because we have to fit in two peptides this time
+      // maximal mass: difference between precursor mass and the smallest peptide + cross-linker
+      max_peptide_mass = precursor_mass - cross_link_mass - peptides[0].peptide_mass + allowed_error;
+      last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+      Size last_alpha_index = last_alpha - peptides.begin();
+
+#pragma omp parallel for
+      for (Size p1 = 0; p1 < last_alpha_index; ++p1)
+      {
+        // Constrain search for beta
+        double min_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass - allowed_error;
+        double max_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass + allowed_error;
+
+        // the last_alpha upper bound is also a conservative upper bound here
+        vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_beta = lower_bound(first_peptide+p1, last_alpha, min_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
+        vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_beta = upper_bound(first_peptide+p1, last_alpha, max_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
+
+        if (first_beta == last_beta)
         {
           continue;
         }
-        else if (peptides[p2].peptide_mass > max_second_peptide_mass)
+
+        Size first_beta_index = first_beta - peptides.begin();
+        Size last_beta_index = last_beta - peptides.begin();
+
+        for (Size p2 = first_beta_index; p2 < last_beta_index; ++p2)
         {
-          break;
-        }
+          // Monoisotopic weight of the first peptide + the second peptide + cross-linker
+          double cross_linked_pair_mass = peptides[p1].peptide_mass + peptides[p2].peptide_mass + cross_link_mass;
 
-        // Monoisotopic weight of the first peptide + the second peptide + cross-linker
-        double cross_linked_pair_mass = peptides[p1].peptide_mass + peptides[p2].peptide_mass + cross_link_mass;
+          // this time both peptides have valid indices
+          OPXLDataStructs::XLPrecursor precursor;
+          precursor.precursor_mass = cross_linked_pair_mass;
+          precursor.alpha_index = p1;
+          precursor.beta_index = p2;
+          precursor.alpha_seq = peptides[p1].unmodified_seq;
+          precursor.beta_seq = peptides[p2].unmodified_seq;
 
-        // this time both peptides have valid indices
-        OPXLDataStructs::XLPrecursor precursor;
-        precursor.precursor_mass = cross_linked_pair_mass;
-        precursor.alpha_index = p1;
-        precursor.beta_index = p2;
-        precursor.alpha_seq = seq_first;
-        precursor.beta_seq = peptides[p2].unmodified_seq;
-
-        // call function to compare with spectrum precursor masses
-        filter_and_add_candidate(mass_to_candidates, spectrum_precursors, precursor_correction_positions, precursor_mass_tolerance_unit_ppm, precursor_mass_tolerance, precursor);
-      }
-    } // end of parallelized for-loop
-    return mass_to_candidates;
-  }
-
-  bool OPXLHelper::filter_and_add_candidate(vector<OPXLDataStructs::XLPrecursor>& mass_to_candidates, const vector< double >& spectrum_precursors, vector< int >& precursor_correction_positions, bool precursor_mass_tolerance_unit_ppm, double precursor_mass_tolerance, OPXLDataStructs::XLPrecursor precursor)
-  {
-    vector< double >::const_iterator low_it;
-    vector< double >::const_iterator up_it;
-
-    // compute absolute tolerance from relative, if necessary
-    double allowed_error = 0;
-    if (precursor_mass_tolerance_unit_ppm) // ppm
-    {
-      allowed_error = precursor.precursor_mass * precursor_mass_tolerance * 1e-6;
-    }
-    else // Dalton
-    {
-      allowed_error = precursor_mass_tolerance;
-    }
-
-    // find precursor with m/z >= low end of range
-    low_it = lower_bound(spectrum_precursors.begin(), spectrum_precursors.end(), precursor.precursor_mass - allowed_error);
-    // find precursor with m/z > (not equal to) high end of range
-    up_it =  upper_bound(spectrum_precursors.begin(), spectrum_precursors.end(), precursor.precursor_mass + allowed_error);
-    // if these two are equal, there is no precursor within the range
-
-    if (low_it != up_it) // if they are not equal, there are matching precursors in the data
-    {
 #pragma omp critical (mass_to_candidates_access)
-      {
-        mass_to_candidates.push_back(precursor);
-        // take the position of the highest matching precursor mass in the vector (prioritize smallest correction)
-        precursor_correction_positions.push_back(std::distance(spectrum_precursors.begin(), std::prev(up_it, 1)));
-      }
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+         {
+           mass_to_candidates.push_back(precursor);
+           precursor_correction_positions.push_back(pm);
+         }
+        } // end of loop over betas
+      } // end of parallel loop over alphas
+    } // end of loop over precursor masses
+    return mass_to_candidates;
   }
 
   std::vector<OPXLDataStructs::AASeqWithMass> OPXLHelper::digestDatabase(
@@ -1476,12 +1458,13 @@ namespace OpenMS
     }
   }
 
-    void OPXLHelper::filterPrecursorsByTags(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags)
+  void OPXLHelper::filterPrecursorsByTags(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags)
   {
     std::vector <OPXLDataStructs::XLPrecursor> filtered_candidates;
     std::vector< int > filtered_precursor_correction_positions;
 
     // brute force string comparisons for now, faster than Aho-Corasick for small tag sets
+#pragma omp parallel for
     for (Size i = 0; i < candidates.size(); ++i)
     {
       // iterate over copies, so that we can reverse them
@@ -1489,20 +1472,26 @@ namespace OpenMS
       {
         if (candidates[i].alpha_seq.hasSubstring(tag) || candidates[i].beta_seq.hasSubstring(tag))
         {
-          filtered_candidates.push_back(candidates[i]);
-          filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+ #pragma omp critical (filtered_candidates_access)
+          {
+            filtered_candidates.push_back(candidates[i]);
+            filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+          }
           break;
         }
 
         std::reverse(tag.begin(), tag.end());
         if (candidates[i].alpha_seq.hasSubstring(tag) || candidates[i].beta_seq.hasSubstring(tag))
         {
-          filtered_candidates.push_back(candidates[i]);
-          filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+ #pragma omp critical (filtered_candidates_access)
+          {
+            filtered_candidates.push_back(candidates[i]);
+            filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+          }
           break;
         }
       }
-    }
+    } // end of parallel loop over candidates
     candidates = filtered_candidates;
     precursor_correction_positions = filtered_precursor_correction_positions;
   }
@@ -1524,17 +1513,20 @@ namespace OpenMS
     // make trie from: set of tags, max. ambiguous, max. mismatches, and the pattern that will contain the trie
     AhoCorasickAmbiguous::initPattern(tag_DB, 0, 0, pattern);
 
-    // init algorithm
-    AhoCorasickAmbiguous fuzzyAC;
-
+#pragma omp parallel for
     for (Size i = 0; i < candidates.size(); ++i)
     // for (const OPXLDataStructs::XLPrecursor& candidate : candidates)
     {
+      // init algorithm
+      AhoCorasickAmbiguous fuzzyAC;
       fuzzyAC.setProtein(candidates[i].alpha_seq);
       if (fuzzyAC.findNext(pattern))
       {
-        filtered_candidates.push_back(candidates[i]);
-        filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+#pragma omp critical (filtered_candidates_access)
+        {
+          filtered_candidates.push_back(candidates[i]);
+          filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+        }
         continue;
       }
 
@@ -1544,11 +1536,14 @@ namespace OpenMS
         fuzzyAC.setProtein(candidates[i].beta_seq);
         if (fuzzyAC.findNext(pattern))
         {
-          filtered_candidates.push_back(candidates[i]);
-          filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+#pragma omp critical (filtered_candidates_access)
+          {
+            filtered_candidates.push_back(candidates[i]);
+            filtered_precursor_correction_positions.push_back(precursor_correction_positions[i]);
+          }
         }
       }
-    }
+    } // end of parallel loop over candidates
     candidates = filtered_candidates;
     precursor_correction_positions = filtered_precursor_correction_positions;
   }

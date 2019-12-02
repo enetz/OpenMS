@@ -92,9 +92,12 @@ namespace OpenMS
         }
       };
 
-
       /**
        * @brief Enumerates precursor masses for all candidates in an XL-MS search
+
+          Assumes the list of peptides and the list of spectrum precursor masses are sorted by mass in ascending order,
+          and the list of mono-link masses is sorted in descending order.
+
        * @param peptides The peptides with precomputed masses from the digestDatabase function
        * @param cross_link_mass_light Mass of the cross-linker, only the light one if a labeled linker is used
        * @param cross_link_mass_mono_link A list of possible masses for the cross-link, if it is attached to a peptide on one side
@@ -303,11 +306,5 @@ namespace OpenMS
        * @param tags The list of tags for the current spectrum produced by the Tagger
        */
       static void filterPrecursorsByTagTrie(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags);
-
-    private:
-
-      // helper function for enumerateCrossLinksAndMasses
-      static bool filter_and_add_candidate(std::vector<OPXLDataStructs::XLPrecursor>& mass_to_candidates, const std::vector< double >& spectrum_precursors, std::vector< int >& precursor_correction_positions, bool precursor_mass_tolerance_unit_ppm, double precursor_mass_tolerance, OPXLDataStructs::XLPrecursor precursor);
-
   };
 }
