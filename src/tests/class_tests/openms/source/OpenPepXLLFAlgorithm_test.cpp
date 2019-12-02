@@ -104,7 +104,7 @@ TEST_EQUAL(peptide_ids.size(), 5)
 TEST_EQUAL(spectra.size(), 127)
 TEST_EQUAL(all_top_csms.size(), 5)
 
-TEST_EQUAL(peptide_ids[0].getHits().size(), 1)
+TEST_EQUAL(peptide_ids[0].getHits().size(), 2)
 TEST_REAL_SIMILAR(peptide_ids[0].getHits()[0].getScore(), 0.123666)
 TEST_EQUAL(peptide_ids[0].getHits()[0].getSequence().toString(), "LPDPVKEYGC(Carbamidomethyl)APWPMVEK(Xlink:DSS)LIK")
 TEST_EQUAL(peptide_ids[0].getHits()[0].getMetaValue("sequence_beta"), "-")
