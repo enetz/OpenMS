@@ -434,8 +434,8 @@ namespace OpenMS
     // spectrum.push_back(p);
 
     spectrum.resize(spectrum.size() + 1);
-    spectrum.end()->mz = pos;
-    spectrum.end()->charge = charge;
+    spectrum.back().mz = pos;
+    spectrum.back().charge = charge;
   }
 
   void SimpleTSGXLMS::addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, double precursor_mass, int charge) const
@@ -449,8 +449,8 @@ namespace OpenMS
     // spectrum.push_back(p);
 
     spectrum.resize(spectrum.size()+1);
-    spectrum.end()->mz = mono_pos / static_cast<double>(charge);
-    spectrum.end()->charge = charge;
+    spectrum.back().mz = mono_pos / static_cast<double>(charge);
+    spectrum.back().charge = charge;
 
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
@@ -459,8 +459,8 @@ namespace OpenMS
       // p.mz = pos;
       // spectrum.push_back(p);
       spectrum.resize(spectrum.size()+1);
-      spectrum.end()->mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      spectrum.end()->charge = charge;
+      spectrum.back().mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      spectrum.back().charge = charge;
     }
 
     // loss peaks of the precursor
@@ -469,8 +469,8 @@ namespace OpenMS
     // p.mz = mono_pos / static_cast<double>(charge);
     // spectrum.push_back(p);
     spectrum.resize(spectrum.size()+1);
-    spectrum.end()->mz = mono_pos / static_cast<double>(charge);
-    spectrum.end()->charge = charge;
+    spectrum.back().mz = mono_pos / static_cast<double>(charge);
+    spectrum.back().charge = charge;
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
@@ -478,17 +478,17 @@ namespace OpenMS
       // p.mz = pos;
       // spectrum.push_back(p);
       spectrum.resize(spectrum.size()+1);
-      spectrum.end()->mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      spectrum.end()->charge = charge;
+      spectrum.back().mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      spectrum.back().charge = charge;
     }
 
     //loss of ammonia
-    // mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - loss_NH3_;
+    mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - loss_NH3_;
     // p.mz = mono_pos / static_cast<double>(charge);
     // spectrum.push_back(p);
     spectrum.resize(spectrum.size()+1);
-    spectrum.end()->mz = mono_pos / static_cast<double>(charge);
-    spectrum.end()->charge = charge;
+    spectrum.back().mz = mono_pos / static_cast<double>(charge);
+    spectrum.back().charge = charge;
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
@@ -496,8 +496,8 @@ namespace OpenMS
       // p.mz = pos;
       // spectrum.push_back(p);
       spectrum.resize(spectrum.size()+1);
-      spectrum.end()->mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      spectrum.end()->charge = charge;
+      spectrum.back().mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      spectrum.back().charge = charge;
     }
   }
 
@@ -537,8 +537,8 @@ namespace OpenMS
     // spectrum.push_back(p);
 
     spectrum.resize(spectrum.size()+1);
-    spectrum.end()->mz = pos;
-    spectrum.end()->charge = charge;
+    spectrum.back().mz = pos;
+    spectrum.back().charge = charge;
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
@@ -547,15 +547,15 @@ namespace OpenMS
       // spectrum.push_back(p);
 
       spectrum.resize(spectrum.size()+1);
-      spectrum.end()->mz = pos;
-      spectrum.end()->charge = charge;
+      spectrum.back().mz = pos;
+      spectrum.back().charge = charge;
     }
   }
 
   void SimpleTSGXLMS::addLosses_(std::vector< SimplePeak >& spectrum, double mono_weight, int charge, LossIndex& losses) const
   {
-    SimpleTSGXLMS::SimplePeak p;
-    p.charge = charge;
+    // SimpleTSGXLMS::SimplePeak p;
+    // p.charge = charge;
 
     if (losses.has_H2O_loss)
     {
@@ -563,8 +563,8 @@ namespace OpenMS
       // p.mz = mass_with_loss / static_cast<double>(charge);
       // spectrum.push_back(p);
       spectrum.resize(spectrum.size()+1);
-      spectrum.end()->mz = mass_with_loss / static_cast<double>(charge);
-      spectrum.end()->charge = charge;
+      spectrum.back().mz = mass_with_loss / static_cast<double>(charge);
+      spectrum.back().charge = charge;
     }
 
     if (losses.has_NH3_loss)
@@ -573,8 +573,8 @@ namespace OpenMS
       // p.mz = mass_with_loss / static_cast<double>(charge);
       // spectrum.push_back(p);
       spectrum.resize(spectrum.size()+1);
-      spectrum.end()->mz = mass_with_loss / static_cast<double>(charge);
-      spectrum.end()->charge = charge;
+      spectrum.back().mz = mass_with_loss / static_cast<double>(charge);
+      spectrum.back().charge = charge;
     }
   }
 
