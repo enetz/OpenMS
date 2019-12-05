@@ -67,19 +67,18 @@ namespace OpenMS
 
     // compute a very conservative total upper bound, based on the heaviest possible linear peptide
     // can be used instead of peptides.end() in all cases for this precursor mass
-    vector<OPXLDataStructs::AASeqWithMass>::const_iterator conservative_upper_bound = upper_bound(peptides.begin(), peptides.end(), max_precursor, OPXLDataStructs::AASeqWithMassComparator());
-    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_peptide = peptides.begin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator conservative_upper_bound = upper_bound(peptides.cbegin(), peptides.cend(), max_precursor, OPXLDataStructs::AASeqWithMassComparator());
 
     // initialize additional iterators
     // the upper bounds for a precursor mass can be used as the lower bounds
     // for the next heavier precursor mass, narrowing down the search space for new bounds
-    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_loop = peptides.begin();
-    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_loop = peptides.begin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_loop = peptides.cbegin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_loop = peptides.cbegin();
 
-    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_mono = peptides.begin();
-    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_mono = peptides.begin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_mono = peptides.cbegin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_mono = peptides.cbegin();
 
-    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_alpha = peptides.begin();
+    vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_alpha = peptides.cbegin();
 
     for (Size pm = 0; pm < spectrum_precursors.size(); ++pm)
     {
@@ -103,8 +102,8 @@ namespace OpenMS
       first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
       last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
 
-      Size first_index = first_loop - peptides.begin();
-      Size last_index = last_loop - peptides.begin();
+      Size first_index = first_loop - peptides.cbegin();
+      Size last_index = last_loop - peptides.cbegin();
 
 #pragma omp parallel for
       for (Size p1 = first_index; p1 < last_index; ++p1)
@@ -166,8 +165,8 @@ namespace OpenMS
         first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
         last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
 
-        first_index = first_mono - peptides.begin();
-        last_index = last_mono - peptides.begin();
+        first_index = first_mono - peptides.cbegin();
+        last_index = last_mono - peptides.cbegin();
 
 #pragma omp parallel for
         for (Size p1 = first_index; p1 < last_index; ++p1)
@@ -197,7 +196,7 @@ namespace OpenMS
       // maximal mass: difference between precursor mass and the smallest peptide + cross-linker
       max_peptide_mass = precursor_mass - cross_link_mass - peptides[0].peptide_mass + allowed_error;
       last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
-      Size last_alpha_index = last_alpha - peptides.begin();
+      Size last_alpha_index = last_alpha - peptides.cbegin();
 
 #pragma omp parallel for
       for (Size p1 = 0; p1 < last_alpha_index; ++p1)
@@ -207,8 +206,8 @@ namespace OpenMS
         double max_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass + allowed_error;
 
         // the last_alpha upper bound is also a conservative upper bound here
-        vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_beta = lower_bound(first_peptide+p1, last_alpha, min_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
-        vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_beta = upper_bound(first_peptide+p1, last_alpha, max_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
+        vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_beta = lower_bound(peptides.cbegin()+p1, last_alpha, min_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
+        vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_beta = upper_bound(peptides.cbegin()+p1, last_alpha, max_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
 
         if (first_beta == last_beta)
         {

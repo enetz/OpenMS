@@ -424,56 +424,80 @@ namespace OpenMS
   // helper to add a single peak to a spectrum (simple fragmentation)
   void SimpleTSGXLMS::addPeak_(std::vector< SimplePeak >& spectrum, double pos, int charge) const
   {
-    if (pos < 0)
-    {
-      return;
-    }
-    SimpleTSGXLMS::SimplePeak p;
-    p.mz = pos;
-    p.charge = charge;
-    spectrum.push_back(p);
+    // if (pos < 0)
+    // {
+    //   return;
+    // }
+    // static SimpleTSGXLMS::SimplePeak p;
+    // p.mz = pos;
+    // p.charge = charge;
+    // spectrum.push_back(p);
+
+    spectrum.resize(spectrum.size() + 1);
+    spectrum.end()->mz = pos;
+    spectrum.end()->charge = charge;
   }
 
   void SimpleTSGXLMS::addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, double precursor_mass, int charge) const
   {
-    SimpleTSGXLMS::SimplePeak p;
-    p.charge = charge;
+    // SimpleTSGXLMS::SimplePeak p;
+    // p.charge = charge;
 
     // precursor peak
     double mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge));
-    p.mz = mono_pos / static_cast<double>(charge);
-    spectrum.push_back(p);
+    // p.mz = mono_pos / static_cast<double>(charge);
+    // spectrum.push_back(p);
+
+    spectrum.resize(spectrum.size()+1);
+    spectrum.end()->mz = mono_pos / static_cast<double>(charge);
+    spectrum.end()->charge = charge;
+
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
-      double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      p.mz = pos;
-      spectrum.push_back(p);
+      // double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      // p.mz = pos;
+      // spectrum.push_back(p);
+      spectrum.resize(spectrum.size()+1);
+      spectrum.end()->mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      spectrum.end()->charge = charge;
     }
 
     // loss peaks of the precursor
     // loss of water
     mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - loss_H2O_;
-    p.mz = mono_pos / static_cast<double>(charge);
-    spectrum.push_back(p);
+    // p.mz = mono_pos / static_cast<double>(charge);
+    // spectrum.push_back(p);
+    spectrum.resize(spectrum.size()+1);
+    spectrum.end()->mz = mono_pos / static_cast<double>(charge);
+    spectrum.end()->charge = charge;
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
-      double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      p.mz = pos;
-      spectrum.push_back(p);
+      // double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      // p.mz = pos;
+      // spectrum.push_back(p);
+      spectrum.resize(spectrum.size()+1);
+      spectrum.end()->mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      spectrum.end()->charge = charge;
     }
 
     //loss of ammonia
-    mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - loss_NH3_;
-    p.mz = mono_pos / static_cast<double>(charge);
-    spectrum.push_back(p);
+    // mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - loss_NH3_;
+    // p.mz = mono_pos / static_cast<double>(charge);
+    // spectrum.push_back(p);
+    spectrum.resize(spectrum.size()+1);
+    spectrum.end()->mz = mono_pos / static_cast<double>(charge);
+    spectrum.end()->charge = charge;
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
-      double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      p.mz = pos;
-      spectrum.push_back(p);
+      // double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      // p.mz = pos;
+      // spectrum.push_back(p);
+      spectrum.resize(spectrum.size()+1);
+      spectrum.end()->mz = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
+      spectrum.end()->charge = charge;
     }
   }
 
@@ -507,16 +531,24 @@ namespace OpenMS
 
     double pos(mono_weight / static_cast<double>(charge));
 
-    SimpleTSGXLMS::SimplePeak p;
-    p.mz = pos;
-    p.charge = charge;
-    spectrum.push_back(p);
+    // SimpleTSGXLMS::SimplePeak p;
+    // p.mz = pos;
+    // p.charge = charge;
+    // spectrum.push_back(p);
+
+    spectrum.resize(spectrum.size()+1);
+    spectrum.end()->mz = pos;
+    spectrum.end()->charge = charge;
 
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
       pos += Constants::C13C12_MASSDIFF_U / static_cast<double>(charge);
-      p.mz = pos;
-      spectrum.push_back(p);
+      // p.mz = pos;
+      // spectrum.push_back(p);
+
+      spectrum.resize(spectrum.size()+1);
+      spectrum.end()->mz = pos;
+      spectrum.end()->charge = charge;
     }
   }
 
@@ -528,21 +560,21 @@ namespace OpenMS
     if (losses.has_H2O_loss)
     {
       double mass_with_loss = mono_weight - loss_H2O_;
-      if (mass_with_loss > 0.0)
-      {
-        p.mz = mass_with_loss / static_cast<double>(charge);
-        spectrum.push_back(p);
-      }
+      // p.mz = mass_with_loss / static_cast<double>(charge);
+      // spectrum.push_back(p);
+      spectrum.resize(spectrum.size()+1);
+      spectrum.end()->mz = mass_with_loss / static_cast<double>(charge);
+      spectrum.end()->charge = charge;
     }
 
     if (losses.has_NH3_loss)
     {
       double mass_with_loss = mono_weight - loss_NH3_;
-      if (mass_with_loss > 0.0)
-      {
-        p.mz = mass_with_loss / static_cast<double>(charge);
-        spectrum.push_back(p);
-      }
+      // p.mz = mass_with_loss / static_cast<double>(charge);
+      // spectrum.push_back(p);
+      spectrum.resize(spectrum.size()+1);
+      spectrum.end()->mz = mass_with_loss / static_cast<double>(charge);
+      spectrum.end()->charge = charge;
     }
   }
 

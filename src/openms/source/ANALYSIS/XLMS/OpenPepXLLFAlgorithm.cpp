@@ -392,6 +392,10 @@ using namespace OpenMS;
     vector<OPXLDataStructs::AASeqWithMass> filtered_peptide_masses;
     filtered_peptide_masses.assign(peptide_masses.begin(), last);
 
+#ifdef DEBUG_OPENPEPXLLFALGO
+    OPENMS_LOG_DEBUG << "Number of linear peptide candidates: " << filtered_peptide_masses.size() << endl;
+#endif
+
     // iterate over all spectra
     progresslogger.startProgress(0, 1, "Matching to theoretical spectra and scoring...");
 
@@ -593,9 +597,13 @@ using namespace OpenMS;
         OPXLDataStructs::CrossLinkSpectrumMatch csm = mainscore_csms_spectrum[i];
 
         PeakSpectrum theoretical_spec_linear_alpha;
+        theoretical_spec_linear_alpha.reserve(500);
         PeakSpectrum theoretical_spec_linear_beta;
+        theoretical_spec_linear_beta.reserve(500);
         PeakSpectrum theoretical_spec_xlinks_alpha;
+        theoretical_spec_xlinks_alpha.reserve(500);
         PeakSpectrum theoretical_spec_xlinks_beta;
+        theoretical_spec_xlinks_beta.reserve(500);
 
         bool type_is_cross_link = cross_link_candidate.getType() == OPXLDataStructs::CROSS;
         bool type_is_loop = cross_link_candidate.getType() == OPXLDataStructs::LOOP;
