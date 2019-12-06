@@ -60,45 +60,48 @@ namespace OpenMS
     return ' ';
   }
 
-  void Tagger::getTag_(std::string & tag, const std::vector<double>& mzs, const size_t i, std::vector<std::string>& tags, size_t charge) const
+  void Tagger::getTag_(std::string & tag, const std::vector<double>& mzs, const size_t i, std::vector<std::string>& tags) const
   {
     const size_t N = mzs.size();
     size_t j = i + 1;
-    // recurse for all peaks in distance < max_gap
     while (j < N)
     {
       if (tag.size() == max_tag_length_) { return; } // maximum tag size reached? - continue with next parent
 
       const double gap = mzs[j] - mzs[i];
-      if ((gap * charge) > max_gap_) { return; } // already too far away - continue with next parent
-      const char aa = getAAByMass_(gap * charge);
+      if ((gap) > max_gap_) { return; } // already too far away - continue with next parent
 
-
-
-      if (aa == ' ') { ++j; continue; } // can't extend tag
-      tag += aa;
-      getTag_(tag, mzs, j, tags, charge);
-
-      if (tag.size() >= min_tag_length_)
+      // consider all charges for the next residue
+      for (Size charge = 1; charge <= max_charge_; ++charge)
       {
-#pragma omp critical (tags_access)
-        tags.push_back(tag);
-      }
+        if ((gap * charge) > max_gap_) { break; } // already too far away - higher charges won't fit either
+        const char aa = getAAByMass_(gap * charge);
 
-      // if aa is "L", then also add "I" as an alternative residue and extend the tag again
-      // this will add redundancy, (and redundant runtime) but we avoid dealing with J and ambigous matching to I and L later on
-      if (aa == 'L')
-      {
-        tag.pop_back();
-        tag.push_back('I');
-        getTag_(tag, mzs, j, tags, charge);
+        if (aa == ' ') { continue; } // can't extend tag
+        tag += aa;
+        getTag_(tag, mzs, j, tags);
+
         if (tag.size() >= min_tag_length_)
         {
 #pragma omp critical (tags_access)
           tags.push_back(tag);
         }
+
+        // if aa is "L", then also add "I" as an alternative residue and extend the tag again
+        // this will add redundancy, (and redundant runtime) but we avoid dealing with J and ambigous matching to I and L later on
+        if (aa == 'L')
+        {
+          tag.pop_back();
+          tag.push_back('I');
+          getTag_(tag, mzs, j, tags);
+          if (tag.size() >= min_tag_length_)
+          {
+#pragma omp critical (tags_access)
+            tags.push_back(tag);
+          }
+        }
+        tag.pop_back();  // remove last string
       }
-      tag.pop_back();  // remove last string
       ++j;
     }
   }
@@ -162,18 +165,15 @@ namespace OpenMS
     // start peak
     if (min_tag_length_ > mzs.size()) return; // avoid segfault
 
-    // make one search for each charge
-    for (size_t charge = min_charge_; charge <= max_charge_; ++charge)
-    {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(guided)
 #endif
       for (size_t i = 0; i < mzs.size() - min_tag_length_; ++i)
       {
         std::string tag;
-        getTag_(tag, mzs, i, tags, charge);
+        getTag_(tag, mzs, i, tags);
       } // end of parallelized loop over starting peaks
-    }
+
     // make tags unique
     sort(tags.begin(), tags.end());
     auto last_unique_tag = unique(tags.begin(), tags.end());
