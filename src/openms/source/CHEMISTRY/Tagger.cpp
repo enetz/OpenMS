@@ -168,7 +168,7 @@ namespace OpenMS
 #ifdef _OPENMP
 #pragma omp parallel for schedule(guided)
 #endif
-      for (size_t i = 0; i < mzs.size() - min_tag_length_; ++i)
+      for (int i = 0; i < mzs.size() - min_tag_length_; ++i)
       {
         std::string tag;
         getTag_(tag, mzs, i, tags, charge);

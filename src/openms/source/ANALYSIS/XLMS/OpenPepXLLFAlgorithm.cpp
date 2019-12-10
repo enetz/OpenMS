@@ -572,13 +572,13 @@ using namespace OpenMS;
       } // end of parallellized candidate loop
       std::sort(mainscore_csms_spectrum.rbegin(), mainscore_csms_spectrum.rend(), OPXLDataStructs::CLSMScoreComparator());
 
-      Size last_candidate_index = mainscore_csms_spectrum.size();
-      last_candidate_index = std::min(last_candidate_index, Size(number_top_hits_));
+      int last_candidate_index = static_cast<int>(mainscore_csms_spectrum.size());
+      last_candidate_index = std::min(last_candidate_index, number_top_hits_);
 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(guided)
 #endif
-      for (Size i = 0; i < last_candidate_index ; ++i)
+      for (int i = 0; i < last_candidate_index ; ++i)
       {
         OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate = mainscore_csms_spectrum[i].cross_link;
         AASequence alpha;
