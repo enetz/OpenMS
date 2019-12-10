@@ -72,7 +72,7 @@ namespace OpenMS
       if ((gap) > max_gap_) { return; } // already too far away - continue with next parent
 
       // consider all charges for the next residue
-      for (Size charge = 1; charge <= max_charge_; ++charge)
+      for (Size charge = min_charge_; charge <= max_charge_; ++charge)
       {
         if ((gap * charge) > max_gap_) { break; } // already too far away - higher charges won't fit either
         const char aa = getAAByMass_(gap * charge);
