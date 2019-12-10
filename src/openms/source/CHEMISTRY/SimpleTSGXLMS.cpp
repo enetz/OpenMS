@@ -36,6 +36,7 @@
 #include <OpenMS/CONCEPT/Constants.h>
 #include <OpenMS/CHEMISTRY/AASequence.h>
 #include <OpenMS/KERNEL/MSSpectrum.h>
+#include <boost/sort/pdqsort/pdqsort.hpp>
 
 
 using namespace std;
@@ -156,7 +157,7 @@ namespace OpenMS
       backward_losses = getBackwardLosses_(peptide);
     }
 
-    for (Int z = 1; z <= charge; ++z)
+    for (Int z = charge; z >= 1; --z)
     {
       if (add_b_ions_)
       {
@@ -184,7 +185,7 @@ namespace OpenMS
       }
     }
 
-    std::sort(spectrum.begin(), spectrum.end(), SimpleTSGXLMS::SimplePeakComparator());
+    boost::sort::pdqsort(spectrum.begin(), spectrum.end(), SimpleTSGXLMS::SimplePeakComparator());
     return;
   }
 
@@ -321,7 +322,7 @@ namespace OpenMS
       addPrecursorPeaks_(spectrum, precursor_mass, maxcharge);
     }
 
-    std::sort(spectrum.begin(), spectrum.end(), SimpleTSGXLMS::SimplePeakComparator());
+    boost::sort::pdqsort(spectrum.begin(), spectrum.end(), SimpleTSGXLMS::SimplePeakComparator());
     return;
   }
 
@@ -663,7 +664,7 @@ namespace OpenMS
       addPrecursorPeaks_(spectrum, precursor_mass, maxcharge);
     }
 
-    std::sort(spectrum.begin(), spectrum.end(), SimpleTSGXLMS::SimplePeakComparator());
+    boost::sort::pdqsort(spectrum.begin(), spectrum.end(), SimpleTSGXLMS::SimplePeakComparator());
     return;
   }
 
