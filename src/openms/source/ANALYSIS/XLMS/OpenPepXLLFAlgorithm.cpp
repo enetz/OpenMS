@@ -47,6 +47,7 @@
 #include <OpenMS/ANALYSIS/ID/PeptideIndexing.h>
 #include <OpenMS/MATH/STATISTICS/StatisticFunctions.h>
 #include <OpenMS/ANALYSIS/ID/PrecursorPurity.h>
+#include <OpenMS/TRANSFORMATIONS/RAW2PEAK/PeakPickerHiRes.h>
 
 #include <OpenMS/CHEMISTRY/TheoreticalSpectrumGeneratorXLMS.h>
 #include <OpenMS/CHEMISTRY/SimpleTSGXLMS.h>
@@ -224,35 +225,47 @@ using namespace OpenMS;
     ModifiedPeptideGenerator::MapToResidueType fixed_modifications = ModifiedPeptideGenerator::getModifications(fixedModNames_);
     ModifiedPeptideGenerator::MapToResidueType variable_modifications = ModifiedPeptideGenerator::getModifications(varModNames_);
 
+    if (unprocessed_spectra.empty() && unprocessed_spectra.getChromatograms().size() == 0)
+    {
+      OPENMS_LOG_WARN << "The given file does not contain any conventional peak data, but might"
+                  " contain chromatograms. This tool currently cannot handle them, sorry." << endl;
+      return INCOMPATIBLE_INPUT_DATA;
+    }
+
+    //check if spectra are sorted
+    for (Size i = 0; i < unprocessed_spectra.size(); ++i)
+    {
+      if (!unprocessed_spectra[i].isSorted())
+      {
+        OPENMS_LOG_WARN << "Error: Not all spectra are sorted according to peak m/z positions. Use FileFilter to sort the input!" << endl;
+        return INCOMPATIBLE_INPUT_DATA;
+      }
+    }
+
+    // Peak Picking, check if all levels are picked and pick uncentroided MS levels
+    PeakPickerHiRes pp;
+    PeakMap picked_spectra;
+    progresslogger.startProgress(0, 1, "Centroiding data (if necessary)...");
+    pp.pickExperiment(unprocessed_spectra, picked_spectra, true);
+    progresslogger.endProgress();
+    unprocessed_spectra.clear(true);
+
     // Precursor Purity precalculation
     progresslogger.startProgress(0, 1, "Computing precursor purities...");
-    map<String, PrecursorPurity::PurityScores> precursor_purities = PrecursorPurity::computePrecursorPurities(unprocessed_spectra, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_);
+    map<String, PrecursorPurity::PurityScores> precursor_purities = PrecursorPurity::computePrecursorPurities(picked_spectra, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_);
     progresslogger.endProgress();
 
     // preprocess spectra (filter out 0 values, sort by position)
     progresslogger.startProgress(0, 1, "Filtering spectra...");
     // vector<Size> discarded_spectra;
-    spectra = OPXLSpectrumProcessingAlgorithms::preprocessSpectra(unprocessed_spectra, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, peptide_min_size_, min_precursor_charge_, max_precursor_charge_, deisotope, false);
+    spectra = OPXLSpectrumProcessingAlgorithms::preprocessSpectra(picked_spectra, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, peptide_min_size_, min_precursor_charge_, max_precursor_charge_, deisotope, false);
     progresslogger.endProgress();
-
-    // // discard the precursor purities of discarded spectra
-    // if (precursor_purities.size() > 0)
-    // {
-    //   // cout << "Discarded spectra: " << discarded_spectra.size() << " | ";
-    //   for (Size discarded_index : discarded_spectra)
-    //   {
-    //     // cout << discarded_index << " | ";
-    //     precursor_purities.erase(precursor_purities.begin()+discarded_index);
-    //   }
-    //   // cout << endl;
-    // }
-    // precursor_purities.shrink_to_fit();
+    picked_spectra.clear(true);
 
     ProteaseDigestion digestor;
     digestor.setEnzyme(enzyme_name_);
     digestor.setMissedCleavages(missed_cleavages_);
 
-    // TODO: this should probably be set in the tool where the input filename is available
     protein_ids[0].setPrimaryMSRunPath({}, unprocessed_spectra);
 
     ProteinIdentification::SearchParameters search_params = protein_ids[0].getSearchParameters();
@@ -312,15 +325,13 @@ using namespace OpenMS;
     specGenParams_full.setValue("add_c_ions", add_c_ions_, "Add peaks of x-ions to the spectrum");
     specGenParams_full.setValue("add_z_ions", add_z_ions_, "Add peaks of z-ions to the spectrum");
     specGenParams_full.setValue("add_losses", add_losses_, "Adds common losses to those ion expect to have them, only water and ammonia loss is considered");
-
     specGenParams_full.setValue("add_first_prefix_ion", "true", "If set to true e.g. b1 ions are added");
     specGenParams_full.setValue("add_metainfo", "true");
     specGenParams_full.setValue("add_charges", "true");
     specGenParams_full.setValue("add_isotopes", "true", "If set to 1 isotope peaks of the product ion peaks are added");
     specGenParams_full.setValue("max_isotope", 2, "Defines the maximal isotopic peak which is added, add_isotopes must be set to 1");
-
     specGenParams_full.setValue("add_precursor_peaks", "true");
-    specGenParams_full.setValue("add_k_linked_ions", "true");
+    specGenParams_full.setValue("add_k_linked_ions", "false");
     specGen_full.setParameters(specGenParams_full);
 
     Param specGenParams_mainscore = specGen_mainscore.getParameters();
@@ -335,10 +346,21 @@ using namespace OpenMS;
     specGenParams_mainscore.setValue("add_isotopes", "true", "If set to 1 isotope peaks of the product ion peaks are added");
     specGenParams_mainscore.setValue("max_isotope", 2, "Defines the maximal isotopic peak which is added, add_isotopes must be set to 1");
     specGenParams_mainscore.setValue("add_precursor_peaks", "true");
-    specGenParams_mainscore.setValue("add_k_linked_ions", "true");
+    specGenParams_mainscore.setValue("add_k_linked_ions", "false");
     specGen_mainscore.setParameters(specGenParams_mainscore);
 
-    Tagger tagger = Tagger(sequence_tag_min_length_, fragment_mass_tolerance_, sequence_tag_min_length_, 1, max_precursor_charge_-1, fixedModNames_, varModNames_);
+    // use a less stringent tolerance for the tagger
+    double tagger_tol;
+    if (fragment_mass_tolerance_unit_ppm_) // ppm: increase tolerance by 50%
+    {
+      tagger_tol = fragment_mass_tolerance_xlinks_ + (fragment_mass_tolerance_xlinks_ / 2.0);
+    }
+    else // dalton: turn into ppm at 3000 mz
+    {
+      tagger_tol = fragment_mass_tolerance_xlinks_ / 1e-6 / 3000;
+    }
+
+    Tagger tagger = Tagger(sequence_tag_min_length_, tagger_tol, sequence_tag_min_length_, 1, max_precursor_charge_, fixedModNames_, varModNames_);
 
 #ifdef DEBUG_OPENPEPXLLFALGO
     OPENMS_LOG_DEBUG << "Peptide candidates: " << peptide_masses.size() << endl;
@@ -402,7 +424,7 @@ using namespace OpenMS;
     Size spectrum_counter = 0;
 
 #ifdef DEBUG_OPENPEPXLLFALGO
-    OPENMS_LOG_DEBUG << "Spectra left after preprocessing and filtering: " << spectra.size() << " of " << unprocessed_spectra.size() << endl;
+    OPENMS_LOG_DEBUG << "Spectra left after preprocessing and filtering: " << spectra.size() << endl;
 #endif
 
 // #ifdef _OPENMP
@@ -476,9 +498,11 @@ using namespace OpenMS;
         if (cross_link_candidate.alpha) { alpha = *cross_link_candidate.alpha; }
         if (cross_link_candidate.beta) { beta = *cross_link_candidate.beta; }
 
+        theoretical_spec_linear_alpha.reserve(1500);
         specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, 2, link_pos_B);
         if (type_is_cross_link)
         {
+          theoretical_spec_linear_beta.reserve(1500);
           specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, 2);
         }
 
@@ -510,13 +534,15 @@ using namespace OpenMS;
 
         if (type_is_cross_link)
         {
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, true, 1, precursor_charge);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, false, 1, precursor_charge);
+          theoretical_spec_xlinks_alpha.reserve(1500);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, true, 2, precursor_charge);
+          theoretical_spec_xlinks_beta.reserve(1500);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, false, 2, precursor_charge);
         }
         else
         {
           // Function for mono-links or loop-links
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, 2, precursor_charge, link_pos_B);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, 1, precursor_charge, link_pos_B);
         }
         if (theoretical_spec_xlinks_alpha.size() < 1)
         {
@@ -597,13 +623,12 @@ using namespace OpenMS;
         OPXLDataStructs::CrossLinkSpectrumMatch csm = mainscore_csms_spectrum[i];
 
         PeakSpectrum theoretical_spec_linear_alpha;
-        theoretical_spec_linear_alpha.reserve(500);
-        PeakSpectrum theoretical_spec_linear_beta;
-        theoretical_spec_linear_beta.reserve(500);
+        theoretical_spec_linear_alpha.reserve(1500);
         PeakSpectrum theoretical_spec_xlinks_alpha;
-        theoretical_spec_xlinks_alpha.reserve(500);
+        theoretical_spec_xlinks_alpha.reserve(1500);
+        PeakSpectrum theoretical_spec_linear_beta;
         PeakSpectrum theoretical_spec_xlinks_beta;
-        theoretical_spec_xlinks_beta.reserve(500);
+
 
         bool type_is_cross_link = cross_link_candidate.getType() == OPXLDataStructs::CROSS;
         bool type_is_loop = cross_link_candidate.getType() == OPXLDataStructs::LOOP;
@@ -615,14 +640,16 @@ using namespace OpenMS;
         specGen_full.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, true, 2, link_pos_B);
         if (type_is_cross_link)
         {
+          theoretical_spec_linear_beta.reserve(1500);
           specGen_full.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, false, 2);
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, true, 1, precursor_charge);
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, false, 1, precursor_charge);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, true, 2, precursor_charge);
+          theoretical_spec_xlinks_beta.reserve(1500);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, false, 2, precursor_charge);
         }
         else
         {
           // Function for mono-links or loop-links
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, true, 2, precursor_charge, link_pos_B);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, true, 1, precursor_charge, link_pos_B);
         }
 
         // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide
