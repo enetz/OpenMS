@@ -191,7 +191,7 @@ namespace OpenMS
 #ifdef _OPENMP
 #pragma omp parallel for schedule(guided)
 #endif
-    for (Size i = 0; i < spectra.size(); ++i)
+    for (int i = 0; i < static_cast<int>(spectra.size()); ++i)
     {
       // change current parent index if a new MS1 spectrum is reached
       if (spectra[i].getMSLevel() == 1)

@@ -103,10 +103,10 @@ namespace OpenMS
       last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
 
       Size first_index = first_loop - peptides.cbegin();
-      Size last_index = last_loop - peptides.cbegin();
+      int last_index = last_loop - peptides.cbegin();
 
 #pragma omp parallel for
-      for (Size p1 = first_index; p1 < last_index; ++p1)
+      for (int p1 = first_index; p1 < last_index; ++p1)
       {
         const String& seq_first = peptides[p1].unmodified_seq;
         // test if this peptide could have loop-links: one cross-link with both sides attached to the same peptide
@@ -169,7 +169,7 @@ namespace OpenMS
         last_index = last_mono - peptides.cbegin();
 
 #pragma omp parallel for
-        for (Size p1 = first_index; p1 < last_index; ++p1)
+        for (int p1 = first_index; p1 < last_index; ++p1)
         {
           // Monoisotopic weight of the peptide + cross-linker
           double cross_linked_peptide_mass = peptides[p1].peptide_mass + mono_link_mass;
@@ -196,10 +196,10 @@ namespace OpenMS
       // maximal mass: difference between precursor mass and the smallest peptide + cross-linker
       max_peptide_mass = precursor_mass - cross_link_mass - peptides[0].peptide_mass + allowed_error;
       last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
-      Size last_alpha_index = last_alpha - peptides.cbegin();
+      int last_alpha_index = last_alpha - peptides.cbegin();
 
 #pragma omp parallel for
-      for (Size p1 = 0; p1 < last_alpha_index; ++p1)
+      for (int p1 = 0; p1 < last_alpha_index; ++p1)
       {
         // Constrain search for beta
         double min_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass - allowed_error;
@@ -407,7 +407,7 @@ namespace OpenMS
 #ifdef _OPENMP
 #pragma omp parallel for schedule(guided)
 #endif
-    for (SignedSize i = 0; i < static_cast<SignedSize>(candidates.size()); ++i)
+    for (int i = 0; i < static_cast<int>(candidates.size()); ++i)
     {
       OPXLDataStructs::XLPrecursor candidate = candidates[i];
       vector <SignedSize> link_pos_first;
@@ -1464,7 +1464,7 @@ namespace OpenMS
 
     // brute force string comparisons for now, faster than Aho-Corasick for small tag sets
 #pragma omp parallel for
-    for (Size i = 0; i < candidates.size(); ++i)
+    for (int i = 0; i < static_cast<int>(candidates.size()); ++i)
     {
       // iterate over copies, so that we can reverse them
       for (std::string tag : tags)
@@ -1513,7 +1513,7 @@ namespace OpenMS
     AhoCorasickAmbiguous::initPattern(tag_DB, 0, 0, pattern);
 
 #pragma omp parallel for
-    for (Size i = 0; i < candidates.size(); ++i)
+    for (int i = 0; i < static_cast<int>(candidates.size()); ++i)
     // for (const OPXLDataStructs::XLPrecursor& candidate : candidates)
     {
       // init algorithm
