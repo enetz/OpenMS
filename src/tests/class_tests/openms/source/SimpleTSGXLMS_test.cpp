@@ -548,29 +548,28 @@ START_SECTION(virtual void getXLinkIonSpectrum(PeakSpectrum & spectrum, OPXLData
   // 6 ion types with 4 charges each are expected, each with a second isotopic peak
   TEST_EQUAL(spec.size(), 48)
 
-  // // Benchmarking sorting of double and SimplePeak vectors
-  // for (Size i = 0; i <= 50000; i++)
+  // Benchmarking of generating cross-linked ion spectra using different sorting algorithms (sec)
+  // stable_sort:                   52
+  // reverse + stable_sort:         50
+  // std::sort:                     55
+  // boost::spinsort:              100
+  // reverse + boost::spinsort:     45.8
+  // boost::pdqsort:                45.4
+  // rev + pdqsort:                 46
+  // for (Size i = 0; i <= 2000000; i++)
   // {
-  //   double mz = 2500;
-  //
-  //   vector< double > double_vector;
-  //   for (Size j = 0; j <= 2000; j++)
-  //   {
-  //     double_vector.push_back(mz);
-  //     mz -= 1.0;
-  //   }
-  //   sort(double_vector.begin(), double_vector.end());
-  //
-  //   vector< SimpleTSGXLMS::SimplePeak > simple_vector;
-  //   SimpleTSGXLMS::SimplePeak p;
-  //   p.charge = 1;
-  //   for (Size j = 0; j <= 2000; j++)
-  //   {
-  //     p.mz = mz;
-  //     simple_vector.push_back(p);
-  //     mz -= 1.0;
-  //   }
-  //   sort(simple_vector.begin(), simple_vector.end(), SimpleTSGXLMS::SimplePeakComparator());
+  //   spec.clear();
+  //   ptr->getXLinkIonSpectrum(spec, test_link, true, 2, 5);
+  // }
+
+  // // Linear spectra
+  // // boost::pdqsort:                20.14
+  // // stable_sort:                   20.96
+  // AASequence tmp_peptide = AASequence::fromString("PEPTIDEPEPTIDEPEPTIDE");
+  // for (Size i = 0; i <= 2000000; i++)
+  // {
+  //   spec.clear();
+  //   ptr->getLinearIonSpectrum(spec, tmp_peptide, 9, true, 2);
   // }
 
 END_SECTION
