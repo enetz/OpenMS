@@ -122,7 +122,7 @@ using namespace OpenMS;
     defaults_.setValue("algorithm:deisotope", "auto", "Set to true, if the input spectra should be deisotoped before any other processing steps. If set to auto the spectra will be deisotoped, if the fragment mass tolerance is < 0.1 Da or < 100 ppm (0.1 Da at a mass of 1000)", ListUtils::create<String>("advanced"));
     defaults_.setValidStrings("algorithm:deisotope", deisotope_strings);
     defaults_.setSectionDescription("algorithm", "Additional algorithm settings");
-    defaults_.setValue("algorithm:use_sequence_tags", "false", "Use sequence tags to filter out candidates before scoring (experimental). This can make the search faster, but will make it less sensitive.", ListUtils::create<String>("advanced"));
+    defaults_.setValue("algorithm:use_sequence_tags", "false", "Use sequence tags (de novo sequencing of short fragments) to filter out candidates before scoring. This will make the search faster, but can impact the sensitivity positively or negatively, depending on the dataset.");
     defaults_.setValidStrings("algorithm:use_sequence_tags", bool_strings);
     defaults_.setValue("algorithm:sequence_tag_min_length", 2, "Minimal length of sequence tags to use for filtering candidates. Longer tags will make the search faster but much less sensitive (ignored if use_sequence_tags is false)", ListUtils::create<String>("advanced"));
 
