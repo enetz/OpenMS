@@ -109,7 +109,7 @@ namespace OpenMS
        * @param precursor_mass_tolerance_unit_ppm The unit of the precursor mass tolerance ("Da" or "ppm")
        * @return A vector of XLPrecursors containing all possible candidate cross-links
        */
-      static std::vector<OPXLDataStructs::XLPrecursor> enumerateCrossLinksAndMasses(const std::vector<OPXLDataStructs::AASeqWithMass>&  peptides, double cross_link_mass_light, const DoubleList& cross_link_mass_mono_link, const StringList& cross_link_residue1, const StringList& cross_link_residue2, const std::vector< double >& spectrum_precursors, std::vector< int >& precursor_correction_positions, double precursor_mass_tolerance, bool precursor_mass_tolerance_unit_ppm);
+      static std::vector<OPXLDataStructs::XLPrecursor> enumerateCrossLinksAndMasses(const std::vector<OPXLDataStructs::AASeqWithMass>& peptides, double cross_link_mass_light, const DoubleList& cross_link_mass_mono_link, const StringList& cross_link_residue1, const StringList& cross_link_residue2, const std::vector< double >& spectrum_precursors, std::vector< int >& precursor_correction_positions, double precursor_mass_tolerance, bool precursor_mass_tolerance_unit_ppm, bool use_sequence_tags, const std::vector<std::string>& tags);
 
       /**
        * @brief Digests a database with the given EnzymaticDigestion settings and precomputes masses for all peptides
@@ -295,5 +295,8 @@ namespace OpenMS
        * @param tags The list of tags for the current spectrum produced by the Tagger
        */
       static void filterPrecursorsByTags(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags);
+
+      static void filterPeptidesByTags(const std::vector <OPXLDataStructs::AASeqWithMass>& candidates, const std::vector<std::string>& tags, std::vector<bool>& used_peptides);
+
   };
 }

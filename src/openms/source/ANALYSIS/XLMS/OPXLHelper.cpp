@@ -52,14 +52,36 @@ using namespace std;
 
 namespace OpenMS
 {
-  vector<OPXLDataStructs::XLPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::AASeqWithMass>& peptides, double cross_link_mass, const DoubleList& cross_link_mass_mono_link, const StringList& cross_link_residue1, const StringList& cross_link_residue2, const vector< double >& spectrum_precursors, vector< int >& precursor_correction_positions, double precursor_mass_tolerance, bool precursor_mass_tolerance_unit_ppm)
+  vector<OPXLDataStructs::XLPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::AASeqWithMass>& peptides,
+                                                                                double cross_link_mass,
+                                                                                const DoubleList& cross_link_mass_mono_link,
+                                                                                const StringList& cross_link_residue1,
+                                                                                const StringList& cross_link_residue2,
+                                                                                const vector< double >& spectrum_precursors,
+                                                                                vector< int >& precursor_correction_positions,
+                                                                                double precursor_mass_tolerance,
+                                                                                bool precursor_mass_tolerance_unit_ppm,
+                                                                                bool use_sequence_tags,
+                                                                                const std::vector<std::string>& tags)
   {
     // initialize empty vector for the results
     vector<OPXLDataStructs::XLPrecursor> mass_to_candidates;
+    Size peptides_size = peptides.size();
+    vector<bool> used_peptides(peptides_size, true);
+
+    // filter linear peptides by sequence tags
+    if (use_sequence_tags && tags.size() < 1)
+    {
+      return mass_to_candidates;
+    }
+    if (use_sequence_tags)
+    {
+      vector<bool> used_peptides2(peptides_size, false);
+      used_peptides = used_peptides2;
+      OPXLHelper::filterPeptidesByTags(peptides, tags, used_peptides);
+    }
 
     double max_precursor = spectrum_precursors[spectrum_precursors.size()-1];
-
-    Size peptides_size = peptides.size();
 
     // compute a very conservative total upper bound, based on the heaviest possible linear peptide
     // can be used instead of peptides.end() in all cases for this precursor mass
@@ -104,6 +126,11 @@ namespace OpenMS
 #pragma omp parallel for
       for (int p1 = first_index; p1 < last_index; ++p1)
       {
+        if (!used_peptides[p1])
+        {
+          continue;
+        }
+
         const String& seq_first = peptides[p1].unmodified_seq;
         // test if this peptide could have loop-links: one cross-link with both sides attached to the same peptide
         bool first_res = false; // is there a residue the first side of the linker can attach to?
@@ -167,6 +194,11 @@ namespace OpenMS
 #pragma omp parallel for
         for (int p1 = first_index; p1 < last_index; ++p1)
         {
+          if (!used_peptides[p1])
+          {
+            continue;
+          }
+
           // Monoisotopic weight of the peptide + cross-linker
           double cross_linked_peptide_mass = peptides[p1].peptide_mass + mono_link_mass;
 
@@ -197,6 +229,11 @@ namespace OpenMS
 #pragma omp parallel for
       for (int p1 = 0; p1 < last_alpha_index; ++p1)
       {
+        if (!used_peptides[p1])
+        {
+          continue;
+        }
+
         // Constrain search for beta
         double min_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass - allowed_error;
         double max_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass + allowed_error;
@@ -215,6 +252,11 @@ namespace OpenMS
 
         for (Size p2 = first_beta_index; p2 < last_beta_index; ++p2)
         {
+          if (!used_peptides[p2])
+          {
+            continue;
+          }
+
           // Monoisotopic weight of the first peptide + the second peptide + cross-linker
           double cross_linked_pair_mass = peptides[p1].peptide_mass + peptides[p2].peptide_mass + cross_link_mass;
 
@@ -1353,25 +1395,25 @@ namespace OpenMS
 
     std::vector< int > precursor_correction_positions;
     // if sequence tags are used and no tags were found, don't bother combining peptide pairs
-    if ( (use_sequence_tags && tags.size() > 0) ||
-         !use_sequence_tags)
-    {
-      candidates = OPXLHelper::enumerateCrossLinksAndMasses(filtered_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2, spectrum_precursor_vector, precursor_correction_positions, precursor_mass_tolerance, precursor_mass_tolerance_unit_ppm);
-    }
+    // if ( (use_sequence_tags && tags.size() > 0) ||
+    //      !use_sequence_tags)
+    // {
+      candidates = OPXLHelper::enumerateCrossLinksAndMasses(filtered_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2, spectrum_precursor_vector, precursor_correction_positions, precursor_mass_tolerance, precursor_mass_tolerance_unit_ppm, use_sequence_tags, tags);
+    // }
 
     // an empty vector of sequence tags implies no filtering should be done in this case
-    if (use_sequence_tags)
-    {
-      Size candidates_size = candidates.size();
-      OPXLHelper::filterPrecursorsByTags(candidates, precursor_correction_positions, tags);
-
-#pragma omp critical (LOG_DEBUG_access)
-      {
-        OPENMS_LOG_DEBUG << "Number of sequence tags: " << tags.size() << std::endl;
-        OPENMS_LOG_DEBUG << "Candidate Peptide Pairs before sequence tag filtering: " << candidates_size << std::endl;
-        OPENMS_LOG_DEBUG << "Candidate Peptide Pairs  after sequence tag filtering: " << candidates.size() << std::endl;
-      }
-    }
+//     if (use_sequence_tags)
+//     {
+//       Size candidates_size = candidates.size();
+//       OPXLHelper::filterPrecursorsByTags(candidates, precursor_correction_positions, tags);
+//
+// #pragma omp critical (LOG_DEBUG_access)
+//       {
+//         OPENMS_LOG_DEBUG << "Number of sequence tags: " << tags.size() << std::endl;
+//         OPENMS_LOG_DEBUG << "Candidate Peptide Pairs before sequence tag filtering: " << candidates_size << std::endl;
+//         OPENMS_LOG_DEBUG << "Candidate Peptide Pairs  after sequence tag filtering: " << candidates.size() << std::endl;
+//       }
+//     }
 
     vector< int > precursor_corrections;
     for (Size pc = 0; pc < precursor_correction_positions.size(); ++pc)
@@ -1484,4 +1526,36 @@ namespace OpenMS
     candidates = filtered_candidates;
     precursor_correction_positions = filtered_precursor_correction_positions;
   }
+
+  void OPXLHelper::filterPeptidesByTags(const std::vector <OPXLDataStructs::AASeqWithMass>& candidates, const std::vector<std::string>& tags, vector<bool>& used_peptides)
+  {
+    // brute force string comparisons for now, faster than Aho-Corasick for small tag sets
+#pragma omp parallel for
+    for (int i = 0; i < static_cast<int>(candidates.size()); ++i)
+    {
+      // iterate over copies, so that we can reverse them
+      for (std::string tag : tags)
+      {
+        if (candidates[i].unmodified_seq.hasSubstring(tag))
+        {
+ #pragma omp critical (filtered_candidates_access)
+          {
+            used_peptides[i] = true;
+          }
+          break;
+        }
+
+        std::reverse(tag.begin(), tag.end());
+        if (candidates[i].unmodified_seq.hasSubstring(tag))
+        {
+ #pragma omp critical (filtered_candidates_access)
+          {
+            used_peptides[i] = true;
+          }
+          break;
+        }
+      }
+    } // end of parallel loop over candidates
+  }
+
 }
