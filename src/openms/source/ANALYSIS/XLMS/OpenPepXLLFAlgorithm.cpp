@@ -433,6 +433,7 @@ using namespace OpenMS;
       // lists for one spectrum, to determine best match to the spectrum
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > all_csms_spectrum;
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > mainscore_csms_spectrum;
+      vector< double > score_vec;
 
 #pragma omp parallel for schedule(guided)
       for (SignedSize i = 0; i < static_cast<SignedSize>(cross_link_candidates.size()); ++i)
@@ -542,7 +543,7 @@ using namespace OpenMS;
 
         double new_match_odds_weight = 0.2;
         double new_rel_error_weight = -0.03;
-        double new_score = new_match_odds_weight * std::log(1e-7 + match_odds) + new_rel_error_weight * abs(rel_error);
+        double new_score = new_match_odds_weight * std::log(1e-7 + match_odds) + new_rel_error_weight * abs(rel_error) + 1;
 
         csm.score = new_score;
         csm.match_odds = match_odds;
@@ -551,10 +552,30 @@ using namespace OpenMS;
         csm.precursor_error_ppm = rel_error;
 
 #pragma omp critical (mainscore_csms_spectrum_access)
-        mainscore_csms_spectrum.push_back(csm);
+        {
+          mainscore_csms_spectrum.push_back(csm);
+          score_vec.push_back(new_score);
+        }
 
       }
       std::sort(mainscore_csms_spectrum.rbegin(), mainscore_csms_spectrum.rend(), OPXLDataStructs::CLSMScoreComparator());
+      std::sort(score_vec.rbegin(), score_vec.rend());
+
+      cout << "score_vec.size(): " << score_vec.size() << endl;
+      cout << "mainscore_csms_spectrum.size(): " << mainscore_csms_spectrum.size() << endl;
+
+      int q100_index = static_cast<int>(std::round(score_vec.size() / 100));
+      double q100 = 1;
+      if (score_vec.size() > 30 && q100_index < score_vec.size() && q100_index >= 0)
+      {
+        q100 = score_vec[ std::max(3, q100_index) ];
+        cout << "q100_index = " << q100_index << " | q100 = " << q100 << " | score_vec.size " << score_vec.size() << " | USED" << endl;
+      }
+      else // TODO spectra with too few CSMs are ignored for now, using default score is not acceptable
+      {
+        cout << "q100_index = " << q100_index << " | q100 = " << q100 << " | score_vec.size " << score_vec.size() << " | SKIPPED" << endl;
+        continue;
+      }
 
       int last_candidate_index = static_cast<int>(mainscore_csms_spectrum.size());
       last_candidate_index = std::min(last_candidate_index, number_top_hits_);
@@ -577,6 +598,7 @@ using namespace OpenMS;
         }
 #endif
         OPXLDataStructs::CrossLinkSpectrumMatch csm = mainscore_csms_spectrum[i];
+        csm.score = csm.score / q100;
 
         PeakSpectrum theoretical_spec_linear_alpha;
         theoretical_spec_linear_alpha.reserve(1500);
