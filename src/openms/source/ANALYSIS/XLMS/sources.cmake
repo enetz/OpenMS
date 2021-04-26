@@ -5,6 +5,7 @@ set(directory source/ANALYSIS/XLMS)
 set(sources_list
 OpenPepXLAlgorithm.cpp
 OpenPepXLLFAlgorithm.cpp
+OpenPepXLLFCleavableAlgorithm.cpp
 OPXLDataStructs.cpp
 OPXLHelper.cpp
 OPXLSpectrumProcessingAlgorithms.cpp
