@@ -34,7 +34,7 @@
 // --------------------------------------------------------------------------
 
 #include <OpenMS/APPLICATIONS/TOPPBase.h>
-#include <OpenMS/ANALYSIS/XLMS/OpenPepXLLFAlgorithm.h>
+#include <OpenMS/ANALYSIS/XLMS/OpenPepXLLFCleavableAlgorithm.h>
 #include <OpenMS/CONCEPT/VersionInfo.h>
 #include <OpenMS/FORMAT/XQuestResultXMLFile.h>
 #include <OpenMS/FORMAT/FASTAFile.h>
@@ -146,7 +146,7 @@ protected:
         registerInputFile_("decoy_database", "<file>", "", "Input file containing the decoy protein database. Decoys can also be included in the normal database file instead (or additionally).", false, true);
         setValidFormats_("decoy_database", ListUtils::create<String>("fasta"));
 
-        registerFullParam_(OpenPepXLLFAlgorithm().getDefaults());
+        registerFullParam_(OpenPepXLLFCleavableAlgorithm().getDefaults());
 
         // output file
         registerOutputFile_("out_idXML", "<idXML_file>", "", "Results in idXML format (at least one of these output parameters should be set, otherwise you will not have any results).", false, false);
@@ -218,7 +218,7 @@ protected:
         vector< vector< OPXLDataStructs::CrossLinkSpectrumMatch > > all_top_csms;
         PeakMap spectra;
 
-        OpenPepXLLFAlgorithm search_algorithm;
+        OpenPepXLLFCleavableAlgorithm search_algorithm;
         Param this_param = getParam_();
         Param algo_param = search_algorithm.getParameters();
         algo_param.update(this_param, false, false, false, false, OpenMS_Log_debug); // suppress param. update message
@@ -238,11 +238,11 @@ protected:
         protein_ids[0].setMetaValue("SpectrumIdentificationProtocol", DataValue("MS:1002494")); // cross-linking search = MS:1002494
 
         // run algorithm
-        OpenPepXLLFAlgorithm::ExitCodes exit_code = search_algorithm.run(unprocessed_spectra, fasta_db, protein_ids, peptide_ids, all_top_csms, spectra);
+        OpenPepXLLFCleavableAlgorithm::ExitCodes exit_code = search_algorithm.run(unprocessed_spectra, fasta_db, protein_ids, peptide_ids, all_top_csms, spectra);
 
-        if (exit_code != OpenPepXLLFAlgorithm::EXECUTION_OK)
+        if (exit_code != OpenPepXLLFCleavableAlgorithm::EXECUTION_OK)
         {
-            if (exit_code == OpenPepXLLFAlgorithm::ILLEGAL_PARAMETERS)
+            if (exit_code == OpenPepXLLFCleavableAlgorithm::ILLEGAL_PARAMETERS)
             {
                 return ILLEGAL_PARAMETERS;
             }

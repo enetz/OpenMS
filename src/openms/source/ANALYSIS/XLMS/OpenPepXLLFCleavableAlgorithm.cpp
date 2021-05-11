@@ -32,7 +32,7 @@
 // $Authors: Timo Sachsenberg, Eugen Netz $
 // --------------------------------------------------------------------------
 
-#include <OpenMS/ANALYSIS/XLMS/OpenPepXLLFAlgorithm.h>
+#include <OpenMS/ANALYSIS/XLMS/OpenPepXLLFCleavableAlgorithm.h>
 #include <OpenMS/CHEMISTRY/ModificationsDB.h>
 #include <OpenMS/ANALYSIS/XLMS/OPXLSpectrumProcessingAlgorithms.h>
 #include <OpenMS/ANALYSIS/XLMS/OPXLHelper.h>
@@ -60,8 +60,8 @@ using namespace OpenMS;
 #include <omp.h>
 #endif
 
-  OpenPepXLLFAlgorithm::OpenPepXLLFAlgorithm()
-    : DefaultParamHandler("OpenPepXLLFAlgorithm")
+  OpenPepXLLFCleavableAlgorithm::OpenPepXLLFCleavableAlgorithm()
+    : DefaultParamHandler("OpenPepXLLFCleavableAlgorithm")
   {
     defaults_.setValue("decoy_string", "DECOY_", "String that was appended (or prefixed - see 'prefix' flag below) to the accessions in the protein database to indicate decoy proteins.");
     std::vector<std::string> bool_strings = {"true", "false"};
@@ -103,10 +103,11 @@ using namespace OpenMS;
     defaults_.setSectionDescription("peptide", "Settings for digesting proteins into peptides");
 
     defaults_.setValue("cross_linker:residue1", std::vector<std::string>({"K", "N-term"}), "Comma separated residues, that the first side of a bifunctional cross-linker can attach to");
-    defaults_.setValue("cross_linker:residue2", std::vector<std::string>({"K", "N-term"}), "Comma separated residues, that the second side of a bifunctional cross-linker can attach to");
-    defaults_.setValue("cross_linker:mass", 138.0680796, "Mass of the light cross-linker, linking two residues on one or two peptides");
-    defaults_.setValue("cross_linker:mass_mono_link", DoubleList({156.07864431, 155.094628715}), "Possible masses of the linker, when attached to only one peptide");
-    defaults_.setValue("cross_linker:name", "DSS", "Name of the searched cross-link, used to resolve ambiguity of equal masses (e.g. DSS or BS3)");
+    defaults_.setValue("cross_linker:residue2", std::vector<std::string>({"K", "S", "T", "Y", "N-term"}), "Comma separated residues, that the second side of a bifunctional cross-linker can attach to");
+    defaults_.setValue("cross_linker:mass", 196.08479222, "Mass of the light cross-linker, linking two residues on one or two peptides");
+    defaults_.setValue("cross_linker:mass_mono_link", std::vector<double>{169.13408813, 195.11335269}, "Possible masses of the linker, when attached to only one peptide");
+    defaults_.setValue("cross_linker:mass_fragments", std::vector<double>{85.05276383, 111.03202839}, "Masses of the cleaved cross linker");
+    defaults_.setValue("cross_linker:name", "DSBU", "Name of the searched cross-link, used to resolve ambiguity of equal masses (e.g. DSS or BS3)");
     defaults_.setSectionDescription("cross_linker", "Description of the cross-linker reagent");
 
     defaults_.setValue("algorithm:number_top_hits", 1, "Number of top hits reported for each spectrum pair");
@@ -137,11 +138,11 @@ using namespace OpenMS;
     defaultsToParam_();
   }
 
-  OpenPepXLLFAlgorithm::~OpenPepXLLFAlgorithm()
+  OpenPepXLLFCleavableAlgorithm::~OpenPepXLLFCleavableAlgorithm()
   {
   }
 
-  void OpenPepXLLFAlgorithm::updateMembers_()
+  void OpenPepXLLFCleavableAlgorithm::updateMembers_()
   {
     decoy_string_ = static_cast<String>(param_.getValue("decoy_string").toString());
     decoy_prefix_ = param_.getValue("decoy_prefix") == "true";
@@ -160,6 +161,7 @@ using namespace OpenMS;
     cross_link_residue2_ = ListUtils::toStringList<std::string>(param_.getValue("cross_linker:residue2"));
     cross_link_mass_ = static_cast<double>(param_.getValue("cross_linker:mass"));
     cross_link_mass_mono_link_ = param_.getValue("cross_linker:mass_mono_link");
+    cross_link_mass_fragments_ = param_.getValue("cross_linker:mass_fragments");
     cross_link_name_ = static_cast<String>(param_.getValue("cross_linker:name").toString());
 
     fixedModNames_ = ListUtils::toStringList<std::string>(param_.getValue("modifications:fixed"));
@@ -183,7 +185,7 @@ using namespace OpenMS;
     add_losses_ = param_.getValue("ions:neutral_losses").toString();
   }
 
-  OpenPepXLLFAlgorithm::ExitCodes OpenPepXLLFAlgorithm::run(PeakMap& unprocessed_spectra, std::vector<FASTAFile::FASTAEntry>& fasta_db, std::vector<ProteinIdentification>& protein_ids, std::vector<PeptideIdentification>& peptide_ids, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > >& all_top_csms, PeakMap& spectra)
+  OpenPepXLLFCleavableAlgorithm::ExitCodes OpenPepXLLFCleavableAlgorithm::run(PeakMap& unprocessed_spectra, std::vector<FASTAFile::FASTAEntry>& fasta_db, std::vector<ProteinIdentification>& protein_ids, std::vector<PeptideIdentification>& peptide_ids, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > >& all_top_csms, PeakMap& spectra)
   {
     ProgressLogger progresslogger;
     progresslogger.setLogType(this->getLogType());
@@ -291,6 +293,7 @@ using namespace OpenMS;
     search_params.setMetaValue("cross_link:residue2", cross_link_residue2_);
     search_params.setMetaValue("cross_link:mass", cross_link_mass_);
     search_params.setMetaValue("cross_link:mass_monolink", cross_link_mass_mono_link_);
+    search_params.setMetaValue("cross_link:mass_fragments", cross_link_mass_fragments_);
     search_params.setMetaValue("cross_link:name", cross_link_name_);
     search_params.setMetaValue("precursor:corrections", precursor_correction_steps_);
 
@@ -496,13 +499,13 @@ using namespace OpenMS;
         if (type_is_cross_link)
         {
           theoretical_spec_xlinks_beta.reserve(1500);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, true, 2, precursor_charge);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, false, 2, precursor_charge);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 2, precursor_charge);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 2, precursor_charge);
         }
         else
         {
           // Function for mono-links or loop-links
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, 1, precursor_charge, link_pos_B);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_,1, precursor_charge, link_pos_B);
         }
         if (theoretical_spec_xlinks_alpha.empty())
         {
@@ -605,13 +608,13 @@ using namespace OpenMS;
           theoretical_spec_linear_beta.reserve(1500);
           theoretical_spec_xlinks_beta.reserve(1500);
           specGen_full.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, false, 2);
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, true, 1, precursor_charge);
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, false, 1, precursor_charge);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 1, precursor_charge);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 1, precursor_charge);
         }
         else
         {
           // Function for mono-links or loop-links
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, true, 2, precursor_charge, link_pos_B);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_,true, 2, precursor_charge, link_pos_B);
         }
 
         // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide
@@ -990,5 +993,5 @@ using namespace OpenMS;
     OPXLHelper::removeBetaPeptideHits(peptide_ids);
     OPXLHelper::computeDeltaScores(peptide_ids);
     OPXLHelper::addPercolatorFeatureList(protein_ids[0]);
-    return OpenPepXLLFAlgorithm::ExitCodes::EXECUTION_OK;
+    return OpenPepXLLFCleavableAlgorithm::ExitCodes::EXECUTION_OK;
   }
