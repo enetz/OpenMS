@@ -258,6 +258,10 @@ using namespace OpenMS;
     // sort the spectra by RT, the order might have been changed by parallel preprocessing
     spectra.sortSpectra(false);
 
+    //Add 0 to allow ions where the whole cross linker was cleaved
+    //This could just be inserted in the INI file for each cross linker individually
+    cross_link_mass_fragments_.insert(cross_link_mass_fragments_.begin(), 0);
+
     ProteaseDigestion digestor;
     digestor.setEnzyme(enzyme_name_);
     digestor.setMissedCleavages(missed_cleavages_);
@@ -440,9 +444,13 @@ using namespace OpenMS;
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > mainscore_csms_spectrum;
 
 #pragma omp parallel for schedule(guided)
+      /*
       for (SignedSize i = 0; i < static_cast<SignedSize>(cross_link_candidates.size()); ++i)
       {
         OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate = cross_link_candidates[i];
+      */
+      for (auto& cross_link_candidate : cross_link_candidates)
+      {
 
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_linear_alpha;
         theoretical_spec_linear_alpha.reserve(1500);
@@ -462,6 +470,49 @@ using namespace OpenMS;
         if (cross_link_candidate.alpha) { alpha = *cross_link_candidate.alpha; }
         if (cross_link_candidate.beta) { beta = *cross_link_candidate.beta; }
 
+        theoretical_spec_xlinks_alpha.reserve(1500);
+        if (type_is_cross_link)
+        {
+          theoretical_spec_xlinks_beta.reserve(1500);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 2, precursor_charge);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 2, precursor_charge);
+        }
+        else
+        {
+          // Function for mono-links or loop-links
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_,1, precursor_charge, link_pos_B);
+        }
+
+        if (theoretical_spec_xlinks_alpha.empty())
+        {
+          continue;
+        }
+
+        vector< pair< Size, Size > > matched_spec_xlinks_alpha;
+        vector< pair< Size, Size > > matched_spec_xlinks_beta;
+
+        PeakSpectrum::IntegerDataArray exp_charges;
+        if (spectrum.getIntegerDataArrays().size() > 0)
+        {
+          exp_charges = spectrum.getIntegerDataArrays()[0];
+        }
+
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_alpha, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_alpha, spectrum, exp_charges);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_beta, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_beta, spectrum, exp_charges);
+
+        // drop candidates with almost no linear fragment peak matches before making the more complex theoretical spectra and aligning them
+        // this removes hits that no one would trust after manual validation anyway and reduces time wasted on really bad spectra or candidates without any matching peaks
+        if (matched_spec_xlinks_alpha.size() < 2 && (!type_is_cross_link || matched_spec_xlinks_beta.size() < 2) )
+        {
+          continue;
+        }
+
+        vector< pair< Size, Size > > matched_spec_linear_alpha;
+        vector< pair< Size, Size > > matched_spec_linear_beta;
+
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
+
         specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, 2, link_pos_B);
         if (type_is_cross_link)
         {
@@ -474,46 +525,6 @@ using namespace OpenMS;
         {
           continue;
         }
-
-        vector< pair< Size, Size > > matched_spec_linear_alpha;
-        vector< pair< Size, Size > > matched_spec_linear_beta;
-        vector< pair< Size, Size > > matched_spec_xlinks_alpha;
-        vector< pair< Size, Size > > matched_spec_xlinks_beta;
-
-        PeakSpectrum::IntegerDataArray exp_charges;
-        if (spectrum.getIntegerDataArrays().size() > 0)
-        {
-          exp_charges = spectrum.getIntegerDataArrays()[0];
-        }
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
-
-        // drop candidates with almost no linear fragment peak matches before making the more complex theoretical spectra and aligning them
-        // this removes hits that no one would trust after manual validation anyway and reduces time wasted on really bad spectra or candidates without any matching peaks
-        if (matched_spec_linear_alpha.size() < 2 || (type_is_cross_link && matched_spec_linear_beta.size() < 2) )
-        {
-          continue;
-        }
-        theoretical_spec_xlinks_alpha.reserve(1500);
-
-        if (type_is_cross_link)
-        {
-          theoretical_spec_xlinks_beta.reserve(1500);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 2, precursor_charge);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 2, precursor_charge);
-        }
-        else
-        {
-          // Function for mono-links or loop-links
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_,1, precursor_charge, link_pos_B);
-        }
-        if (theoretical_spec_xlinks_alpha.empty())
-        {
-          continue;
-        }
-
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_alpha, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_alpha, spectrum, exp_charges);
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_beta, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_beta, spectrum, exp_charges);
 
         // the maximal xlink ion charge is (precursor charge - 1) and the minimal xlink ion charge is 2.
         // we need the difference between min and max here, which is (precursor_charge - 3) in most cases
@@ -618,7 +629,7 @@ using namespace OpenMS;
         }
 
         // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide
-        if ( (theoretical_spec_linear_alpha.size() < 1) || (theoretical_spec_xlinks_alpha.size() < 1) )
+        if (theoretical_spec_linear_alpha.empty() || theoretical_spec_xlinks_alpha.empty())
         {
           continue;
         }

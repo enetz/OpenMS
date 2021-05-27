@@ -112,16 +112,18 @@ namespace OpenMS
         {
          for (Size i = 0; i < cross_link_residue1.size(); ++i)
          {
-           if (cross_link_residue1[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue1[i])
+           if (cross_link_residue1[i].size() == 1 && seq_first[k] == *cross_link_residue1[i].c_str())
            {
              first_res = true;
+             break;
            }
          }
          for (Size i = 0; i < cross_link_residue2.size(); ++i)
          {
-           if (cross_link_residue2[i].size() == 1 && string(1, seq_first[k]) == cross_link_residue2[i])
+           if (cross_link_residue2[i].size() == 1 && seq_first[k] == *cross_link_residue2[i].c_str())
            {
              second_res = true;
+             break;
            }
          }
         }

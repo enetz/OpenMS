@@ -349,9 +349,6 @@ namespace OpenMS
 
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
-      //For the test only add the ions once
-      addXLinkIonPeaks_(spectrum, peptide, link_pos, cross_link_masses, Residue::BIon, forward_losses, backward_losses, z, link_pos_2);
-      /*
       if (add_b_ions_)
       {
         addXLinkIonPeaks_(spectrum, peptide, link_pos, cross_link_masses, Residue::BIon, forward_losses, backward_losses, z, link_pos_2);
@@ -380,7 +377,6 @@ namespace OpenMS
       {
         addKLinkedIonPeaks_(spectrum, peptide, link_pos, precursor_mass, z);
       }
-       */
     }
 
     if (add_precursor_peaks_)
@@ -496,31 +492,11 @@ namespace OpenMS
       return;
     }
 
-    DoubleList cross_link_mass_combinations = cross_link_mass;
-
     // second link position, in case of a loop-link
     Size link_pos_B = link_pos_2;
     if (link_pos_2 == 0)
     {
       link_pos_B = link_pos;
-    }
-    else
-    {
-      // in case of a loop-link calculate all the combined masses of the cross linker
-      for (Size i = 0; i < cross_link_mass.size(); ++i)
-      {
-        for (Size j = i + 1; j < cross_link_mass.size(); ++j)
-        {
-          if(cross_link_mass.at(i) == 0 || cross_link_mass.at(j) == 0) continue;
-          cross_link_mass_combinations.push_back(cross_link_mass.at(i) +  cross_link_mass.at(j));
-        }
-      }
-    }
-
-    DoubleList& possible_xlink_masses = cross_link_mass_combinations;
-    if (link_pos == link_pos_B)
-    {
-      possible_xlink_masses = cross_link_mass;
     }
 
     if (res_type == Residue::AIon || res_type == Residue::BIon || res_type == Residue::CIon)
@@ -529,17 +505,11 @@ namespace OpenMS
       double mono_weight(peptide.getMonoWeight(res_type, charge));
 
       // subtract one residue at a time
-      for (Size i = peptide.size(); i > link_pos; --i) {
-        if (i < peptide.size())
-        {
-          mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
-        }
-        if (i < link_pos_B)
-        {
-          possible_xlink_masses = cross_link_mass;
-        }
+      for (Size i = peptide.size() - 1; i > link_pos; --i) {
+        mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
+
         //calculate m/z for every possible cross linker mass
-        for(double xlink_mass : possible_xlink_masses)
+        for(double xlink_mass : cross_link_mass)
         {
           double pos((mono_weight + xlink_mass) / charge);
 
@@ -560,17 +530,11 @@ namespace OpenMS
     {
       double mono_weight(peptide.getMonoWeight(res_type, charge));
       // subtract one residue at a time
-      for (SignedSize i = -1; i < link_pos_B; ++i)
+      for (Size i = 0; i < link_pos_B; ++i)
       {
-        if (i > -1)
-        {
-          mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
-        }
-        if (i > link_pos)
-        {
-          possible_xlink_masses = cross_link_mass;
-        }
-        for (double xlink_mass : possible_xlink_masses)
+        mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
+
+        for (double xlink_mass : cross_link_mass)
         {
           double pos((mono_weight + xlink_mass) / charge);
 
@@ -791,8 +755,17 @@ namespace OpenMS
       }
     }
 
+    AASequence peptide = alpha;
+    if (!frag_alpha)
+    {
+      peptide = beta;
+    }
+
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
+
+      addOnlyXLinkIonPeaks_(spectrum, peptide, cross_link_mass, z);
+
       if (add_b_ions_)
       {
         addXLinkIonPeaks_(spectrum, crosslink, cross_link_mass, frag_alpha, Residue::BIon, forward_losses, backward_losses, losses_peptide2, z);
@@ -997,6 +970,29 @@ namespace OpenMS
 
     //Adding the ions for a fragmented cross linker
     addXLinkIonPeaks_(spectrum, peptide, link_index, cross_link_mass, res_type, forward_losses, backward_losses, charge, 0);
+  }
+
+  void SimpleTSGXLMS::addOnlyXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, const DoubleList& cross_link_mass, int charge) const
+  {
+    if (peptide.empty())
+    {
+      cout << "Warning: Attempt at creating XLink Ions Spectrum from empty string!" << endl;
+      return;
+    }
+
+    double mono_weight(peptide.getMonoWeight(Residue::Full, charge));
+
+    for (double xlink_mass : cross_link_mass)
+    {
+      double pos((mono_weight + xlink_mass) / charge);
+      spectrum.emplace_back(pos, charge);
+
+      if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
+      {
+        spectrum.emplace_back(pos + (Constants::C13C12_MASSDIFF_U / charge), charge);
+      }
+    }
+
   }
 
   std::vector< SimpleTSGXLMS::LossIndex > SimpleTSGXLMS::getForwardLosses_(AASequence& peptide) const

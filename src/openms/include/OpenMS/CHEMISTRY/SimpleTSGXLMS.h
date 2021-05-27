@@ -281,6 +281,8 @@ namespace OpenMS
 
       virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink & crosslink, const DoubleList& cross_link_mass, bool frag_alpha, Residue::ResidueType res_type, std::vector< LossIndex > & forward_losses, std::vector< LossIndex > & backward_losses, LossIndex & losses_peptide2, int charge) const;
 
+      virtual void addOnlyXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, const DoubleList& cross_link_mass, int charge) const;
+
       /**
        * @brief Calculates sets of possible neutral losses for each position in the given peptide
 
