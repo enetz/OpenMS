@@ -165,10 +165,12 @@ namespace OpenMS
         String enzyme_name_;
 
         Int number_top_hits_;
+        Int required_cross_link_specific_ions_;
         String deisotope_mode_;
         bool use_sequence_tags_;
         Size sequence_tag_min_length_;
 
+        String add_cross_link_ions_;
         String add_y_ions_;
         String add_b_ions_;
         String add_x_ions_;

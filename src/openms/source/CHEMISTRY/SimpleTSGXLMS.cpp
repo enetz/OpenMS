@@ -70,6 +70,9 @@ namespace OpenMS
     defaults_.setValidStrings("add_k_linked_ions", {"true","false"});
 
     // TODO not functional yet
+    defaults_.setValue("add_cross_link_ions", "true", "Add peaks of cross-linker specific ions");
+    defaults_.setValidStrings("add_cross_link_ions", {"true", "false"});
+
     defaults_.setValue("add_first_prefix_ion", "true", "If set to true e.g. b1 ions are added");
     defaults_.setValidStrings("add_first_prefix_ion", {"true","false"});
 
@@ -349,6 +352,12 @@ namespace OpenMS
 
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
+
+      if (add_cross_link_ions_)
+      {
+        addXLinkSpecificIonPeaks_(spectrum, peptide, cross_link_masses, z);
+      }
+
       if (add_b_ions_)
       {
         addXLinkIonPeaks_(spectrum, peptide, link_pos, cross_link_masses, Residue::BIon, forward_losses, backward_losses, z, link_pos_2);
@@ -764,7 +773,10 @@ namespace OpenMS
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
 
-      addOnlyXLinkIonPeaks_(spectrum, peptide, cross_link_mass, z);
+      if (add_cross_link_ions_)
+      {
+        addXLinkSpecificIonPeaks_(spectrum, peptide, cross_link_mass, z);
+      }
 
       if (add_b_ions_)
       {
@@ -793,7 +805,6 @@ namespace OpenMS
       if (add_k_linked_ions_ && !beta.empty())
       {
         double precursor_mass = alpha.getMonoWeight() + beta.getMonoWeight() + crosslink.cross_linker_mass;
-        AASequence peptide;
         Size link_pos;
         if (frag_alpha)
         {
@@ -817,6 +828,29 @@ namespace OpenMS
         precursor_mass += beta.getMonoWeight();
       }
       addPrecursorPeaks_(spectrum, precursor_mass, maxcharge);
+    }
+
+#ifdef OPENMS_USE_PDQSORT
+    std::reverse(spectrum.begin(), spectrum.end());
+    boost::sort::pdqsort_branchless(spectrum.begin(), spectrum.end(), [](const SimplePeak& a, const SimplePeak& b) {return a.mz < b.mz;});
+#else
+    std::sort(spectrum.begin(), spectrum.end(), [](const SimplePeak& a, const SimplePeak& b) {return a.mz < b.mz;});
+#endif
+
+  }
+
+  void SimpleTSGXLMS::getXLinkSpecificIonSpectrum(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink& crosslink, const DoubleList& cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const
+  {
+
+    AASequence peptide = *crosslink.alpha;
+    if (!frag_alpha)
+    {
+      peptide = *crosslink.beta;
+    }
+
+    for (Int c = mincharge; c < maxcharge; ++c)
+    {
+      addXLinkSpecificIonPeaks_(spectrum, peptide, cross_link_mass, c);
     }
 
 #ifdef OPENMS_USE_PDQSORT
@@ -972,7 +1006,7 @@ namespace OpenMS
     addXLinkIonPeaks_(spectrum, peptide, link_index, cross_link_mass, res_type, forward_losses, backward_losses, charge, 0);
   }
 
-  void SimpleTSGXLMS::addOnlyXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, const DoubleList& cross_link_mass, int charge) const
+  void SimpleTSGXLMS::addXLinkSpecificIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, const DoubleList& cross_link_mass, int charge) const
   {
     if (peptide.empty())
     {

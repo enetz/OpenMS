@@ -328,6 +328,7 @@ namespace OpenMS
        */
       std::vector< LossIndex > getBackwardLosses_(AASequence & peptide) const;
 
+      bool add_cross_link_ions_;
       bool add_b_ions_;
       bool add_y_ions_;
       bool add_a_ions_;

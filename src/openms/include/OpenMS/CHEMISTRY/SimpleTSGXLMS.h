@@ -184,6 +184,8 @@ namespace OpenMS
 
       virtual void getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink& crosslink, const DoubleList& cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const;
 
+      virtual void getXLinkSpecificIonSpectrum(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink& crosslink, const DoubleList& cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const;
+
       /// overwrite
       void updateMembers_() override;
 
@@ -281,7 +283,7 @@ namespace OpenMS
 
       virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink & crosslink, const DoubleList& cross_link_mass, bool frag_alpha, Residue::ResidueType res_type, std::vector< LossIndex > & forward_losses, std::vector< LossIndex > & backward_losses, LossIndex & losses_peptide2, int charge) const;
 
-      virtual void addOnlyXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, const DoubleList& cross_link_mass, int charge) const;
+      virtual void addXLinkSpecificIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, const DoubleList& cross_link_mass, int charge) const;
 
       /**
        * @brief Calculates sets of possible neutral losses for each position in the given peptide
@@ -301,6 +303,7 @@ namespace OpenMS
        */
       std::vector< LossIndex > getBackwardLosses_(AASequence & peptide) const;
 
+      bool add_cross_link_ions_;
       bool add_b_ions_;
       bool add_y_ions_;
       bool add_a_ions_;
