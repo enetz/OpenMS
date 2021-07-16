@@ -212,6 +212,8 @@ namespace OpenMS
        */
       virtual void addPrecursorPeaks_(PeakSpectrum & spectrum, DataArrays::IntegerDataArray & charges, DataArrays::StringDataArray & ion_names, double precursor_mass, int charge) const;
 
+      virtual void addPrecursorPeaks_(PeakSpectrum & spectrum, DataArrays::IntegerDataArray & charges, DataArrays::StringDataArray & ion_names, bool alpha, AASequence& peptide, const DoubleList& cross_link_masses, int charge) const;
+
       /**
        * @brief Adds losses for a linear ion
 
@@ -328,7 +330,6 @@ namespace OpenMS
        */
       std::vector< LossIndex > getBackwardLosses_(AASequence & peptide) const;
 
-      bool add_cross_link_ions_;
       bool add_b_ions_;
       bool add_y_ions_;
       bool add_a_ions_;

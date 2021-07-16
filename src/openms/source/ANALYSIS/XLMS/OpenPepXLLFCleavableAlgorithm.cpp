@@ -54,7 +54,7 @@ using namespace std;
 using namespace OpenMS;
 
 // turn on additional debug output
-// #define DEBUG_OPENPEPXLLFALGO
+#define DEBUG_OPENPEPXLLFALGO
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -105,13 +105,16 @@ using namespace OpenMS;
     defaults_.setValue("cross_linker:residue1", std::vector<std::string>({"K", "N-term"}), "Comma separated residues, that the first side of a bifunctional cross-linker can attach to");
     defaults_.setValue("cross_linker:residue2", std::vector<std::string>({"K", "S", "T", "Y", "N-term"}), "Comma separated residues, that the second side of a bifunctional cross-linker can attach to");
     defaults_.setValue("cross_linker:mass", 196.08479222, "Mass of the light cross-linker, linking two residues on one or two peptides");
-    defaults_.setValue("cross_linker:mass_mono_link", std::vector<double>{169.13408813, 195.11335269}, "Possible masses of the linker, when attached to only one peptide");
+    defaults_.setValue("cross_linker:mass_mono_link", std::vector<double>{214.0954, 213.1113, 317.1587}, "Possible masses of the linker, when attached to only one peptide");
     defaults_.setValue("cross_linker:mass_fragments", std::vector<double>{85.05276383, 111.03202839}, "Masses of the cleaved cross linker");
     defaults_.setValue("cross_linker:name", "DSBU", "Name of the searched cross-link, used to resolve ambiguity of equal masses (e.g. DSS or BS3)");
     defaults_.setSectionDescription("cross_linker", "Description of the cross-linker reagent");
 
+    defaults_.setValue("algorithm:pre_filter", "true", "pre filter the spectra for cross linker specific peaks", std::vector<std::string>{"advanced"});
+    defaults_.setValidStrings("algorithm:pre_filter", bool_strings);
+    defaults_.setValue("algorithm:pre_filter_error", 0.1, "max error that is allowed for the pre-filtering", std::vector<std::string>{"advanced"});
+
     defaults_.setValue("algorithm:number_top_hits", 1, "Number of top hits reported for each spectrum pair");
-    defaults_.setValue("algorithm:required_cross_link_ions", 3, "Number of cross-linker specific ions a spectrum needs to have to be considered");
     std::vector<std::string> deisotope_strings = std::vector<std::string>({"true", "false", "auto"});
     defaults_.setValue("algorithm:deisotope", "auto", "Set to true, if the input spectra should be deisotoped before any other processing steps. If set to auto the spectra will be deisotoped, if the fragment mass tolerance is < 0.1 Da or < 100 ppm (0.1 Da at a mass of 1000)", std::vector<std::string>({"advanced"}));
     defaults_.setValidStrings("algorithm:deisotope", deisotope_strings);
@@ -120,7 +123,6 @@ using namespace OpenMS;
     defaults_.setValue("algorithm:sequence_tag_min_length", 2, "Minimal length of sequence tags to use for filtering candidates. Longer tags will make the search faster but much less sensitive. Ignored if 'algorithm:use_sequence_tags' is false.", std::vector<std::string>({"advanced"}));
     defaults_.setSectionDescription("algorithm", "Additional algorithm settings");
 
-    defaults_.setValue("ions:cross_link_specific", "true", "Search for peaks of specific ions of the cross-linker.", std::vector<std::string>({"advanced"}));
     defaults_.setValue("ions:b_ions", "true", "Search for peaks of b-ions.", std::vector<std::string>({"advanced"}));
     defaults_.setValue("ions:y_ions", "true", "Search for peaks of y-ions.", std::vector<std::string>({"advanced"}));
     defaults_.setValue("ions:a_ions", "false", "Search for peaks of a-ions.", std::vector<std::string>({"advanced"}));
@@ -173,13 +175,14 @@ using namespace OpenMS;
     missed_cleavages_ = static_cast<Size>(param_.getValue("peptide:missed_cleavages"));
     enzyme_name_ = static_cast<String>(param_.getValue("peptide:enzyme").toString());
 
+    pre_filter_spectra_ = param_.getValue("algorithm:pre_filter").toBool();
+    max_pre_filter_error_ = static_cast<double>(param_.getValue("algorithm:pre_filter_error"));
+
     number_top_hits_ = static_cast<Int>(param_.getValue("algorithm:number_top_hits"));
-    required_cross_link_specific_ions_ = static_cast<Int>(param_.getValue("algorithm:required_cross_link_ions"));
     deisotope_mode_ = static_cast<String>(param_.getValue("algorithm:deisotope").toString());
     use_sequence_tags_ = param_.getValue("algorithm:use_sequence_tags") == "true";
     sequence_tag_min_length_ = static_cast<Size>(param_.getValue("algorithm:sequence_tag_min_length"));
 
-    add_cross_link_ions_ = param_.getValue("ions:cross_link_specific").toString();
     add_y_ions_ = param_.getValue("ions:y_ions").toString();
     add_b_ions_ = param_.getValue("ions:b_ions").toString();
     add_x_ions_ = param_.getValue("ions:x_ions").toString();
@@ -262,10 +265,6 @@ using namespace OpenMS;
     // sort the spectra by RT, the order might have been changed by parallel preprocessing
     spectra.sortSpectra(false);
 
-    //Add 0 to allow ions where the whole cross linker was cleaved
-    //This could just be inserted in the INI file for each cross linker individually
-    cross_link_mass_fragments_.insert(cross_link_mass_fragments_.begin(), 0);
-
     ProteaseDigestion digestor;
     digestor.setEnzyme(enzyme_name_);
     digestor.setMissedCleavages(missed_cleavages_);
@@ -318,7 +317,6 @@ using namespace OpenMS;
 
     // settings for full-scoring, annotations, 2nd isotopic peaks, losses and precursors
     Param specGenParams_full = specGen_full.getParameters();
-    specGenParams_full.setValue("add_cross_link_ions", add_cross_link_ions_, "Add peaks of cross-linker specific ions");
     specGenParams_full.setValue("add_b_ions", add_b_ions_, "Add peaks of y-ions to the spectrum");
     specGenParams_full.setValue("add_y_ions", add_y_ions_, "Add peaks of b-ions to the spectrum");
     specGenParams_full.setValue("add_a_ions", add_a_ions_, "Add peaks of a-ions to the spectrum");
@@ -338,7 +336,6 @@ using namespace OpenMS;
     specGen_full.setParameters(specGenParams_full);
 
     Param specGenParams_mainscore = specGen_mainscore.getParameters();
-    specGenParams_mainscore.setValue("add_cross_link_ions", add_cross_link_ions_, "Add peaks of cross-linker specific ions");
     specGenParams_mainscore.setValue("add_b_ions", add_b_ions_, "Add peaks of y-ions to the spectrum");
     specGenParams_mainscore.setValue("add_y_ions", add_y_ions_, "Add peaks of b-ions to the spectrum");
     specGenParams_mainscore.setValue("add_a_ions", add_a_ions_, "Add peaks of a-ions to the spectrum");
@@ -408,6 +405,10 @@ using namespace OpenMS;
     vector<OPXLDataStructs::AASeqWithMass> filtered_peptide_masses;
     filtered_peptide_masses.assign(peptide_masses.begin(), last);
 
+    //Add 0 to allow ions where the whole cross linker was cleaved
+    //This could just be inserted in the INI file for each cross linker individually
+    cross_link_mass_fragments_.insert(cross_link_mass_fragments_.begin(), 0);
+
     // iterate over all spectra
     progresslogger.startProgress(0, 1, "Matching to theoretical spectra and scoring...");
 
@@ -428,12 +429,27 @@ using namespace OpenMS;
         tagger.getTag(spectrum, tags);
       }
 
-      vector< OPXLDataStructs::CrossLinkSpectrumMatch > top_csms_spectrum;
-      vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_, filtered_peptide_masses, cross_link_mass_, cross_link_mass_mono_link_, cross_link_residue1_, cross_link_residue2_, cross_link_name_, use_sequence_tags_, tags);
+      vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates;
+      if (pre_filter_spectra_)
+      {
+        vector<pair<Size, OPXLDataStructs::AASeqWithMass > > alpha_candidates;
+        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, precursor_charge, cross_link_mass_,
+                                             cross_link_mass_fragments_, max_pre_filter_error_, alpha_candidates);
+        if (alpha_candidates.empty())
+        {
+          continue;
+        }
+
+        cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_, alpha_candidates, filtered_peptide_masses, cross_link_mass_, cross_link_mass_mono_link_, cross_link_residue1_, cross_link_residue2_, cross_link_name_, use_sequence_tags_, tags);
+      }
+      else
+      {
+        cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_, filtered_peptide_masses, cross_link_mass_, cross_link_mass_mono_link_, cross_link_residue1_, cross_link_residue2_, cross_link_name_, use_sequence_tags_, tags);
+      }
       all_candidates_count += cross_link_candidates.size();
 
 #ifdef DEBUG_OPENPEPXLLFALGO
-      OPENMS_LOG_DEBUG << "Size of enumerated candidates: " << double(cross_link_candidates.size()) * sizeof(OPXLDataStructs::ProteinProteinCrossLink) / 1024.0 / 1024.0 << " mb" << endl;
+      OPENMS_LOG_DEBUG << "Size of enumerated candidates: " << double(cross_link_candidates.size()) * sizeof(OPXLDataStructs::ProteinProteinCrossLink) / 1024.0 / 1024.0 << " mb\n";
 #endif
 
       spectrum_counter++;
@@ -444,6 +460,8 @@ using namespace OpenMS;
       {
         continue;
       }
+
+      vector< OPXLDataStructs::CrossLinkSpectrumMatch > top_csms_spectrum;
 
       // lists for one spectrum, to determine best match to the spectrum
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > all_csms_spectrum;
@@ -464,9 +482,6 @@ using namespace OpenMS;
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_xlinks_alpha;
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_xlinks_beta;
 
-        std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_xlink_specific_alpha;
-        std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_xlink_specific_beta;
-
         bool type_is_cross_link = cross_link_candidate.getType() == OPXLDataStructs::CROSS;
         bool type_is_loop = cross_link_candidate.getType() == OPXLDataStructs::LOOP;
         Size link_pos_B = 0;
@@ -478,72 +493,6 @@ using namespace OpenMS;
         AASequence beta;
         if (cross_link_candidate.alpha) { alpha = *cross_link_candidate.alpha; }
         if (cross_link_candidate.beta) { beta = *cross_link_candidate.beta; }
-
-        PeakSpectrum::IntegerDataArray exp_charges;
-        if (spectrum.getIntegerDataArrays().size() > 0)
-        {
-          exp_charges = spectrum.getIntegerDataArrays()[0];
-        }
-
-        if (required_cross_link_specific_ions_ > 0)
-        {
-
-          theoretical_spec_xlink_specific_alpha.reserve(cross_link_mass_fragments_.size());
-          specGen_mainscore.getXLinkSpecificIonSpectrum(theoretical_spec_xlink_specific_alpha, cross_link_candidate,
-                                                        cross_link_mass_fragments_, true, 2, precursor_charge);
-          if (type_is_cross_link)
-          {
-            theoretical_spec_xlink_specific_beta.reserve(cross_link_mass_fragments_.size());
-            specGen_mainscore.getXLinkSpecificIonSpectrum(theoretical_spec_xlink_specific_beta, cross_link_candidate,
-                                                          cross_link_mass_fragments_, false, 2, precursor_charge);
-          }
-
-          if (theoretical_spec_xlink_specific_alpha.empty())
-          {
-            continue;
-          }
-
-          vector<pair<Size, Size> > matched_spec_xlink_specific_alpha;
-          vector<pair<Size, Size> > matched_spec_xlink_specific_beta;
-
-          OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlink_specific_alpha,
-                                                                       fragment_mass_tolerance_xlinks_,
-                                                                       fragment_mass_tolerance_unit_ppm_,
-                                                                       theoretical_spec_xlink_specific_alpha, spectrum,
-                                                                       exp_charges);
-          OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlink_specific_beta,
-                                                                       fragment_mass_tolerance_xlinks_,
-                                                                       fragment_mass_tolerance_unit_ppm_,
-                                                                       theoretical_spec_xlink_specific_alpha, spectrum,
-                                                                       exp_charges);
-
-          if (matched_spec_xlink_specific_alpha.size() < cross_link_mass_fragments_.size() &&
-              (!type_is_cross_link || matched_spec_xlink_specific_beta.size() < cross_link_mass_fragments_.size()))
-          {
-            continue;
-          }
-        }
-
-        specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, 2, link_pos_B);
-        if (type_is_cross_link)
-        {
-          theoretical_spec_linear_beta.reserve(1500);
-          specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, 2);
-        }
-
-        // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide
-        if ( theoretical_spec_linear_alpha.empty() )
-        {
-          continue;
-        }
-
-        vector< pair< Size, Size > > matched_spec_linear_alpha;
-        vector< pair< Size, Size > > matched_spec_linear_beta;
-
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
-
-        //I could filter out spectras with only few linear peaks here
 
         theoretical_spec_xlinks_alpha.reserve(1500);
         if (type_is_cross_link)
@@ -566,8 +515,40 @@ using namespace OpenMS;
         vector< pair< Size, Size > > matched_spec_xlinks_alpha;
         vector< pair< Size, Size > > matched_spec_xlinks_beta;
 
+        PeakSpectrum::IntegerDataArray exp_charges;
+        if (spectrum.getIntegerDataArrays().size() > 0)
+        {
+          exp_charges = spectrum.getIntegerDataArrays()[0];
+        }
+
         OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_alpha, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_alpha, spectrum, exp_charges);
         OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_beta, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_beta, spectrum, exp_charges);
+
+        // drop candidates with almost no linear fragment peak matches before making the more complex theoretical spectra and aligning them
+        // this removes hits that no one would trust after manual validation anyway and reduces time wasted on really bad spectra or candidates without any matching peaks
+        if (matched_spec_xlinks_alpha.size() < 2 && (!type_is_cross_link || matched_spec_xlinks_beta.size() < 2) )
+        {
+          continue;
+        }
+
+        vector< pair< Size, Size > > matched_spec_linear_alpha;
+        vector< pair< Size, Size > > matched_spec_linear_beta;
+
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
+
+        specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, 2, link_pos_B);
+        if (type_is_cross_link)
+        {
+          theoretical_spec_linear_beta.reserve(1500);
+          specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, 2);
+        }
+
+        // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide
+        if ( theoretical_spec_linear_alpha.empty() )
+        {
+          continue;
+        }
 
         // the maximal xlink ion charge is (precursor charge - 1) and the minimal xlink ion charge is 2.
         // we need the difference between min and max here, which is (precursor_charge - 3) in most cases
@@ -722,6 +703,11 @@ using namespace OpenMS;
                                 <<  " | " << matched_spec_xlinks_alpha.size() <<  " | " << matched_spec_xlinks_beta.size() << endl;
         }
 #endif
+
+        if (spectrum.getRT() >= 3497.99)
+        {
+          printf("break");
+        }
 
         // TODO define good exclusion criteria for total crap
         Size matched_peaks = matched_spec_linear_alpha.size() + matched_spec_linear_beta.size() + matched_spec_xlinks_alpha.size() + matched_spec_xlinks_beta.size();

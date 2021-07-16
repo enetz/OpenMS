@@ -92,6 +92,22 @@ namespace OpenMS
         }
       };
 
+      struct AlphaCandidatesComparator
+      {
+          bool operator() (const std::pair<Size, OPXLDataStructs::AASeqWithMass>& a, const std::pair<Size, OPXLDataStructs::AASeqWithMass>& b) const
+          {
+            return a.second.peptide_mass < b.second.peptide_mass;
+          }
+          bool operator() (const std::pair<Size, OPXLDataStructs::AASeqWithMass>& a, const double b) const
+          {
+            return a.second.peptide_mass < b;
+          }
+          bool operator() (const double a, const std::pair<Size, OPXLDataStructs::AASeqWithMass>& b) const
+          {
+            return a < b.second.peptide_mass;
+          }
+      };
+
       /**
        * @brief Enumerates precursor masses for all candidates in an XL-MS search
 
@@ -109,7 +125,26 @@ namespace OpenMS
        * @param precursor_mass_tolerance_unit_ppm The unit of the precursor mass tolerance ("Da" or "ppm")
        * @return A vector of XLPrecursors containing all possible candidate cross-links
        */
-      static std::vector<OPXLDataStructs::XLPrecursor> enumerateCrossLinksAndMasses(const std::vector<OPXLDataStructs::AASeqWithMass>&  peptides, double cross_link_mass_light, const DoubleList& cross_link_mass_mono_link, const StringList& cross_link_residue1, const StringList& cross_link_residue2, const std::vector< double >& spectrum_precursors, std::vector< int >& precursor_correction_positions, double precursor_mass_tolerance, bool precursor_mass_tolerance_unit_ppm);
+      static std::vector<OPXLDataStructs::XLPrecursor> enumerateCrossLinksAndMasses(const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
+                                                                                    double cross_link_mass_light,
+                                                                                    const DoubleList& cross_link_mass_mono_link,
+                                                                                    const StringList& cross_link_residue1,
+                                                                                    const StringList& cross_link_residue2,
+                                                                                    const std::vector< double >& spectrum_precursors,
+                                                                                    std::vector< int >& precursor_correction_positions,
+                                                                                    double precursor_mass_tolerance,
+                                                                                    bool precursor_mass_tolerance_unit_ppm);
+
+      static std::vector<OPXLDataStructs::XLPrecursor> enumerateCrossLinksAndMasses(const std::vector<std::pair<Size, OPXLDataStructs::AASeqWithMass> >& alpha_candidates,
+                                                                                    const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
+                                                                                    double cross_link_mass_light,
+                                                                                    const DoubleList& cross_link_mass_mono_link,
+                                                                                    const StringList& cross_link_residue1,
+                                                                                    const StringList& cross_link_residue2,
+                                                                                    const std::vector< double >& spectrum_precursors,
+                                                                                    std::vector< int >& precursor_correction_positions,
+                                                                                    double precursor_mass_tolerance,
+                                                                                    bool precursor_mass_tolerance_unit_ppm);
 
       /**
        * @brief Digests a database with the given EnzymaticDigestion settings and precomputes masses for all peptides
@@ -238,6 +273,14 @@ namespace OpenMS
        */
       static std::vector< PeptideIdentification > combineTopRanksFromPairs(std::vector< PeptideIdentification > & peptide_ids, Size number_top_hits);
 
+      static void collectPeptideCandidates(const PeakSpectrum& spectrum,
+                                           const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
+                                           const double precursor_charge,
+                                           const double cross_link_mass,
+                                           const DoubleList& cross_link_masses,
+                                           double max_error,
+                                           std::vector<std::pair<Size, OPXLDataStructs::AASeqWithMass> >& peptide_candidates);
+
       /**
        * @brief Searches for cross-link candidates for a MS/MS spectrum
 
@@ -263,12 +306,27 @@ namespace OpenMS
                                                                                                 bool precursor_mass_tolerance_unit_ppm,
                                                                                                 const std::vector<OPXLDataStructs::AASeqWithMass>& filtered_peptide_masses,
                                                                                                 double cross_link_mass,
-                                                                                                DoubleList cross_link_mass_mono_link,
-                                                                                                StringList cross_link_residue1,
-                                                                                                StringList cross_link_residue2,
+                                                                                                const DoubleList& cross_link_mass_mono_link,
+                                                                                                const StringList& cross_link_residue1,
+                                                                                                const StringList& cross_link_residue2,
                                                                                                 String cross_link_name,
                                                                                                 bool use_sequence_tags = false,
                                                                                                 const std::vector<std::string>& tags = std::vector<std::string>());
+
+      //This is just a copy of above function but it allows the alpha_candidates parameter to be passed to the enumerate function
+      static std::vector <OPXLDataStructs::ProteinProteinCrossLink> collectPrecursorCandidates(const IntList& precursor_correction_steps,
+                                                                                               double precursor_mass,
+                                                                                               double precursor_mass_tolerance,
+                                                                                               bool precursor_mass_tolerance_unit_ppm,
+                                                                                               const std::vector<std::pair<Size, OPXLDataStructs::AASeqWithMass> >& alpha_candidates,
+                                                                                               const std::vector<OPXLDataStructs::AASeqWithMass>& filtered_peptide_masses,
+                                                                                               double cross_link_mass,
+                                                                                               DoubleList cross_link_mass_mono_link,
+                                                                                               StringList cross_link_residue1,
+                                                                                               StringList cross_link_residue2,
+                                                                                               String cross_link_name,
+                                                                                               bool use_sequence_tags = false,
+                                                                                               const std::vector<std::string>& tags = std::vector<std::string>());
 
       /**
        * @brief Computes the mass error of a precursor mass to a hit
@@ -295,5 +353,6 @@ namespace OpenMS
        * @param tags The list of tags for the current spectrum produced by the Tagger
        */
       static void filterPrecursorsByTags(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags);
+
   };
 }
