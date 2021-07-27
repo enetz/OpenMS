@@ -275,7 +275,6 @@ namespace OpenMS
 
       static void collectPeptideCandidates(const PeakSpectrum& spectrum,
                                            const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
-                                           const double precursor_charge,
                                            const double cross_link_mass,
                                            const DoubleList& cross_link_masses,
                                            double max_error,

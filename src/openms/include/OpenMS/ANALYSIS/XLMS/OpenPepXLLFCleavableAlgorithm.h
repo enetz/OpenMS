@@ -30,7 +30,7 @@
 //
 // --------------------------------------------------------------------------
 // $Maintainer: Eugen Netz $
-// $Authors: Eugen Netz $
+// $Authors: Ruben Grünberg, Eugen Netz $
 // --------------------------------------------------------------------------
 
 #pragma once
@@ -158,7 +158,6 @@ namespace OpenMS
         String cross_link_name_;
 
         bool pre_filter_spectra_;
-        double max_pre_filter_error_;
 
         StringList fixedModNames_;
         StringList varModNames_;

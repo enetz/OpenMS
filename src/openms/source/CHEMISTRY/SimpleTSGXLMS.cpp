@@ -598,13 +598,32 @@ namespace OpenMS
 
     for (double xlink_mass : cross_link_mass)
     {
-      double pos((mono_weight + xlink_mass) / charge);
-      spectrum.emplace_back(pos, charge);
+      double mono_pos((mono_weight + xlink_mass) / charge);
+      spectrum.emplace_back(mono_pos, charge);
 
       if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
       {
-        spectrum.emplace_back(pos + (Constants::C13C12_MASSDIFF_U / charge), charge);
+        spectrum.emplace_back(mono_pos + (Constants::C13C12_MASSDIFF_U / charge), charge);
       }
+
+      // loss peaks of the precursor
+      // loss of water
+      mono_pos = (mono_weight + xlink_mass) + (Constants::PROTON_MASS_U * charge) - loss_H2O_;
+      if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
+      {
+        spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, charge);
+      }
+      spectrum.emplace_back(mono_pos / charge, charge);
+
+      //loss of ammonia
+      mono_pos = (mono_weight + xlink_mass) + (Constants::PROTON_MASS_U * charge) - loss_NH3_;
+
+      if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
+      {
+        spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, charge);
+      }
+      spectrum.emplace_back(mono_pos / charge, charge);
+
     }
 
   }

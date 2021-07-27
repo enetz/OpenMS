@@ -29,7 +29,7 @@
 //
 // --------------------------------------------------------------------------
 // $Maintainer: Eugen Netz $
-// $Authors: Timo Sachsenberg, Eugen Netz $
+// $Authors: Ruben Grünberg, Eugen Netz $
 // --------------------------------------------------------------------------
 
 #include <OpenMS/ANALYSIS/XLMS/OpenPepXLLFCleavableAlgorithm.h>
@@ -112,7 +112,6 @@ using namespace OpenMS;
 
     defaults_.setValue("algorithm:pre_filter", "true", "pre filter the spectra for cross linker specific peaks", std::vector<std::string>{"advanced"});
     defaults_.setValidStrings("algorithm:pre_filter", bool_strings);
-    defaults_.setValue("algorithm:pre_filter_error", 0.1, "max error that is allowed for the pre-filtering", std::vector<std::string>{"advanced"});
 
     defaults_.setValue("algorithm:number_top_hits", 1, "Number of top hits reported for each spectrum pair");
     std::vector<std::string> deisotope_strings = std::vector<std::string>({"true", "false", "auto"});
@@ -142,9 +141,7 @@ using namespace OpenMS;
     defaultsToParam_();
   }
 
-  OpenPepXLLFCleavableAlgorithm::~OpenPepXLLFCleavableAlgorithm()
-  {
-  }
+  OpenPepXLLFCleavableAlgorithm::~OpenPepXLLFCleavableAlgorithm() = default;
 
   void OpenPepXLLFCleavableAlgorithm::updateMembers_()
   {
@@ -176,7 +173,6 @@ using namespace OpenMS;
     enzyme_name_ = static_cast<String>(param_.getValue("peptide:enzyme").toString());
 
     pre_filter_spectra_ = param_.getValue("algorithm:pre_filter").toBool();
-    max_pre_filter_error_ = static_cast<double>(param_.getValue("algorithm:pre_filter_error"));
 
     number_top_hits_ = static_cast<Int>(param_.getValue("algorithm:number_top_hits"));
     deisotope_mode_ = static_cast<String>(param_.getValue("algorithm:deisotope").toString());
@@ -228,7 +224,7 @@ using namespace OpenMS;
 
     protein_ids[0].setPrimaryMSRunPath({}, unprocessed_spectra);
 
-    if (unprocessed_spectra.empty() && unprocessed_spectra.getChromatograms().size() == 0)
+    if (unprocessed_spectra.empty() && unprocessed_spectra.getChromatograms().empty())
     {
       OPENMS_LOG_WARN << "The given file does not contain any conventional peak data, but might"
                   " contain chromatograms. This tool currently cannot handle them, sorry." << endl;
@@ -236,9 +232,9 @@ using namespace OpenMS;
     }
 
     //check if spectra are sorted
-    for (Size i = 0; i < unprocessed_spectra.size(); ++i)
+    for (auto& spectrum : unprocessed_spectra)
     {
-      if (!unprocessed_spectra[i].isSorted())
+      if (!spectrum.isSorted())
       {
         OPENMS_LOG_WARN << "Error: Not all spectra are sorted according to peak m/z positions. Use FileFilter to sort the input!" << endl;
         return INCOMPATIBLE_INPUT_DATA;
@@ -374,10 +370,10 @@ using namespace OpenMS;
 
     // Collect precursor MZs for filtering enumerated peptide pairs
     vector< double > spectrum_precursors;
-    for (Size i = 0; i < spectra.size(); i++)
+    for (auto& spectrum : spectra)
     {
-      double current_precursor_mz = spectra[i].getPrecursors()[0].getMZ();
-      double current_precursor_charge = spectra[i].getPrecursors()[0].getCharge();
+      double current_precursor_mz = spectrum.getPrecursors()[0].getMZ();
+      double current_precursor_charge = spectrum.getPrecursors()[0].getCharge();
       double current_precursor_mass = (current_precursor_mz * current_precursor_charge) - (current_precursor_charge * Constants::PROTON_MASS_U);
       spectrum_precursors.push_back(current_precursor_mass);
     }
@@ -418,14 +414,14 @@ using namespace OpenMS;
     {
       const PeakSpectrum& spectrum = spectra[scan_index];
 
-      const double precursor_charge = spectrum.getPrecursors()[0].getCharge();
+      const Int precursor_charge = spectrum.getPrecursors()[0].getCharge();
       const double precursor_mz = spectrum.getPrecursors()[0].getMZ();
       const double precursor_mass = (precursor_mz * static_cast<double>(precursor_charge)) - (static_cast<double>(precursor_charge) * Constants::PROTON_MASS_U);
 
       std::vector<std::string> tags;
       if (use_sequence_tags_)
       {
-        tagger.setMaxCharge(precursor_charge-1);
+        tagger.setMaxCharge(static_cast<Size>(precursor_charge-1));
         tagger.getTag(spectrum, tags);
       }
 
@@ -433,8 +429,8 @@ using namespace OpenMS;
       if (pre_filter_spectra_)
       {
         vector<pair<Size, OPXLDataStructs::AASeqWithMass > > alpha_candidates;
-        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, precursor_charge, cross_link_mass_,
-                                             cross_link_mass_fragments_, max_pre_filter_error_, alpha_candidates);
+        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, cross_link_mass_,
+                                             cross_link_mass_fragments_, max_peptide_allowed_error, alpha_candidates);
         if (alpha_candidates.empty())
         {
           continue;
@@ -475,7 +471,6 @@ using namespace OpenMS;
       */
       for (auto& cross_link_candidate : cross_link_candidates)
       {
-
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_linear_alpha;
         theoretical_spec_linear_alpha.reserve(1500);
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_linear_beta;
@@ -516,7 +511,7 @@ using namespace OpenMS;
         vector< pair< Size, Size > > matched_spec_xlinks_beta;
 
         PeakSpectrum::IntegerDataArray exp_charges;
-        if (spectrum.getIntegerDataArrays().size() > 0)
+        if (!spectrum.getIntegerDataArrays().empty())
         {
           exp_charges = spectrum.getIntegerDataArrays()[0];
         }
@@ -531,12 +526,6 @@ using namespace OpenMS;
           continue;
         }
 
-        vector< pair< Size, Size > > matched_spec_linear_alpha;
-        vector< pair< Size, Size > > matched_spec_linear_beta;
-
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
-
         specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, 2, link_pos_B);
         if (type_is_cross_link)
         {
@@ -549,6 +538,12 @@ using namespace OpenMS;
         {
           continue;
         }
+
+        vector< pair< Size, Size > > matched_spec_linear_alpha;
+        vector< pair< Size, Size > > matched_spec_linear_beta;
+
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
 
         // the maximal xlink ion charge is (precursor charge - 1) and the minimal xlink ion charge is 2.
         // we need the difference between min and max here, which is (precursor_charge - 3) in most cases
@@ -670,22 +665,22 @@ using namespace OpenMS;
 
         PeakSpectrum::IntegerDataArray& theo_charges_la = theoretical_spec_linear_alpha.getIntegerDataArrays()[0];
         PeakSpectrum::IntegerDataArray theo_charges_xa;
-        if (theoretical_spec_xlinks_alpha.getIntegerDataArrays().size() > 0)
+        if (!theoretical_spec_xlinks_alpha.getIntegerDataArrays().empty())
         {
           theo_charges_xa = theoretical_spec_xlinks_alpha.getIntegerDataArrays()[0];
         }
         PeakSpectrum::IntegerDataArray theo_charges_lb;
         PeakSpectrum::IntegerDataArray theo_charges_xb;
-        if (theoretical_spec_linear_beta.getIntegerDataArrays().size() > 0)
+        if (!theoretical_spec_linear_beta.getIntegerDataArrays().empty())
         {
           theo_charges_lb = theoretical_spec_linear_beta.getIntegerDataArrays()[0];
         }
-        if (theoretical_spec_xlinks_beta.getIntegerDataArrays().size() > 0)
+        if (!theoretical_spec_xlinks_beta.getIntegerDataArrays().empty())
         {
           theo_charges_xb = theoretical_spec_xlinks_beta.getIntegerDataArrays()[0];
         }
         PeakSpectrum::IntegerDataArray exp_charges;
-        if (spectrum.getIntegerDataArrays().size() > 0)
+        if (!spectrum.getIntegerDataArrays().empty())
         {
           exp_charges = spectrum.getIntegerDataArrays()[0];
         }
@@ -703,11 +698,6 @@ using namespace OpenMS;
                                 <<  " | " << matched_spec_xlinks_alpha.size() <<  " | " << matched_spec_xlinks_beta.size() << endl;
         }
 #endif
-
-        if (spectrum.getRT() >= 3497.99)
-        {
-          printf("break");
-        }
 
         // TODO define good exclusion criteria for total crap
         Size matched_peaks = matched_spec_linear_alpha.size() + matched_spec_linear_beta.size() + matched_spec_xlinks_alpha.size() + matched_spec_xlinks_beta.size();
@@ -827,7 +817,7 @@ using namespace OpenMS;
 
         csm.precursor_correction = cross_link_candidate.precursor_correction;
 
-        if (precursor_purities.size() > 0)
+        if (!precursor_purities.empty())
         {
           csm.precursor_total_intensity = precursor_purities[spectrum.getNativeID()].total_intensity;
           csm.precursor_target_intensity = precursor_purities[spectrum.getNativeID()].target_intensity;
@@ -856,40 +846,40 @@ using namespace OpenMS;
         csm.ppm_error_abs_sum = 0;
 
         // TODO find a better way to compute the absolute sum
-        if (ppm_error_array_linear_alpha.size() > 0)
+        if (!ppm_error_array_linear_alpha.empty())
         {
           for (Size k = 0; k < ppm_error_array_linear_alpha.size(); ++k)
           {
             csm.ppm_error_abs_sum_linear_alpha += abs(ppm_error_array_linear_alpha[k]);
           }
-          csm.ppm_error_abs_sum_linear_alpha = csm.ppm_error_abs_sum_linear_alpha / ppm_error_array_linear_alpha.size();
+          csm.ppm_error_abs_sum_linear_alpha = csm.ppm_error_abs_sum_linear_alpha / static_cast<double>(ppm_error_array_linear_alpha.size());
         }
 
-        if (ppm_error_array_linear_beta.size() > 0)
+        if (!ppm_error_array_linear_beta.empty())
         {
           for (Size k = 0; k < ppm_error_array_linear_beta.size(); ++k)
           {
             csm.ppm_error_abs_sum_linear_beta += abs(ppm_error_array_linear_beta[k]);
           }
-          csm.ppm_error_abs_sum_linear_beta = csm.ppm_error_abs_sum_linear_beta / ppm_error_array_linear_beta.size();
+          csm.ppm_error_abs_sum_linear_beta = csm.ppm_error_abs_sum_linear_beta / static_cast<double>(ppm_error_array_linear_beta.size());
         }
 
-        if (ppm_error_array_xlinks_alpha.size() > 0)
+        if (!ppm_error_array_xlinks_alpha.empty())
         {
           for (Size k = 0; k < ppm_error_array_xlinks_alpha.size(); ++k)
           {
             csm.ppm_error_abs_sum_xlinks_alpha += abs(ppm_error_array_xlinks_alpha[k]);
           }
-          csm.ppm_error_abs_sum_xlinks_alpha = csm.ppm_error_abs_sum_xlinks_alpha / ppm_error_array_xlinks_alpha.size();
+          csm.ppm_error_abs_sum_xlinks_alpha = csm.ppm_error_abs_sum_xlinks_alpha / static_cast<double>(ppm_error_array_xlinks_alpha.size());
         }
 
-        if (ppm_error_array_xlinks_beta.size() > 0)
+        if (!ppm_error_array_xlinks_beta.empty())
         {
           for (Size k = 0; k < ppm_error_array_xlinks_beta.size(); ++k)
           {
             csm.ppm_error_abs_sum_xlinks_beta += abs(ppm_error_array_xlinks_beta[k]);
           }
-          csm.ppm_error_abs_sum_xlinks_beta = csm.ppm_error_abs_sum_xlinks_beta / ppm_error_array_xlinks_beta.size();
+          csm.ppm_error_abs_sum_xlinks_beta = csm.ppm_error_abs_sum_xlinks_beta / static_cast<double>(ppm_error_array_xlinks_beta.size());
         }
 
         DataArrays::FloatDataArray ppm_error_array_linear;
@@ -908,49 +898,49 @@ using namespace OpenMS;
         ppm_error_array.insert(ppm_error_array.end(), ppm_error_array_linear.begin(), ppm_error_array_linear.end());
         ppm_error_array.insert(ppm_error_array.end(), ppm_error_array_xlinks.begin(), ppm_error_array_xlinks.end());
 
-        if (ppm_error_array_linear.size() > 0)
+        if (!ppm_error_array_linear.empty())
         {
           for (double ppm_error : ppm_error_array_linear)
           {
             csm.ppm_error_abs_sum_linear += abs(ppm_error);
           }
-          csm.ppm_error_abs_sum_linear = csm.ppm_error_abs_sum_linear / ppm_error_array_linear.size();
+          csm.ppm_error_abs_sum_linear = csm.ppm_error_abs_sum_linear / static_cast<double>(ppm_error_array_linear.size());
         }
 
-        if (ppm_error_array_xlinks.size() > 0)
+        if (!ppm_error_array_xlinks.empty())
         {
           for (double ppm_error : ppm_error_array_xlinks)
           {
             csm.ppm_error_abs_sum_xlinks += abs(ppm_error);
           }
-          csm.ppm_error_abs_sum_xlinks = csm.ppm_error_abs_sum_xlinks / ppm_error_array_xlinks.size();
+          csm.ppm_error_abs_sum_xlinks = csm.ppm_error_abs_sum_xlinks / static_cast<double>(ppm_error_array_xlinks.size());
         }
 
-        if (ppm_error_array_alpha.size() > 0)
+        if (!ppm_error_array_alpha.empty())
         {
           for (double ppm_error : ppm_error_array_alpha)
           {
             csm.ppm_error_abs_sum_alpha += abs(ppm_error);
           }
-          csm.ppm_error_abs_sum_alpha = csm.ppm_error_abs_sum_alpha / ppm_error_array_alpha.size();
+          csm.ppm_error_abs_sum_alpha = csm.ppm_error_abs_sum_alpha / static_cast<double>(ppm_error_array_alpha.size());
         }
 
-        if (ppm_error_array_beta.size() > 0)
+        if (!ppm_error_array_beta.empty())
         {
           for (double ppm_error : ppm_error_array_beta)
           {
             csm.ppm_error_abs_sum_beta += abs(ppm_error);
           }
-          csm.ppm_error_abs_sum_beta = csm.ppm_error_abs_sum_beta / ppm_error_array_beta.size();
+          csm.ppm_error_abs_sum_beta = csm.ppm_error_abs_sum_beta / static_cast<double>(ppm_error_array_beta.size());
         }
 
-        if (ppm_error_array.size() > 0)
+        if (!ppm_error_array.empty())
         {
           for (double ppm_error : ppm_error_array)
           {
             csm.ppm_error_abs_sum += abs(ppm_error);
           }
-          csm.ppm_error_abs_sum = csm.ppm_error_abs_sum / ppm_error_array.size();
+          csm.ppm_error_abs_sum = csm.ppm_error_abs_sum / static_cast<double>(ppm_error_array.size());
         }
 
         // write fragment annotations
