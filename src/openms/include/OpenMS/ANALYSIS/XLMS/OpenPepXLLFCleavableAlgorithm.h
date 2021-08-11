@@ -158,6 +158,7 @@ namespace OpenMS
         String cross_link_name_;
 
         bool pre_filter_spectra_;
+        bool discard_filtered_out_;
 
         StringList fixedModNames_;
         StringList varModNames_;

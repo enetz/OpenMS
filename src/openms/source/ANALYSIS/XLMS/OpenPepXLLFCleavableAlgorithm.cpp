@@ -112,6 +112,8 @@ using namespace OpenMS;
 
     defaults_.setValue("algorithm:pre_filter", "true", "pre filter the spectra for cross linker specific peaks", std::vector<std::string>{"advanced"});
     defaults_.setValidStrings("algorithm:pre_filter", bool_strings);
+    defaults_.setValue("algorithm:discard_filtered_out", "true", "When this is false, spectra that have no xlinker specific peak pairs are analysed using the whole peptide DB", std::vector<std::string>{"advanced"});
+    defaults_.setValidStrings("algorithm:discard_filtered_out", bool_strings);
 
     defaults_.setValue("algorithm:number_top_hits", 1, "Number of top hits reported for each spectrum pair");
     std::vector<std::string> deisotope_strings = std::vector<std::string>({"true", "false", "auto"});
@@ -173,6 +175,7 @@ using namespace OpenMS;
     enzyme_name_ = static_cast<String>(param_.getValue("peptide:enzyme").toString());
 
     pre_filter_spectra_ = param_.getValue("algorithm:pre_filter").toBool();
+    discard_filtered_out_ = param_.getValue("algorithm:discard_filtered_out").toBool();
 
     number_top_hits_ = static_cast<Int>(param_.getValue("algorithm:number_top_hits"));
     deisotope_mode_ = static_cast<String>(param_.getValue("algorithm:deisotope").toString());
@@ -307,6 +310,10 @@ using namespace OpenMS;
     vector<OPXLDataStructs::AASeqWithMass> peptide_masses;
     peptide_masses = OPXLHelper::digestDatabase(fasta_db, digestor, peptide_min_size_, cross_link_residue1_, cross_link_residue2_, fixed_modifications,  variable_modifications, max_variable_mods_per_peptide_);
 
+    #ifdef DEBUG_OPENPEPXLLFALGO
+        OPENMS_LOG_DEBUG << "All peptides: " << peptide_masses.size() << endl;
+    #endif
+
     // declare and set up spectrum generators
     TheoreticalSpectrumGeneratorXLMS specGen_full;
     SimpleTSGXLMS specGen_mainscore;
@@ -360,10 +367,6 @@ using namespace OpenMS;
     Tagger tagger(sequence_tag_min_length_, tagger_tol, sequence_tag_min_length_, 1, max_precursor_charge_, fixedModNames_, varModNames_);
     Size all_candidates_count(0);
 
-#ifdef DEBUG_OPENPEPXLLFALGO
-    OPENMS_LOG_DEBUG << "Peptide candidates: " << peptide_masses.size() << endl;
-#endif
-
     search_params = protein_ids[0].getSearchParameters();
     search_params.setMetaValue("MS:1001029", peptide_masses.size()); // number of sequences searched = MS:1001029
     protein_ids[0].setSearchParameters(search_params);
@@ -403,7 +406,10 @@ using namespace OpenMS;
 
     //Add 0 to allow ions where the whole cross linker was cleaved
     //This could just be inserted in the INI file for each cross linker individually
+    //TODO: Figure out what is better
     cross_link_mass_fragments_.insert(cross_link_mass_fragments_.begin(), 0);
+    //Add the whole cross_linker to the fragment masses
+    cross_link_mass_fragments_.emplace_back(cross_link_mass_);
 
     // iterate over all spectra
     progresslogger.startProgress(0, 1, "Matching to theoretical spectra and scoring...");
@@ -425,22 +431,54 @@ using namespace OpenMS;
         tagger.getTag(spectrum, tags);
       }
 
+      vector<OPXLDataStructs::AASeqWithMass> alpha_candidates;
       vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates;
       if (pre_filter_spectra_)
       {
-        vector<pair<Size, OPXLDataStructs::AASeqWithMass > > alpha_candidates;
-        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, cross_link_mass_,
-                                             cross_link_mass_fragments_, max_peptide_allowed_error, alpha_candidates);
+        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, cross_link_mass_fragments_,
+                                             max_peptide_allowed_error, precursor_charge, alpha_candidates);
         if (alpha_candidates.empty())
         {
-          continue;
+          if (discard_filtered_out_)
+          {
+            continue;
+          }
+          else
+          {
+            cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
+                                                                           precursor_mass_tolerance_,
+                                                                           precursor_mass_tolerance_unit_ppm_,
+                                                                           filtered_peptide_masses, cross_link_mass_,
+                                                                           cross_link_mass_mono_link_,
+                                                                           cross_link_residue1_, cross_link_residue2_,
+                                                                           cross_link_name_,
+                                                                           use_sequence_tags_, tags);
+          }
         }
-
-        cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_, alpha_candidates, filtered_peptide_masses, cross_link_mass_, cross_link_mass_mono_link_, cross_link_residue1_, cross_link_residue2_, cross_link_name_, use_sequence_tags_, tags);
+        else
+        {
+          #ifdef DEBUG_OPENPEPXLLFALGO
+                    OPENMS_LOG_DEBUG << "Peptide candidates: " << alpha_candidates.size() << endl;
+          #endif
+          cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
+                                                                         precursor_mass_tolerance_,
+                                                                         precursor_mass_tolerance_unit_ppm_,
+                                                                         alpha_candidates,
+                                                                         cross_link_mass_, cross_link_mass_mono_link_,
+                                                                         cross_link_residue1_, cross_link_residue2_,
+                                                                         cross_link_name_, use_sequence_tags_,
+                                                                         tags);
+        }
       }
       else
       {
-        cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass, precursor_mass_tolerance_, precursor_mass_tolerance_unit_ppm_, filtered_peptide_masses, cross_link_mass_, cross_link_mass_mono_link_, cross_link_residue1_, cross_link_residue2_, cross_link_name_, use_sequence_tags_, tags);
+        cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
+                                                                       precursor_mass_tolerance_,
+                                                                       precursor_mass_tolerance_unit_ppm_,
+                                                                       filtered_peptide_masses, cross_link_mass_,
+                                                                       cross_link_mass_mono_link_, cross_link_residue1_,
+                                                                       cross_link_residue2_, cross_link_name_,
+                                                                       use_sequence_tags_, tags);
       }
       all_candidates_count += cross_link_candidates.size();
 
