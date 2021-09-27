@@ -135,6 +135,9 @@ namespace OpenMS
         ExitCodes run(PeakMap& unprocessed_spectra, std::vector<FASTAFile::FASTAEntry>& fasta_db, std::vector<ProteinIdentification>& protein_ids, std::vector<PeptideIdentification>& peptide_ids, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > >& all_top_csms, PeakMap& spectra);
 
     private:
+        enum BetaFilter {NONE, LOOSE, STRICT};
+
+
         void updateMembers_() override;
 
         String decoy_string_;
@@ -158,7 +161,11 @@ namespace OpenMS
         String cross_link_name_;
 
         bool pre_filter_spectra_;
+        BetaFilter beta_filter_;
         bool discard_filtered_out_;
+
+        Size min_linear_fragments_;
+        Size min_xlink_fragments_;
 
         StringList fixedModNames_;
         StringList varModNames_;

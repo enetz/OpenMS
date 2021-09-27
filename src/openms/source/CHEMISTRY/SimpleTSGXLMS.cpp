@@ -595,6 +595,15 @@ namespace OpenMS
     }
 
     double mono_weight(peptide.getMonoWeight(Residue::Full, charge));
+    spectrum.emplace_back(mono_weight / charge, charge);
+    spectrum.emplace_back((mono_weight - loss_H2O_) / charge, charge);
+    spectrum.emplace_back((mono_weight - loss_NH3_) / charge, charge);
+    if (add_isotopes_ && max_isotope_ >= 2)
+    {
+      spectrum.emplace_back((mono_weight + Constants::C13C12_MASSDIFF_U) / charge, charge);
+      spectrum.emplace_back((mono_weight - loss_H2O_ + Constants::C13C12_MASSDIFF_U) / charge, charge);
+      spectrum.emplace_back((mono_weight - loss_NH3_ + Constants::C13C12_MASSDIFF_U) / charge, charge);
+    }
 
     for (double xlink_mass : cross_link_mass)
     {
@@ -608,21 +617,20 @@ namespace OpenMS
 
       // loss peaks of the precursor
       // loss of water
-      mono_pos = (mono_weight + xlink_mass) + (Constants::PROTON_MASS_U * charge) - loss_H2O_;
+      mono_pos = (mono_weight + xlink_mass - loss_H2O_) / charge;
+      spectrum.emplace_back(mono_pos, charge);
       if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
       {
-        spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, charge);
+        spectrum.emplace_back(mono_pos + (Constants::C13C12_MASSDIFF_U / charge), charge);
       }
-      spectrum.emplace_back(mono_pos / charge, charge);
 
       //loss of ammonia
-      mono_pos = (mono_weight + xlink_mass) + (Constants::PROTON_MASS_U * charge) - loss_NH3_;
-
+      mono_pos = (mono_weight + xlink_mass - loss_NH3_) / charge;
+      spectrum.emplace_back(mono_pos, charge);
       if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
       {
-        spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, charge);
+        spectrum.emplace_back(mono_pos + (Constants::C13C12_MASSDIFF_U / charge), charge);
       }
-      spectrum.emplace_back(mono_pos / charge, charge);
 
     }
 
@@ -1007,8 +1015,8 @@ namespace OpenMS
       link_index = crosslink.cross_link_position.second;
     }
 
-    //Is this necessary ??
-    //Adding the ions for a non fragmented cross linker
+    //TODO: Is this necessary ??
+    //Adding the ions for a non fragmented cross linker - I really don't think I should do this because we have a lot of peaks and decoy hits already!
     //addXLinkIonPeaks_(spectrum, crosslink, frag_alpha, res_type, forward_losses, backward_losses, losses_peptide2, charge);
 
     //Adding the ions for a fragmented cross linker

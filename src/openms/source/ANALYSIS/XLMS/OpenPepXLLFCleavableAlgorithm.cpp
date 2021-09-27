@@ -110,8 +110,12 @@ using namespace OpenMS;
     defaults_.setValue("cross_linker:name", "DSBU", "Name of the searched cross-link, used to resolve ambiguity of equal masses (e.g. DSS or BS3)");
     defaults_.setSectionDescription("cross_linker", "Description of the cross-linker reagent");
 
+    defaults_.setValue("algorithm:min_linear_fragments", 2, "Minimum number of linear fragments per peptide");
+    defaults_.setValue("algorithm:min_xlink_fragments", 2, "Minimum number of xlink fragments per peptide");
     defaults_.setValue("algorithm:pre_filter", "true", "pre filter the spectra for cross linker specific peaks", std::vector<std::string>{"advanced"});
     defaults_.setValidStrings("algorithm:pre_filter", bool_strings);
+    defaults_.setValue("algorithm:beta_filter", "Loose", "Type of filtering used for the beta peptides (strict = same as alpha, loose = look for additional peak pairs", std::vector<std::string>{"advanced"});
+    defaults_.setValidStrings("algorithm:beta_filter", std::vector<std::string>{"None", "Loose", "Strict"});
     defaults_.setValue("algorithm:discard_filtered_out", "true", "When this is false, spectra that have no xlinker specific peak pairs are analysed using the whole peptide DB", std::vector<std::string>{"advanced"});
     defaults_.setValidStrings("algorithm:discard_filtered_out", bool_strings);
 
@@ -174,7 +178,20 @@ using namespace OpenMS;
     missed_cleavages_ = static_cast<Size>(param_.getValue("peptide:missed_cleavages"));
     enzyme_name_ = static_cast<String>(param_.getValue("peptide:enzyme").toString());
 
+    min_linear_fragments_ = param_.getValue("algorithm:min_linear_fragments");
+    min_xlink_fragments_ = param_.getValue("algorithm:min_xlink_fragments");
     pre_filter_spectra_ = param_.getValue("algorithm:pre_filter").toBool();
+    String beta_filter_raw = param_.getValue("algorithm:beta_filter").toString();
+    if (beta_filter_raw == "None")
+    {
+      beta_filter_ = NONE;
+    } else if(beta_filter_raw == "Loose")
+    {
+      beta_filter_ = LOOSE;
+    } else
+    {
+      beta_filter_ = STRICT;
+    }
     discard_filtered_out_ = param_.getValue("algorithm:discard_filtered_out").toBool();
 
     number_top_hits_ = static_cast<Int>(param_.getValue("algorithm:number_top_hits"));
@@ -404,13 +421,6 @@ using namespace OpenMS;
     vector<OPXLDataStructs::AASeqWithMass> filtered_peptide_masses;
     filtered_peptide_masses.assign(peptide_masses.begin(), last);
 
-    //Add 0 to allow ions where the whole cross linker was cleaved
-    //This could just be inserted in the INI file for each cross linker individually
-    //TODO: Figure out what is better
-    cross_link_mass_fragments_.insert(cross_link_mass_fragments_.begin(), 0);
-    //Add the whole cross_linker to the fragment masses
-    cross_link_mass_fragments_.emplace_back(cross_link_mass_);
-
     // iterate over all spectra
     progresslogger.startProgress(0, 1, "Matching to theoretical spectra and scoring...");
 
@@ -431,12 +441,22 @@ using namespace OpenMS;
         tagger.getTag(spectrum, tags);
       }
 
+      spectrum_counter++;
+      cout << "Processing spectrum " << spectrum_counter << " / " << spectra.size() << " |\tSpectrum ID: " << spectrum.getNativeID() << "\t| at: " << DateTime::now().getTime() << endl;
+
       vector<OPXLDataStructs::AASeqWithMass> alpha_candidates;
+      vector<OPXLDataStructs::AASeqWithMass> beta_candidates;
       vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates;
       if (pre_filter_spectra_)
       {
-        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, cross_link_mass_fragments_,
+        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
+                                             {cross_link_mass_fragments_.at(1) - cross_link_mass_fragments_.at(0)},
+                                             {cross_link_mass_fragments_.at(0)},
                                              max_peptide_allowed_error, precursor_charge, alpha_candidates);
+        #ifdef DEBUG_OPENPEPXLLFALGO
+              OPENMS_LOG_DEBUG << "Peptides: " << filtered_peptide_masses.size() << " Alpha candidates: "
+                               << alpha_candidates.size() << endl;
+        #endif
         if (alpha_candidates.empty())
         {
           if (discard_filtered_out_)
@@ -457,17 +477,46 @@ using namespace OpenMS;
         }
         else
         {
-          #ifdef DEBUG_OPENPEPXLLFALGO
-                    OPENMS_LOG_DEBUG << "Peptide candidates: " << alpha_candidates.size() << endl;
-          #endif
-          cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
-                                                                         precursor_mass_tolerance_,
-                                                                         precursor_mass_tolerance_unit_ppm_,
-                                                                         alpha_candidates,
-                                                                         cross_link_mass_, cross_link_mass_mono_link_,
-                                                                         cross_link_residue1_, cross_link_residue2_,
-                                                                         cross_link_name_, use_sequence_tags_,
-                                                                         tags);
+          switch(beta_filter_)
+          {
+          case NONE:
+            cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
+                                                                           precursor_mass_tolerance_,
+                                                                           precursor_mass_tolerance_unit_ppm_,
+                                                                           alpha_candidates, filtered_peptide_masses,
+                                                                           cross_link_mass_, cross_link_mass_mono_link_,
+                                                                           cross_link_residue1_, cross_link_residue2_,
+                                                                           cross_link_name_, use_sequence_tags_, tags);
+          break;
+          case LOOSE:
+          {
+            beta_candidates.assign(alpha_candidates.begin(),
+                                   alpha_candidates.end()); //All alpha_candidates can also be beta candidates (no need to search for the mass difference again)
+            OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, cross_link_mass_fragments_,
+                                                 {0, 0},
+                                                 max_peptide_allowed_error, precursor_charge, beta_candidates);
+            #ifdef DEBUG_OPENPEPXLLFALGO
+                        OPENMS_LOG_DEBUG << " Beta candidates: " << beta_candidates.size() << endl;
+            #endif
+            cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
+                                                                           precursor_mass_tolerance_,
+                                                                           precursor_mass_tolerance_unit_ppm_,
+                                                                           alpha_candidates, beta_candidates,
+                                                                           cross_link_mass_, cross_link_mass_mono_link_,
+                                                                           cross_link_residue1_, cross_link_residue2_,
+                                                                           cross_link_name_, use_sequence_tags_, tags);
+          }
+          break;
+          case STRICT:
+            cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
+                                                                           precursor_mass_tolerance_,
+                                                                           precursor_mass_tolerance_unit_ppm_,
+                                                                           alpha_candidates,
+                                                                           cross_link_mass_, cross_link_mass_mono_link_,
+                                                                           cross_link_residue1_, cross_link_residue2_,
+                                                                           cross_link_name_, use_sequence_tags_, tags);
+          break;
+          }
         }
       }
       else
@@ -486,8 +535,6 @@ using namespace OpenMS;
       OPENMS_LOG_DEBUG << "Size of enumerated candidates: " << double(cross_link_candidates.size()) * sizeof(OPXLDataStructs::ProteinProteinCrossLink) / 1024.0 / 1024.0 << " mb\n";
 #endif
 
-      spectrum_counter++;
-      cout << "Processing spectrum " << spectrum_counter << " / " << spectra.size() << " |\tSpectrum ID: " << spectrum.getNativeID() << "\t| at: " << DateTime::now().getTime() << endl;
       cout << "Number of peaks: " << spectrum.size() << " |\tNumber of candidates: " << cross_link_candidates.size() << endl;
 
       if (cross_link_candidates.empty())
@@ -527,48 +574,11 @@ using namespace OpenMS;
         if (cross_link_candidate.alpha) { alpha = *cross_link_candidate.alpha; }
         if (cross_link_candidate.beta) { beta = *cross_link_candidate.beta; }
 
-        theoretical_spec_xlinks_alpha.reserve(1500);
-        if (type_is_cross_link)
-        {
-          theoretical_spec_xlinks_beta.reserve(1500);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 2, precursor_charge);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 2, precursor_charge);
-        }
-        else
-        {
-          // Function for mono-links or loop-links
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_,1, precursor_charge, link_pos_B);
-        }
-
-        if (theoretical_spec_xlinks_alpha.empty())
-        {
-          continue;
-        }
-
-        vector< pair< Size, Size > > matched_spec_xlinks_alpha;
-        vector< pair< Size, Size > > matched_spec_xlinks_beta;
-
-        PeakSpectrum::IntegerDataArray exp_charges;
-        if (!spectrum.getIntegerDataArrays().empty())
-        {
-          exp_charges = spectrum.getIntegerDataArrays()[0];
-        }
-
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_alpha, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_alpha, spectrum, exp_charges);
-        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_beta, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_beta, spectrum, exp_charges);
-
-        // drop candidates with almost no linear fragment peak matches before making the more complex theoretical spectra and aligning them
-        // this removes hits that no one would trust after manual validation anyway and reduces time wasted on really bad spectra or candidates without any matching peaks
-        if (matched_spec_xlinks_alpha.size() < 2 && (!type_is_cross_link || matched_spec_xlinks_beta.size() < 2) )
-        {
-          continue;
-        }
-
-        specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, 2, link_pos_B);
+        specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_charge - 1 , link_pos_B);
         if (type_is_cross_link)
         {
           theoretical_spec_linear_beta.reserve(1500);
-          specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, 2);
+          specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, precursor_charge - 1);
         }
 
         // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide
@@ -577,11 +587,55 @@ using namespace OpenMS;
           continue;
         }
 
+        PeakSpectrum::IntegerDataArray exp_charges;
+        if (!spectrum.getIntegerDataArrays().empty())
+        {
+          exp_charges = spectrum.getIntegerDataArrays()[0];
+        }
+
         vector< pair< Size, Size > > matched_spec_linear_alpha;
         vector< pair< Size, Size > > matched_spec_linear_beta;
 
         OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
         OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
+
+        // drop candidates with almost no linear fragment peak matches before making the more complex theoretical spectra and aligning them
+        // this removes hits that no one would trust after manual validation anyway and reduces time wasted on really bad spectra or candidates without any matching peaks
+        if (matched_spec_linear_alpha.size() < min_linear_fragments_ && (!type_is_cross_link || matched_spec_linear_beta.size() < min_linear_fragments_) )
+        {
+          continue;
+        }
+
+        theoretical_spec_xlinks_alpha.reserve(1500);
+        if (type_is_cross_link)
+        {
+          theoretical_spec_xlinks_beta.reserve(1500);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 1, precursor_charge - 1);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 1, precursor_charge - 1);
+        }
+        else
+        {
+          // Function for mono-links or loop-links
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_, 1, precursor_charge - 1, link_pos_B);
+        }
+
+        if (theoretical_spec_xlinks_alpha.empty() && (!type_is_cross_link || theoretical_spec_xlinks_beta.empty()))
+        {
+          continue;
+        }
+
+        vector< pair< Size, Size > > matched_spec_xlinks_alpha;
+        vector< pair< Size, Size > > matched_spec_xlinks_beta;
+
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_alpha, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_alpha, spectrum, exp_charges);
+        OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_xlinks_beta, fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_xlinks_beta, spectrum, exp_charges);
+
+        // TODO: drop candidates with almost no xlink fragment peak matches before making the more complex theoretical spectra and aligning them
+        // There should be at least two xlink fragment matches because of the pre filtering!!!
+        if (matched_spec_xlinks_alpha.size() < min_xlink_fragments_ && (!type_is_cross_link || matched_spec_xlinks_beta.size() < min_xlink_fragments_) )
+        {
+          continue;
+        }
 
         // the maximal xlink ion charge is (precursor charge - 1) and the minimal xlink ion charge is 2.
         // we need the difference between min and max here, which is (precursor_charge - 3) in most cases
@@ -670,19 +724,19 @@ using namespace OpenMS;
         {
           link_pos_B = cross_link_candidate.cross_link_position.second;
         }
-        specGen_full.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, true, 2, link_pos_B);
+        specGen_full.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, true, precursor_charge - 1, link_pos_B);
         if (type_is_cross_link)
         {
           theoretical_spec_linear_beta.reserve(1500);
           theoretical_spec_xlinks_beta.reserve(1500);
-          specGen_full.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, false, 2);
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 1, precursor_charge);
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 1, precursor_charge);
+          specGen_full.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, false, precursor_charge - 1);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 1, precursor_charge - 1);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 1, precursor_charge - 1);
         }
         else
         {
           // Function for mono-links or loop-links
-          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_,true, 2, precursor_charge, link_pos_B);
+          specGen_full.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_,true, 1, precursor_charge - 1, link_pos_B);
         }
 
         // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide

@@ -247,8 +247,8 @@ namespace OpenMS
     return mass_to_candidates;
   }
 
-    vector<OPXLDataStructs::XLPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::AASeqWithMass>& peptides,
-                                                                                  const vector<OPXLDataStructs::AASeqWithMass>& all_peptides,
+    vector<OPXLDataStructs::XLPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::AASeqWithMass>& alpha_peptides,
+                                                                                  const vector<OPXLDataStructs::AASeqWithMass>& beta_peptides,
                                                                                   double cross_link_mass,
                                                                                   const DoubleList& cross_link_mass_mono_link,
                                                                                   const StringList& cross_link_residue1,
@@ -263,22 +263,22 @@ namespace OpenMS
 
       double max_precursor = spectrum_precursors[spectrum_precursors.size()-1];
 
-      Size all_peptides_size = all_peptides.size();
+      Size all_peptides_size = beta_peptides.size();
 
       // compute a very conservative total upper bound, based on the heaviest possible linear peptide
-      // can be used instead of peptides.end() in all cases for this precursor mass
-      vector<OPXLDataStructs::AASeqWithMass>::const_iterator conservative_upper_bound = upper_bound(peptides.cbegin(), peptides.cend(), max_precursor, OPXLDataStructs::AASeqWithMassComparator());
+      // can be used instead of alpha_peptides.end() in all cases for this precursor mass
+      vector<OPXLDataStructs::AASeqWithMass>::const_iterator conservative_upper_bound = upper_bound(alpha_peptides.cbegin(), alpha_peptides.cend(), max_precursor, OPXLDataStructs::AASeqWithMassComparator());
 
       // initialize additional iterators
       // the upper bounds for a precursor mass can be used as the lower bounds
       // for the next heavier precursor mass, narrowing down the search space for new bounds
-      vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_loop = peptides.cbegin();
-      vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_loop = peptides.cbegin();
+      vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_loop = alpha_peptides.cbegin();
+      vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_loop = alpha_peptides.cbegin();
 
-      vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_mono = peptides.cbegin();
-      vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_mono = peptides.cbegin();
+      vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_mono = alpha_peptides.cbegin();
+      vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_mono = alpha_peptides.cbegin();
 
-      vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_alpha = peptides.cbegin();
+      vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_alpha = alpha_peptides.cbegin();
 
       for (Size pm = 0; pm < spectrum_precursors.size(); ++pm)
       {
@@ -295,20 +295,20 @@ namespace OpenMS
         }
 
         // ################################ Enumerate Loop-Links #################
-        // The largest peptides given a fixed precursor mass are possible with loop links
+        // The largest alpha_peptides given a fixed precursor mass are possible with loop links
         double min_peptide_mass = precursor_mass - cross_link_mass - allowed_error;
         double max_peptide_mass = precursor_mass - cross_link_mass + allowed_error;
 
         first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
         last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
 
-        int first_index = first_loop - peptides.cbegin();
-        int last_index = last_loop - peptides.cbegin();
+        int first_index = first_loop - alpha_peptides.cbegin();
+        int last_index = last_loop - alpha_peptides.cbegin();
 
 #pragma omp parallel for
         for (int p1 = first_index; p1 < last_index; ++p1)
         {
-          const String& seq_first = peptides[p1].unmodified_seq;
+          const String& seq_first = alpha_peptides[p1].unmodified_seq;
           // test if this peptide could have loop-links: one cross-link with both sides attached to the same peptide
           bool first_res = false; // is there a residue the first side of the linker can attach to?
           bool second_res = false; // is there a residue the second side of the linker can attach to?
@@ -336,7 +336,7 @@ namespace OpenMS
           if (first_res && second_res)
           {
             // Monoisotopic weight of the peptide + cross-linker
-            double cross_linked_peptide_mass = peptides[p1].peptide_mass + cross_link_mass;
+            double cross_linked_peptide_mass = alpha_peptides[p1].peptide_mass + cross_link_mass;
 
             // also only one peptide
             OPXLDataStructs::XLPrecursor precursor;
@@ -367,21 +367,21 @@ namespace OpenMS
           first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
           last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
 
-          first_index = first_mono - peptides.cbegin();
-          last_index = last_mono - peptides.cbegin();
+          first_index = first_mono - alpha_peptides.cbegin();
+          last_index = last_mono - alpha_peptides.cbegin();
 
 #pragma omp parallel for
           for (int p1 = first_index; p1 < last_index; ++p1)
           {
             // Monoisotopic weight of the peptide + cross-linker
-            double cross_linked_peptide_mass = peptides[p1].peptide_mass + mono_link_mass;
+            double cross_linked_peptide_mass = alpha_peptides[p1].peptide_mass + mono_link_mass;
 
             // Make sure it is clear only one peptide is considered here. Use an out-of-range value for the second peptide.
             OPXLDataStructs::XLPrecursor precursor;
             precursor.precursor_mass = cross_linked_peptide_mass;
             precursor.alpha_index = p1;
             precursor.beta_index = all_peptides_size + 1; // an out-of-range index to represent an empty index
-            precursor.alpha_seq = peptides[p1].unmodified_seq;
+            precursor.alpha_seq = alpha_peptides[p1].unmodified_seq;
             precursor.beta_seq = "";
 
 #pragma omp critical (mass_to_candidates_access)
@@ -394,43 +394,43 @@ namespace OpenMS
 
         // ################################ Enumerate Cross-Links #################
         // constrain the conservative upper bound even more,
-        // because we have to fit in two peptides this time
+        // because we have to fit in two alpha_peptides this time
         // maximal mass: difference between precursor mass and the smallest peptide + cross-linker
-        max_peptide_mass = precursor_mass - cross_link_mass - peptides[0].peptide_mass + allowed_error;
+        max_peptide_mass = precursor_mass - cross_link_mass - beta_peptides[0].peptide_mass + allowed_error;
         last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
-        int last_alpha_index = last_alpha - peptides.cbegin();
+        int last_alpha_index = last_alpha - alpha_peptides.cbegin();
 
 #pragma omp parallel for
         for (int p1 = 0; p1 < last_alpha_index; ++p1)
         {
           // Constrain search for beta
-          double min_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass - allowed_error;
-          double max_peptide_mass_beta = precursor_mass - cross_link_mass - peptides[p1].peptide_mass + allowed_error;
+          double min_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_peptides[p1].peptide_mass - allowed_error;
+          double max_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_peptides[p1].peptide_mass + allowed_error;
 
           // the last_alpha upper bound is also a conservative upper bound here
-          vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_beta = lower_bound(all_peptides.begin(), all_peptides.end(), min_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
-          vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_beta = upper_bound(all_peptides.begin(), all_peptides.end(), max_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
+          vector<OPXLDataStructs::AASeqWithMass>::const_iterator first_beta = lower_bound(beta_peptides.begin(), beta_peptides.end(), min_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
+          vector<OPXLDataStructs::AASeqWithMass>::const_iterator last_beta = upper_bound(beta_peptides.begin(), beta_peptides.end(), max_peptide_mass_beta, OPXLDataStructs::AASeqWithMassComparator());
 
           if (first_beta == last_beta)
           {
             continue;
           }
 
-          Size first_beta_index = first_beta - all_peptides.begin();
-          Size last_beta_index = last_beta - all_peptides.begin();
+          Size first_beta_index = first_beta - beta_peptides.begin();
+          Size last_beta_index = last_beta - beta_peptides.begin();
 
           for (Size p2 = first_beta_index; p2 < last_beta_index; ++p2)
           {
             // Monoisotopic weight of the first peptide + the second peptide + cross-linker
-            double cross_linked_pair_mass = peptides[p1].peptide_mass + all_peptides[p2].peptide_mass + cross_link_mass;
+            double cross_linked_pair_mass = alpha_peptides[p1].peptide_mass + beta_peptides[p2].peptide_mass + cross_link_mass;
 
-            // this time both peptides have valid indices
+            // this time both alpha_peptides have valid indices
             OPXLDataStructs::XLPrecursor precursor;
             precursor.precursor_mass = cross_linked_pair_mass;
             precursor.alpha_index = p1;
             precursor.beta_index = p2;
-            precursor.alpha_seq = peptides[p1].unmodified_seq;
-            precursor.beta_seq = all_peptides[p2].unmodified_seq;
+            precursor.alpha_seq = alpha_peptides[p1].unmodified_seq;
+            precursor.beta_seq = beta_peptides[p2].unmodified_seq;
 
 #pragma omp critical (mass_to_candidates_access)
             {
@@ -638,19 +638,39 @@ namespace OpenMS
 
       for (Size k = 0; k < seq_first.size()-1; ++k)
       {
+        /*
         for (Size x = 0; x < cross_link_residue1.size(); ++x)
         {
           // if (seq_first.substr(k, 1) == cross_link_residue1[x]) link_pos_first.push_back(k);
           if (string(1, seq_first[k]) == cross_link_residue1[x]) link_pos_first.push_back(k);
+        }
+         */
+        for (auto& res : cross_link_residue1)
+        {
+          if (String(seq_first[k]) == res)
+          {
+            link_pos_first.push_back(k);
+            break;
+          }
         }
       }
       if (candidate.beta_index < peptide_masses.size())
       {
         for (Size k = 0; k < seq_second.size()-1; ++k)
         {
+          /*
           for (Size x = 0; x < cross_link_residue2.size(); ++x)
           {
             if (string(1, seq_second[k]) == cross_link_residue2[x]) link_pos_second.push_back(k);
+          }
+           */
+          for (auto& res : cross_link_residue2)
+          {
+            if (String(seq_second[k]) == res)
+            {
+              link_pos_second.push_back(k);
+              break;
+            }
           }
         }
       }
@@ -665,9 +685,19 @@ namespace OpenMS
         {
           for (Size k = 0; k < seq_first.size()-1; ++k)
           {
+            /*
             for (Size x = 0; x < cross_link_residue2.size(); ++x)
             {
               if (string(1, seq_first[k]) == cross_link_residue2[x]) link_pos_second.push_back(k);
+            }
+             */
+            for (auto& res : cross_link_residue2)
+            {
+              if (String(seq_first[k]) == res)
+              {
+                link_pos_second.push_back(k);
+                break;
+              }
             }
           }
         }
@@ -757,12 +787,7 @@ namespace OpenMS
             for (Size k = 0; k < cross_link_mass_mono_link.size(); ++k)
             {
               // only use the correct mono-links (at this point we know it is a mono-link, but not which one)
-              bool is_correct_monolink = false;
               if (abs(spectrum_precursor_vector[precursor_correction_positions[i]] - (peptide_first->getMonoWeight() + cross_link_mass_mono_link[k])) <= allowed_error_vector[precursor_correction_positions[i]])
-              {
-                is_correct_monolink = true;
-              }
-              if (is_correct_monolink)
               {
                 cross_link_candidate.cross_linker_mass = cross_link_mass_mono_link[k];
 
@@ -902,8 +927,8 @@ namespace OpenMS
     vector <OPXLDataStructs::ProteinProteinCrossLink> OPXLHelper::buildCandidates(const std::vector< OPXLDataStructs::XLPrecursor > & candidates,
                                                                                   const std::vector< int > & precursor_corrections,
                                                                                   const std::vector< int >& precursor_correction_positions,
-                                                                                  const std::vector<OPXLDataStructs::AASeqWithMass> & peptide_masses,
-                                                                                  const std::vector<OPXLDataStructs::AASeqWithMass>& all_peptide_masses,
+                                                                                  const std::vector<OPXLDataStructs::AASeqWithMass> & alpha_peptide_masses,
+                                                                                  const std::vector<OPXLDataStructs::AASeqWithMass>& beta_peptide_masses,
                                                                                   const StringList & cross_link_residue1,
                                                                                   const StringList & cross_link_residue2,
                                                                                   double cross_link_mass,
@@ -945,16 +970,16 @@ namespace OpenMS
         OPXLDataStructs::XLPrecursor candidate = candidates[i];
         vector <SignedSize> link_pos_first;
         vector <SignedSize> link_pos_second;
-        const AASequence* peptide_first = &(peptide_masses[candidate.alpha_index].peptide_seq);
-        OPXLDataStructs::PeptidePosition peptide_pos_first = peptide_masses[candidate.alpha_index].position;
+        const AASequence* peptide_first = &(alpha_peptide_masses[candidate.alpha_index].peptide_seq);
+        OPXLDataStructs::PeptidePosition peptide_pos_first = alpha_peptide_masses[candidate.alpha_index].position;
         const AASequence* peptide_second = nullptr;
         OPXLDataStructs::PeptidePosition peptide_pos_second = OPXLDataStructs::INTERNAL;
         String seq_first = candidate.alpha_seq;
         String seq_second;
-        if (candidate.beta_index < all_peptide_masses.size())
+        if (candidate.beta_index < beta_peptide_masses.size())
         {
-          peptide_second = &(all_peptide_masses[candidate.beta_index].peptide_seq);
-          peptide_pos_second = all_peptide_masses[candidate.beta_index].position;
+          peptide_second = &(beta_peptide_masses[candidate.beta_index].peptide_seq);
+          peptide_pos_second = beta_peptide_masses[candidate.beta_index].position;
           seq_second = candidate.beta_seq;
         }
 
@@ -977,7 +1002,7 @@ namespace OpenMS
             if (string(1, seq_first[k]) == cross_link_residue1[x]) link_pos_first.push_back(k);
           }
         }
-        if (candidate.beta_index < all_peptide_masses.size())
+        if (candidate.beta_index < beta_peptide_masses.size())
         {
           for (Size k = 0; k < seq_second.size()-1; ++k)
           {
@@ -1852,75 +1877,62 @@ namespace OpenMS
     return new_peptide_ids;
   }
 
-    void OPXLHelper::collectPeptideCandidates(const PeakSpectrum& spectrum,
-                                              const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
-                                              const DoubleList& cross_link_masses,
-                                              double max_error,
-                                              int max_charge,
-                                              std::vector<OPXLDataStructs::AASeqWithMass>& peptide_candidates)
+  void OPXLHelper::collectPeptideCandidates(const PeakSpectrum &spectrum,
+                                            const vector<OPXLDataStructs::AASeqWithMass> &peptides,
+                                            const DoubleList &mass_diffs, const DoubleList& attached_frag_mass,
+                                            double max_error,
+                                            int max_charge, vector<OPXLDataStructs::AASeqWithMass> &peptide_candidates)
+  {
+    for (int charge = max_charge; charge > 0; --charge)
     {
-      auto first_peak = lower_bound(spectrum.begin(), spectrum.end(), peptides[0].peptide_mass, Peak1D::MZLess());
-      if (first_peak == spectrum.end()) return;
+      auto first_peak = lower_bound(spectrum.begin(), spectrum.end(), peptides.front().peptide_mass / charge, Peak1D::MZLess());
+      if (first_peak == spectrum.end()) continue;
       auto second_peak = first_peak + 1;
 
-      while (first_peak != spectrum.end() - 1)
+      while (first_peak < spectrum.end() - 1)
       {
-        double diff = second_peak->getMZ() - first_peak->getMZ();
-        bool candidate_added = false;
-        for (uint8_t charge = max_charge; charge > 0; --charge)
+        double diff = (second_peak->getMZ() - first_peak->getMZ()) * charge;
+        for (Size mass_index = 0; mass_index < mass_diffs.size(); ++mass_index)
         {
-          for (auto mass : cross_link_masses)
+          if (diff > mass_diffs[mass_index] - max_error && diff < mass_diffs[mass_index] + max_error)
           {
-            if (mass == 0) continue; //Skip the zero because we look for mass differences
-            if (mass > diff * charge - max_error && mass < diff * charge + max_error)
-            {
-              double min_mass = (first_peak->getMZ() - Constants::PROTON_MASS_U) * charge - max_error;
-              double max_mass = (first_peak->getMZ() - Constants::PROTON_MASS_U) * charge + max_error;
-              auto peptide = lower_bound(peptides.begin(), peptides.end(), min_mass,
-                                         OPXLDataStructs::AASeqWithMassComparator());
-              if (peptide == peptides.end()) continue;
-              while (peptide->peptide_mass < max_mass)
-              {
-                //Make sure the peptide is not already in the candidates!
-                if (peptide_candidates.empty() || peptide->peptide_mass < peptide_candidates.front().peptide_mass)
-                {
-                  peptide_candidates.insert(peptide_candidates.begin(), *peptide);
-                  candidate_added = true;
-                }
-                else
-                {
-                  for (auto candidate = peptide_candidates.end() - 1, end = peptide_candidates.begin() - 1;
-                       candidate != end; --candidate)
-                  {
-                    if (candidate->peptide_mass == peptide->peptide_mass)
-                    {
-                      break;
-                    } else if (candidate->peptide_mass < peptide->peptide_mass)
-                    {
-                      peptide_candidates.insert(candidate + 1, *peptide);
-                      candidate_added = true;
-                      break;
-                    }
-                  }
-                }
-                ++peptide;
-              }
+            double pep_mass = (first_peak->getMZ() - Constants::PROTON_MASS_U) * charge - attached_frag_mass[mass_index];
+            auto peptide = lower_bound(peptides.begin(), peptides.end(), pep_mass - max_error, OPXLDataStructs::AASeqWithMassComparator());
+            if (peptide == peptides.end()) {
+              break;
             }
+            while (peptide->peptide_mass < pep_mass + max_error)
+            {
+              bool add = true;
+              for (auto& candidate : peptide_candidates)
+              {
+                if (candidate.peptide_mass == peptide->peptide_mass &&
+                    candidate.peptide_seq == peptide->peptide_seq)
+                {
+                  add = false;
+                  break;
+                }
+              }
+              if (add)
+              {
+                peptide_candidates.push_back(*peptide);
+              }
+              ++peptide;
+            }
+            break;
           }
-          if (candidate_added) break;
         }
-
-        if (candidate_added || diff > cross_link_masses.back() || second_peak == spectrum.end() - 1)
+        if (diff > mass_diffs.back() || second_peak == spectrum.end() - 1)
         {
           ++first_peak;
           second_peak = first_peak + 1;
-        }
-        else
-        {
+        } else {
           ++second_peak;
         }
       }
     }
+    std::sort(peptide_candidates.begin(), peptide_candidates.end(), OPXLDataStructs::AASeqWithMassComparator());
+  }
 
   std::vector <OPXLDataStructs::ProteinProteinCrossLink> OPXLHelper::collectPrecursorCandidates(const IntList& precursor_correction_steps,
                                                                                                 double precursor_mass,
@@ -1995,8 +2007,8 @@ namespace OpenMS
                                                                                                   double precursor_mass,
                                                                                                   double precursor_mass_tolerance,
                                                                                                   bool precursor_mass_tolerance_unit_ppm,
-                                                                                                  const vector<OPXLDataStructs::AASeqWithMass>& filtered_peptide_masses,
-                                                                                                  const std::vector<OPXLDataStructs::AASeqWithMass>& all_peptide_masses,
+                                                                                                  const std::vector<OPXLDataStructs::AASeqWithMass>& alpha_peptide_masses,
+                                                                                                  const std::vector<OPXLDataStructs::AASeqWithMass>& beta_peptide_masses,
                                                                                                   double cross_link_mass,
                                                                                                   const DoubleList& cross_link_mass_mono_link,
                                                                                                   const StringList& cross_link_residue1,
@@ -2035,7 +2047,7 @@ namespace OpenMS
       if ( (use_sequence_tags && tags.size() > 0) ||
            !use_sequence_tags)
       {
-        candidates = OPXLHelper::enumerateCrossLinksAndMasses(filtered_peptide_masses, all_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2, spectrum_precursor_vector, precursor_correction_positions, precursor_mass_tolerance, precursor_mass_tolerance_unit_ppm);
+        candidates = OPXLHelper::enumerateCrossLinksAndMasses(alpha_peptide_masses, beta_peptide_masses, cross_link_mass, cross_link_mass_mono_link, cross_link_residue1, cross_link_residue2, spectrum_precursor_vector, precursor_correction_positions, precursor_mass_tolerance, precursor_mass_tolerance_unit_ppm);
       }
 
       // an empty vector of sequence tags implies no filtering should be done in this case
@@ -2057,7 +2069,7 @@ namespace OpenMS
       {
         precursor_corrections.push_back(precursor_correction_steps[precursor_correction_positions[pc]]);
       }
-      vector <OPXLDataStructs::ProteinProteinCrossLink> cross_link_candidates = OPXLHelper::buildCandidates(candidates, precursor_corrections, precursor_correction_positions, filtered_peptide_masses, all_peptide_masses, cross_link_residue1, cross_link_residue2, cross_link_mass, cross_link_mass_mono_link, spectrum_precursor_vector, allowed_error_vector, cross_link_name);
+      vector <OPXLDataStructs::ProteinProteinCrossLink> cross_link_candidates = OPXLHelper::buildCandidates(candidates, precursor_corrections, precursor_correction_positions, alpha_peptide_masses, beta_peptide_masses, cross_link_residue1, cross_link_residue2, cross_link_mass, cross_link_mass_mono_link, spectrum_precursor_vector, allowed_error_vector, cross_link_name);
       return cross_link_candidates;
     }
 

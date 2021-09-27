@@ -681,11 +681,11 @@ namespace OpenMS
     String ion_type;
     if (frag_alpha)
     {
-      ion_type = "alpha|xi";
+      ion_type = "alpha|";
     }
     else
     {
-      ion_type = "beta|xi";
+      ion_type = "beta|";
     }
 
     // second link position, in case of a loop-link
@@ -708,7 +708,7 @@ namespace OpenMS
     }
 
     // mass of the full peptide
-    double mono_weight(peptide.getMonoWeight(Residue::Full, charge));
+    double mono_weight = peptide.getMonoWeight(res_type, charge);
 
     if (res_type == Residue::AIon || res_type == Residue::BIon || res_type == Residue::CIon) {
 
@@ -717,26 +717,25 @@ namespace OpenMS
         mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
 
         int frag_index = i;
+        int xlink_index = 0;
         for (double xlink_mass : cross_link_masses)
         {
           double pos((mono_weight + xlink_mass) / static_cast<double>(charge));
 
-          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, i, charge, ion_type);
+          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, i, charge, ion_type + "X" + String(xlink_index));
 
           if (add_losses_ && forward_losses.size() >= i+2)
           {
-            String ion_name = "[" + ion_type + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
-
-
-
+            String ion_name = "[" + ion_type + "$" + String(Residue::residueTypeToIonLetter(res_type)) + "X" + String(xlink_index) + "]";
             addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight, intensity, charge, ion_name, forward_losses[i+1]);
           }
 
           if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
           {
             pos += Constants::C13C12_MASSDIFF_U / static_cast<double>(charge);
-            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type);
+            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + "X" + String(xlink_index));
           }
+          ++xlink_index;
         }
       }
     }
@@ -748,22 +747,24 @@ namespace OpenMS
         mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
 
         int frag_index = peptide.size() - 1 - i;
+        int xlink_index = 0;
         for (double xlink_mass : cross_link_masses)
         {
           double pos((mono_weight + xlink_mass) / static_cast<double>(charge));
 
-          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type);
+          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + "X" + String(xlink_index));
           if (add_losses_ && backward_losses.size() >= i+2)
           {
-            String ion_name = "[" + ion_type + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
+            String ion_name = "[" + ion_type + "$" + String(Residue::residueTypeToIonLetter(res_type)) + "X" + String(xlink_index) + "]";
             addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight, intensity, charge, ion_name, backward_losses[i+1]);
           }
 
           if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
           {
             pos += Constants::C13C12_MASSDIFF_U / static_cast<double>(charge);
-            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type);
+            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + "X" + String(xlink_index));
           }
+          ++xlink_index;
         }
       }
     }
@@ -944,10 +945,13 @@ namespace OpenMS
     }
 
     double mono_weight = peptide.getMonoWeight(Residue::Full, charge);
+    //Add the peak of the unfractured peptide without a cross linker (this doesn't really fit here)
+    DoubleList masses(cross_link_masses);
+    masses.insert(masses.begin(), 0);
 
-    for (Size i = 0; i < cross_link_masses.size(); ++i)
+    for (Size i = 0; i < masses.size(); ++i)
     {
-      double xlink_mass(cross_link_masses[i]);
+      double xlink_mass(masses[i]);
       double mono_pos((mono_weight + xlink_mass) / static_cast<double>(charge));
 
       if (mono_pos >= 0)
@@ -985,7 +989,7 @@ namespace OpenMS
 
         // loss peaks of the precursor
         // loss of water
-        mono_pos = (mono_weight + xlink_mass) + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - EmpiricalFormula("H2O").getMonoWeight();
+        mono_pos = (mono_weight + xlink_mass) - EmpiricalFormula("H2O").getMonoWeight();
         p.setMZ(mono_pos / static_cast<double>(charge));
         p.setIntensity(pre_int_H2O_);
         if (add_metainfo_)
@@ -1014,7 +1018,7 @@ namespace OpenMS
         }
 
         //loss of ammonia
-        mono_pos = (mono_weight + xlink_mass) + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - EmpiricalFormula("NH3").getMonoWeight();
+        mono_pos = (mono_weight + xlink_mass) - EmpiricalFormula("NH3").getMonoWeight();
         p.setMZ(mono_pos / static_cast<double>(charge));
         p.setIntensity(pre_int_NH3_);
         if (add_metainfo_)
