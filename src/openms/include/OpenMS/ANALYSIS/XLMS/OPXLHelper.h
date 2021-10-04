@@ -139,8 +139,8 @@ namespace OpenMS
                                                                                     double precursor_mass_tolerance,
                                                                                     bool precursor_mass_tolerance_unit_ppm);
 
-      static std::vector<OPXLDataStructs::XLPrecursor> enumerateCrossLinksAndMasses(const std::vector<OPXLDataStructs::AASeqWithMass>& alpha_peptides,
-                                                                                    const std::vector<OPXLDataStructs::AASeqWithMass>& beta_peptides,
+      static std::vector<OPXLDataStructs::XLCPrecursor> enumerateCrossLinksAndMasses(const std::vector<const OPXLDataStructs::AASeqWithMass*>& alpha_peptides,
+                                                                                    const std::vector<const OPXLDataStructs::AASeqWithMass*>& beta_peptides,
                                                                                     double cross_link_mass_light,
                                                                                     const DoubleList& cross_link_mass_mono_link,
                                                                                     const StringList& cross_link_residue1,
@@ -203,11 +203,9 @@ namespace OpenMS
                                                                                     const std::vector< double >& allowed_error_vector,
                                                                                     String cross_link_name);
 
-      static std::vector <OPXLDataStructs::ProteinProteinCrossLink> buildCandidates(const std::vector< OPXLDataStructs::XLPrecursor > & candidates,
+      static std::vector <OPXLDataStructs::ProteinProteinCrossLink> buildCandidates(const std::vector< OPXLDataStructs::XLCPrecursor > & candidates,
                                                                                     const std::vector< int > & precursor_corrections,
                                                                                     const std::vector< int > & precursor_correction_positions,
-                                                                                    const std::vector<OPXLDataStructs::AASeqWithMass> & alpha_peptide_masses,
-                                                                                    const std::vector<OPXLDataStructs::AASeqWithMass> & beta_peptide_masses,
                                                                                     const StringList & cross_link_residue1,
                                                                                     const StringList & cross_link_residue2,
                                                                                     double cross_link_mass,
@@ -296,7 +294,7 @@ namespace OpenMS
        * @param spectrum The spectrum to search for peak pairs in
        * @param peptides The whole peptide database
        * @param mass_diffs The mass differences to search peak pairs for
-       * @param attached_frag_mass The weight of the xlinker fragment that is attached to the peptide (has to be same length then mass_diffs)
+       * @param remaining_frag_mass The weight of the xlinker fragment that is attached to the peptide (has to be same length then mass_diffs)
        * @param max_error Maximal error for peptide identification
        * @param max_charge Highest charge to consider
        * @param peptide_candidates The found peptides get stored here, sorted by peptide mass (can already have candidates)
@@ -305,10 +303,10 @@ namespace OpenMS
       static void collectPeptideCandidates(const PeakSpectrum& spectrum,
                                            const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
                                            const DoubleList& mass_diffs,
-                                           const DoubleList& attached_frag_mass,
+                                           const DoubleList& remaining_frag_mass,
                                            double max_error,
                                            int max_charge,
-                                           std::vector<OPXLDataStructs::AASeqWithMass>& peptide_candidates);
+                                           std::vector<const OPXLDataStructs::AASeqWithMass*>& peptide_candidates);
 
       /**
        * @brief Searches for cross-link candidates for a MS/MS spectrum
@@ -346,8 +344,8 @@ namespace OpenMS
                                                                                                double precursor_mass,
                                                                                                double precursor_mass_tolerance,
                                                                                                bool precursor_mass_tolerance_unit_ppm,
-                                                                                               const std::vector<OPXLDataStructs::AASeqWithMass>& alpha_peptide_masses,
-                                                                                               const std::vector<OPXLDataStructs::AASeqWithMass>& beta_peptide_masses,
+                                                                                               const std::vector<const OPXLDataStructs::AASeqWithMass*>& alpha_peptide_masses,
+                                                                                               const std::vector<const OPXLDataStructs::AASeqWithMass*>& beta_peptide_masses,
                                                                                                double cross_link_mass,
                                                                                                const DoubleList& cross_link_mass_mono_link,
                                                                                                const StringList& cross_link_residue1,
@@ -381,6 +379,8 @@ namespace OpenMS
        * @param tags The list of tags for the current spectrum produced by the Tagger
        */
       static void filterPrecursorsByTags(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags);
+
+      static void filterPrecursorsByTags(std::vector <OPXLDataStructs::XLCPrecursor>& candidates, std::vector<int>& precursor_correction_positions, const std::vector<std::string>& tags);
 
   };
 }

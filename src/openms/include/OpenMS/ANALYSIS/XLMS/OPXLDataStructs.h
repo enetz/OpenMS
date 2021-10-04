@@ -294,6 +294,45 @@ namespace OpenMS
         }
       };
 
+      struct AASeqWithMassPtrComparator
+      {
+          bool operator() (const AASeqWithMass* a, const AASeqWithMass* b) const
+          {
+            return a->peptide_mass < b->peptide_mass;
+          }
+          bool operator() (const AASeqWithMass* a, double b) const
+          {
+            return a->peptide_mass < b;
+          }
+          bool operator() (double a, const AASeqWithMass* b) const
+          {
+            return a < b->peptide_mass;
+          }
+      };
+
+      struct XLCPrecursor
+      {
+          float precursor_mass;
+          const AASeqWithMass* alpha;
+          const AASeqWithMass* beta;
+
+      };
+
+      struct XLCPrecursorComparator {
+          bool operator() (const XLCPrecursor& a, const XLPrecursor& b) const
+          {
+            return a.precursor_mass < b.precursor_mass;
+          }
+          bool operator() (const XLCPrecursor& a, double b) const
+          {
+            return a.precursor_mass < b;
+          }
+          bool operator() (double a, const XLCPrecursor& b) const
+          {
+            return a < b.precursor_mass;
+          }
+      };
+
       /**
        * @brief The PreprocessedPairSpectra struct represents the result of comparing a light and a heavy labeled spectra to each other.
 

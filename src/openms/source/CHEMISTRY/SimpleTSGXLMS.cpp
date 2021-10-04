@@ -159,7 +159,7 @@ namespace OpenMS
       backward_losses = getBackwardLosses_(peptide);
     }
 
-    for (Int z = charge; z >= 1; --z)
+    for (Int z = charge; z > 0; --z)
     {
       if (add_b_ions_)
       {
