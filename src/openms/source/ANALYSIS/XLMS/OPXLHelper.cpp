@@ -1850,8 +1850,8 @@ namespace OpenMS
   void OPXLHelper::collectPeptideCandidates(const PeakSpectrum &spectrum,
                                             const vector<OPXLDataStructs::AASeqWithMass> &peptides,
                                             const DoubleList &mass_diffs, const DoubleList& remaining_frag_mass,
-                                            double max_error,
-                                            int max_charge, vector<const OPXLDataStructs::AASeqWithMass*> &peptide_candidates)
+                                            double max_error, int max_charge,
+                                            list<const OPXLDataStructs::AASeqWithMass*> &peptide_candidates)
   {
 #ifdef DEBUG_PREFILTER
     clock_t time = clock();
@@ -1904,25 +1904,35 @@ namespace OpenMS
           peptide_candidates.assign(new_candidates.begin(), new_candidates.end());
         } else
         {
-          auto candidate = new_candidates.begin();
-          auto old_candidate = peptide_candidates.begin();
-          while ((*candidate)->peptide_mass < (*old_candidate)->peptide_mass)
+          auto old_it = peptide_candidates.begin();
+          int reverse_count = 0;
+          bool add = true;
+          for (auto candidate : new_candidates)
           {
-            ++old_candidate;
-          }
-          if (candidate != old_candidate)
-          {
-            peptide_candidates.push_back(*candidate);
-          }
-          /*
-          while ((*candidate)->peptide_mass == (*old_candidate)->peptide_mass)
-          {
-            if (candidate == old_candidate)
+            while (old_it != peptide_candidates.end() &&
+                  (*old_it)->peptide_mass < candidate->peptide_mass)
             {
-
+              ++old_it;
             }
+            add = true;
+            while (old_it != peptide_candidates.end() &&
+                   (*old_it)->peptide_mass == candidate->peptide_mass)
+            {
+              if (*old_it == candidate)
+              {
+                add = false;
+                break;
+              }
+              ++old_it;
+              --reverse_count;
+            }
+            if (add)
+            {
+              //peptide_candidates.push_back(candidate);
+              peptide_candidates.insert(old_it, candidate);
+            }
+            std::advance(old_it, reverse_count);
           }
-           */
           /*
           for (auto candidate : new_candidates)
           {
@@ -1940,12 +1950,12 @@ namespace OpenMS
               peptide_candidates.push_back(candidate);
             }
           }
-          */
+           */
         }
       }
     }
 
-    std::sort(peptide_candidates.begin(), peptide_candidates.end(), OPXLDataStructs::AASeqWithMassPtrComparator());
+    //std::sort(peptide_candidates.begin(), peptide_candidates.end(), OPXLDataStructs::AASeqWithMassPtrComparator());
 
 #ifdef DEBUG_PREFILTER
     std::cout << "Prefilter took: " << (clock() - time) << " ms" << std::endl;

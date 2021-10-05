@@ -517,7 +517,8 @@ namespace OpenMS
       }
       if (add_precursor_peaks_)
       {
-        addPrecursorPeaks_(spectrum, charges, ion_names, precursor_mass, z);
+        //addPrecursorPeaks_(spectrum, charges, ion_names, precursor_mass, z);
+        addPrecursorPeaks_(spectrum, charges, ion_names, frag_alpha, peptide, cross_link_masses, z);
       }
 
     }
@@ -716,8 +717,8 @@ namespace OpenMS
       {
         mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
 
-        int frag_index = i;
-        int xlink_index = 0;
+        Size frag_index = i;
+        Size xlink_index = 0;
         for (double xlink_mass : cross_link_masses)
         {
           double pos((mono_weight + xlink_mass) / static_cast<double>(charge));
@@ -746,8 +747,8 @@ namespace OpenMS
       {
         mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
 
-        int frag_index = peptide.size() - 1 - i;
-        int xlink_index = 0;
+        Size frag_index = peptide.size() - 1 - i;
+        Size xlink_index = 0;
         for (double xlink_mass : cross_link_masses)
         {
           double pos((mono_weight + xlink_mass) / static_cast<double>(charge));
@@ -934,18 +935,10 @@ namespace OpenMS
       return;
     }
 
-    String ion_type;
-    if (alpha)
-    {
-      ion_type = "alpha|Pep";
-    }
-    else
-    {
-      ion_type = "beta|Pep";
-    }
+    String ion_type = alpha ? "alpha|Pep" : "beta|Pep";
 
     double mono_weight = peptide.getMonoWeight(Residue::Full, charge);
-    //Add the peak of the unfractured peptide without a cross linker (this doesn't really fit here)
+    //Add the peak of the unfractured peptide without a cross linker (No need since this is covered in the linear spectrum)
     DoubleList masses(cross_link_masses);
     masses.insert(masses.begin(), 0);
 
@@ -1310,6 +1303,16 @@ namespace OpenMS
 
   void TheoreticalSpectrumGeneratorXLMS::getXLinkIonSpectrum(PeakSpectrum &spectrum, OPXLDataStructs::ProteinProteinCrossLink &crosslink, const DoubleList &cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const
   {
+    if (!crosslink.alpha)
+    {
+      return;
+    }
+    if (!frag_alpha && !crosslink.beta)
+    {
+      cout << "Warning: Trying to fragment beta peptide for crosslink without beta peptide!" << endl;
+      return;
+    }
+
     PeakSpectrum::IntegerDataArray charges;
     PeakSpectrum::StringDataArray ion_names;
 
@@ -1334,81 +1337,49 @@ namespace OpenMS
     std::vector< LossIndex > backward_losses;
     LossIndex losses_peptide2;
 
-    if (!crosslink.alpha)
-    {
-      return;
-    }
-    AASequence alpha = *crosslink.alpha;
-    AASequence beta;
-    if (crosslink.beta) { beta = *crosslink.beta; }
+    AASequence peptide = frag_alpha ? *crosslink.alpha : *crosslink.beta;
+    Size link_pos = frag_alpha ? crosslink.cross_link_position.first : crosslink.cross_link_position.second;
 
     if (add_losses_)
     {
-      if (frag_alpha)
-      {
-        losses_peptide2 = getBackwardLosses_(beta)[0];
-        forward_losses = getForwardLosses_(alpha);
-        backward_losses = getBackwardLosses_(alpha);
-      }
-      else
-      {
-        losses_peptide2 = getBackwardLosses_(alpha)[0];
-        forward_losses = getForwardLosses_(beta);
-        backward_losses = getBackwardLosses_(beta);
-      }
+      forward_losses = getForwardLosses_(peptide);
+      backward_losses = getBackwardLosses_(peptide);
     }
 
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
       if (add_b_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, crosslink, cross_link_mass, frag_alpha, Residue::BIon, forward_losses, backward_losses, losses_peptide2, z);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::BIon, forward_losses, backward_losses, z, 0);
       }
       if (add_y_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, crosslink, cross_link_mass, frag_alpha, Residue::YIon, forward_losses, backward_losses, losses_peptide2, z);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::YIon, forward_losses, backward_losses, z, 0);
       }
       if (add_a_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, crosslink, cross_link_mass, frag_alpha, Residue::AIon, forward_losses, backward_losses, losses_peptide2, z);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::AIon, forward_losses, backward_losses, z, 0);
       }
       if (add_x_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, crosslink, cross_link_mass, frag_alpha, Residue::XIon, forward_losses, backward_losses, losses_peptide2, z);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::XIon, forward_losses, backward_losses, z, 0);
       }
       if (add_c_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, crosslink, cross_link_mass, frag_alpha, Residue::CIon, forward_losses, backward_losses, losses_peptide2, z);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::CIon, forward_losses, backward_losses, z, 0);
       }
       if (add_z_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, crosslink, cross_link_mass, frag_alpha, Residue::ZIon, forward_losses, backward_losses, losses_peptide2, z);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::ZIon, forward_losses, backward_losses, z, 0);
       }
-      if (add_k_linked_ions_ && !beta.empty())
+      if (add_k_linked_ions_ && !crosslink.beta->empty())
       {
-        double precursor_mass = alpha.getMonoWeight() + crosslink.cross_linker_mass;
-        precursor_mass += beta.getMonoWeight();
-        AASequence peptide;
-        Size link_pos;
-        if (frag_alpha)
-        {
-          peptide = alpha;
-          link_pos = crosslink.cross_link_position.first;
-        }
-        else
-        {
-          peptide = beta;
-          link_pos = crosslink.cross_link_position.second;
-        }
+        double precursor_mass = crosslink.alpha->getMonoWeight() + crosslink.beta->getMonoWeight() + crosslink.cross_linker_mass;
         addKLinkedIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, precursor_mass, frag_alpha, z);
       }
       if (add_precursor_peaks_)
       {
-        addPrecursorPeaks_(spectrum, charges, ion_names, true, alpha, cross_link_mass, z);
-        if (!beta.empty())
-        {
-          addPrecursorPeaks_(spectrum, charges, ion_names, false, beta, cross_link_mass, z);
-        }
+        addPrecursorPeaks_(spectrum, charges, ion_names, frag_alpha, peptide, cross_link_mass, z);
       }
 
     }
@@ -1575,36 +1546,6 @@ namespace OpenMS
         }
       }
     }
-  }
-
-  void TheoreticalSpectrumGeneratorXLMS::addXLinkIonPeaks_(PeakSpectrum &spectrum, DataArrays::IntegerDataArray &charges, DataArrays::StringDataArray &ion_names, OPXLDataStructs::ProteinProteinCrossLink &crosslink, const DoubleList &cross_link_mass, bool frag_alpha, Residue::ResidueType res_type, vector<LossIndex> &forward_losses, vector<LossIndex> &backward_losses, TheoreticalSpectrumGeneratorXLMS::LossIndex &losses_peptide2, int charge) const
-  {
-    AASequence peptide;
-    Size link_index;
-    if (frag_alpha)
-    {
-      if (!crosslink.alpha || crosslink.alpha->empty())
-      {
-        cout << "Warning: Attempt at creating XLink Ions Spectrum from empty string!" << endl;
-        return;
-      }
-      peptide = *crosslink.alpha;
-      link_index = crosslink.cross_link_position.first;
-    }
-    else
-    {
-      if (!crosslink.beta || crosslink.beta->empty())
-      {
-        cout << "Warning: Attempt at creating XLink Ions Spectrum from empty string!" << endl;
-        return;
-      }
-      peptide = *crosslink.beta;
-      link_index = crosslink.cross_link_position.second;
-    }
-
-    //add peaks for fragmented cross linker
-    addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_index, cross_link_mass, frag_alpha, res_type, forward_losses, backward_losses, charge);
-
   }
 
   std::vector< TheoreticalSpectrumGeneratorXLMS::LossIndex > TheoreticalSpectrumGeneratorXLMS::getForwardLosses_(AASequence & peptide) const

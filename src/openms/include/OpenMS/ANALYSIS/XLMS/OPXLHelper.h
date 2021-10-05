@@ -306,7 +306,7 @@ namespace OpenMS
                                            const DoubleList& remaining_frag_mass,
                                            double max_error,
                                            int max_charge,
-                                           std::vector<const OPXLDataStructs::AASeqWithMass*>& peptide_candidates);
+                                           std::list<const OPXLDataStructs::AASeqWithMass*>& peptide_candidates);
 
       /**
        * @brief Searches for cross-link candidates for a MS/MS spectrum

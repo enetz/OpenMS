@@ -212,7 +212,7 @@ namespace OpenMS
       virtual void addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, double precursor_mass, int charge) const;
 
       //Overload for cleavable cross-linker
-      virtual void addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, const DoubleList& cross_link_mass, int charge) const;
+      virtual void addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, const AASequence& peptide, const DoubleList& cross_link_mass, int charge) const;
 
       /**
        * @brief Adds neutral losses for an ion to a spectrum
@@ -280,9 +280,7 @@ namespace OpenMS
        */
       virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink & crosslink, bool frag_alpha, Residue::ResidueType res_type, std::vector< LossIndex > & forward_losses, std::vector< LossIndex > & backward_losses, LossIndex & losses_peptide2, int charge) const;
 
-      /* overload for cleavable cross linker */
-
-      virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink & crosslink, const DoubleList& cross_link_mass, bool frag_alpha, Residue::ResidueType res_type, std::vector< LossIndex > & forward_losses, std::vector< LossIndex > & backward_losses, LossIndex & losses_peptide2, int charge) const;
+      /* overload for cleavable cross linker not needed */
 
       /**
        * @brief Calculates sets of possible neutral losses for each position in the given peptide

@@ -44,10 +44,10 @@
 
 namespace OpenMS
 {
-  class OPENMS_DLLAPI OPXLDataStructs
+  namespace OPXLDataStructs
   {
 
-    public:
+    //public:
 
       /**
        * @brief The ProteinProteinCrossLinkType enum enumerates possible types of Protein-Protein cross-linking reaction results. Cross-link, Mono-link or Loop-link.

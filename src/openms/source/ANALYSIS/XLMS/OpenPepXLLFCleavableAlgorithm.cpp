@@ -447,7 +447,7 @@ using namespace OpenMS;
       vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates;
       if (pre_filter_spectra_)
       {
-        vector<const OPXLDataStructs::AASeqWithMass*> alpha_candidates;
+        list<const OPXLDataStructs::AASeqWithMass*> alpha_candidates;
         OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
                                              {cross_link_mass_fragments_.at(1) - cross_link_mass_fragments_.at(0)},
                                              {cross_link_mass_fragments_.at(0)},
@@ -476,12 +476,14 @@ using namespace OpenMS;
         }
         else
         {
+          vector<const OPXLDataStructs::AASeqWithMass*> alpha_vec(alpha_candidates.size());
+          alpha_vec.assign(alpha_candidates.begin(), alpha_candidates.end());
           switch(beta_filter_)
           {
           case NONE:
           {
             vector<const OPXLDataStructs::AASeqWithMass *> beta_candidates;
-            beta_candidates.reserve(filtered_peptide_masses.size());
+            //beta_candidates.reserve(filtered_peptide_masses.size());
             for (auto &peptide : filtered_peptide_masses)
             {
               beta_candidates.push_back(&peptide);
@@ -489,7 +491,7 @@ using namespace OpenMS;
             cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
                                                                            precursor_mass_tolerance_,
                                                                            precursor_mass_tolerance_unit_ppm_,
-                                                                           alpha_candidates, beta_candidates,
+                                                                           alpha_vec, beta_candidates,
                                                                            cross_link_mass_, cross_link_mass_mono_link_,
                                                                            cross_link_residue1_, cross_link_residue2_,
                                                                            cross_link_name_, use_sequence_tags_, tags);
@@ -497,7 +499,7 @@ using namespace OpenMS;
           break;
           case LOOSE:
           {
-            vector<const OPXLDataStructs::AASeqWithMass*> beta_candidates;
+            list<const OPXLDataStructs::AASeqWithMass*> beta_candidates;
             beta_candidates.assign(alpha_candidates.begin(),
                                    alpha_candidates.end()); //All alpha_candidates can also be beta candidates (no need to search for the mass difference again)
             OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses, cross_link_mass_fragments_,
@@ -506,10 +508,12 @@ using namespace OpenMS;
             #ifdef DEBUG_OPENPEPXLLFALGO
                         OPENMS_LOG_DEBUG << " Beta candidates: " << beta_candidates.size() << endl;
             #endif
+            vector<const OPXLDataStructs::AASeqWithMass*> beta_vec(beta_candidates.size());
+            beta_vec.assign(beta_candidates.begin(), beta_candidates.end());
             cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
                                                                            precursor_mass_tolerance_,
                                                                            precursor_mass_tolerance_unit_ppm_,
-                                                                           alpha_candidates, beta_candidates,
+                                                                           alpha_vec, beta_vec,
                                                                            cross_link_mass_, cross_link_mass_mono_link_,
                                                                            cross_link_residue1_, cross_link_residue2_,
                                                                            cross_link_name_, use_sequence_tags_, tags);
@@ -519,7 +523,7 @@ using namespace OpenMS;
             cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
                                                                            precursor_mass_tolerance_,
                                                                            precursor_mass_tolerance_unit_ppm_,
-                                                                           alpha_candidates, alpha_candidates,
+                                                                           alpha_vec, alpha_vec,
                                                                            cross_link_mass_, cross_link_mass_mono_link_,
                                                                            cross_link_residue1_, cross_link_residue2_,
                                                                            cross_link_name_, use_sequence_tags_, tags);
@@ -557,11 +561,6 @@ using namespace OpenMS;
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > mainscore_csms_spectrum;
 
 #pragma omp parallel for schedule(guided)
-      /*
-      for (SignedSize i = 0; i < static_cast<SignedSize>(cross_link_candidates.size()); ++i)
-      {
-        OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate = cross_link_candidates[i];
-      */
       for (auto& cross_link_candidate : cross_link_candidates)
       {
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_linear_alpha;
@@ -607,7 +606,7 @@ using namespace OpenMS;
         OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_alpha, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_alpha, spectrum, exp_charges);
         OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(matched_spec_linear_beta, fragment_mass_tolerance_, fragment_mass_tolerance_unit_ppm_, theoretical_spec_linear_beta, spectrum, exp_charges);
 
-        // TODO: drop candidates with almost no xlink fragment peak matches before making the more complex theoretical spectra and aligning them
+        // TODO: drop candidates with almost no linear fragment peak matches before making the more complex theoretical spectra and aligning them
         // drop candidates with almost no linear fragment peak matches before making the more complex theoretical spectra and aligning them
         // this removes hits that no one would trust after manual validation anyway and reduces time wasted on really bad spectra or candidates without any matching peaks
         if (matched_spec_linear_alpha.size() < min_linear_fragments_ && (!type_is_cross_link || matched_spec_linear_beta.size() < min_linear_fragments_) )
