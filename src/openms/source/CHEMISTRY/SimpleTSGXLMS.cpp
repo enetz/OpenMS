@@ -148,7 +148,7 @@ namespace OpenMS
   {
   }
 
-  void SimpleTSGXLMS::getLinearIonSpectrum(std::vector< SimplePeak >& spectrum, AASequence& peptide, Size link_pos, int charge, Size link_pos_2) const
+  void SimpleTSGXLMS::getLinearIonSpectrum(std::vector< SimplePeak >& spectrum, const AASequence& peptide, Size link_pos, int charge, Size link_pos_2) const
   {
     std::vector< LossIndex > forward_losses;
     std::vector< LossIndex > backward_losses;
@@ -192,11 +192,9 @@ namespace OpenMS
 #else
     std::stable_sort(spectrum.begin(), spectrum.end(), [](const SimplePeak& a, const SimplePeak& b) {return a.mz < b.mz;});
 #endif
-
-    return;
   }
 
-  void SimpleTSGXLMS::addLinearPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, Size link_pos, Residue::ResidueType res_type, std::vector< LossIndex >& forward_losses, std::vector< LossIndex >& backward_losses, int charge, Size link_pos_2) const
+  void SimpleTSGXLMS::addLinearPeaks_(std::vector< SimplePeak >& spectrum, const AASequence& peptide, Size link_pos, Residue::ResidueType res_type, const std::vector< LossIndex >& forward_losses, const std::vector< LossIndex >& backward_losses, int charge, Size link_pos_2) const
   {
     if (peptide.empty())
     {
@@ -278,10 +276,9 @@ namespace OpenMS
         }
       }
     }
-    return;
   }
 
-  void SimpleTSGXLMS::getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, AASequence& peptide, Size link_pos, double precursor_mass, int mincharge, int maxcharge, Size link_pos_2) const
+  void SimpleTSGXLMS::getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, const AASequence& peptide, Size link_pos, double precursor_mass, int mincharge, int maxcharge, Size link_pos_2) const
   {
     std::vector< LossIndex > forward_losses;
     std::vector< LossIndex > backward_losses;
@@ -335,11 +332,9 @@ namespace OpenMS
 #else
     std::sort(spectrum.begin(), spectrum.end(), [](const SimplePeak& a, const SimplePeak& b) {return a.mz < b.mz;});
 #endif
-
-    return;
   }
 
-  void SimpleTSGXLMS::getXLinkIonSpectrum(vector<SimplePeak> &spectrum, AASequence &peptide, Size link_pos, double precursor_mass, const DoubleList& cross_link_masses, int mincharge, int maxcharge, Size link_pos_2) const
+  void SimpleTSGXLMS::getXLinkIonSpectrum(vector<SimplePeak> &spectrum, const AASequence &peptide, Size link_pos, double precursor_mass, const DoubleList& cross_link_masses, int mincharge, int maxcharge, Size link_pos_2) const
   {
     std::vector< LossIndex > forward_losses;
     std::vector< LossIndex > backward_losses;
@@ -397,7 +392,7 @@ namespace OpenMS
 
   }
 
-  void SimpleTSGXLMS::addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, Size link_pos, double precursor_mass, Residue::ResidueType res_type, std::vector< LossIndex >& forward_losses, std::vector< LossIndex >& backward_losses, int charge, Size link_pos_2) const
+  void SimpleTSGXLMS::addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, const AASequence& peptide, Size link_pos, double precursor_mass, Residue::ResidueType res_type, const std::vector< LossIndex >& forward_losses, const std::vector< LossIndex >& backward_losses, int charge, Size link_pos_2) const
   {
     if (peptide.empty())
     {
@@ -485,10 +480,9 @@ namespace OpenMS
         }
       }
     }
-    return;
   }
 
-  void SimpleTSGXLMS::addXLinkIonPeaks_(vector<SimplePeak> &spectrum, AASequence &peptide, Size link_pos, const DoubleList &cross_link_mass, Residue::ResidueType res_type, vector<LossIndex> &forward_losses, vector<LossIndex> &backward_losses, int charge, Size link_pos_2) const
+  void SimpleTSGXLMS::addXLinkIonPeaks_(vector<SimplePeak> &spectrum, const AASequence &peptide, Size link_pos, const DoubleList &cross_link_mass, Residue::ResidueType res_type, const vector<LossIndex> &forward_losses, const vector<LossIndex> &backward_losses, int charge, Size link_pos_2) const
   {
     if (peptide.empty())
     {
@@ -638,7 +632,7 @@ namespace OpenMS
 
   }
 
-  void SimpleTSGXLMS::addKLinkedIonPeaks_(std::vector< SimplePeak >& spectrum, AASequence& peptide, Size link_pos, double precursor_mass, int charge) const
+  void SimpleTSGXLMS::addKLinkedIonPeaks_(std::vector< SimplePeak >& spectrum, const AASequence& peptide, Size link_pos, double precursor_mass, int charge) const
   {
     double mono_weight = precursor_mass;
     // link_pos can be zero, if the cross-link is N-terminal
@@ -673,7 +667,7 @@ namespace OpenMS
     spectrum.emplace_back(mono_weight / charge, charge);
   }
 
-  void SimpleTSGXLMS::addLosses_(std::vector< SimplePeak >& spectrum, double mono_weight, int charge, LossIndex& losses) const
+  void SimpleTSGXLMS::addLosses_(std::vector< SimplePeak >& spectrum, double mono_weight, int charge, const LossIndex& losses) const
   {
     if (losses.has_H2O_loss)
     {
@@ -686,7 +680,7 @@ namespace OpenMS
     }
   }
 
-  void SimpleTSGXLMS::getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink& crosslink, bool frag_alpha, int mincharge, int maxcharge) const
+  void SimpleTSGXLMS::getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, const OPXLDataStructs::ProteinProteinCrossLink& crosslink, bool frag_alpha, int mincharge, int maxcharge) const
   {
     std::vector< LossIndex > forward_losses;
     std::vector< LossIndex > backward_losses;
@@ -777,11 +771,9 @@ namespace OpenMS
 #else
     std::sort(spectrum.begin(), spectrum.end(), [](const SimplePeak& a, const SimplePeak& b) {return a.mz < b.mz;});
 #endif
-
-    return;
   }
 
-  void SimpleTSGXLMS::getXLinkIonSpectrum(vector<SimplePeak> &spectrum, OPXLDataStructs::ProteinProteinCrossLink &crosslink, const DoubleList &cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const
+  void SimpleTSGXLMS::getXLinkIonSpectrum(vector<SimplePeak> &spectrum, const OPXLDataStructs::ProteinProteinCrossLink &crosslink, const DoubleList &cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const
   {
     if (!crosslink.alpha)
     {
@@ -789,7 +781,7 @@ namespace OpenMS
     }
     if (!frag_alpha && !crosslink.beta)
     {
-      cout << "Warning: Trying to fragment beta peptide of crosslink with only alpha peptide" << endl;
+      cout << "Warning: Trying to fragment beta peptide of a crosslink with only alpha peptide" << endl;
       return;
     }
 
@@ -840,14 +832,26 @@ namespace OpenMS
 
       if (add_precursor_peaks_)
       {
-        //addPrecursorPeaks_(spectrum, peptide, cross_link_mass, z);
+        addPrecursorPeaks_(spectrum, peptide, cross_link_mass, z);
+        /*
         addPrecursorPeaks_(spectrum, *crosslink.alpha, cross_link_mass, z);
         if (crosslink.beta)
         {
           addPrecursorPeaks_(spectrum, *crosslink.beta, cross_link_mass, z);
         }
+         */
       }
 
+    }
+
+    if (add_precursor_peaks_)
+    {
+      double precursor_mass = crosslink.alpha->getMonoWeight() + crosslink.cross_linker_mass;
+      if (crosslink.beta)
+      {
+        precursor_mass += crosslink.beta->getMonoWeight();
+      }
+      addPrecursorPeaks_(spectrum, precursor_mass, maxcharge);
     }
 
 #ifdef OPENMS_USE_PDQSORT
@@ -859,7 +863,7 @@ namespace OpenMS
 
   }
 
-  void SimpleTSGXLMS::addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, OPXLDataStructs::ProteinProteinCrossLink& crosslink, bool frag_alpha, Residue::ResidueType res_type, std::vector< LossIndex >& forward_losses, std::vector< LossIndex >& backward_losses, LossIndex& losses_peptide2, int charge) const
+  void SimpleTSGXLMS::addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, const OPXLDataStructs::ProteinProteinCrossLink& crosslink, bool frag_alpha, Residue::ResidueType res_type, const std::vector< LossIndex >& forward_losses, const std::vector< LossIndex >& backward_losses, const LossIndex& losses_peptide2, int charge) const
   {
     if (!crosslink.alpha || crosslink.alpha->empty())
     {
@@ -970,10 +974,9 @@ namespace OpenMS
         }
       }
     }
-    return;
   }
 
-  std::vector< SimpleTSGXLMS::LossIndex > SimpleTSGXLMS::getForwardLosses_(AASequence& peptide) const
+  std::vector< SimpleTSGXLMS::LossIndex > SimpleTSGXLMS::getForwardLosses_(const AASequence& peptide) const
   {
     // this gives us a "forward set" with incremental losses from the first to the last residue
     std::vector< LossIndex > ion_losses(peptide.size());
@@ -986,7 +989,7 @@ namespace OpenMS
     return ion_losses;
   }
 
-  std::vector< SimpleTSGXLMS::LossIndex > SimpleTSGXLMS::getBackwardLosses_(AASequence& peptide) const
+  std::vector< SimpleTSGXLMS::LossIndex > SimpleTSGXLMS::getBackwardLosses_(const AASequence& peptide) const
   {
     // this gives us a "backward set" with incremental losses from the last to the first residue
     std::vector< LossIndex > ion_losses(peptide.size());

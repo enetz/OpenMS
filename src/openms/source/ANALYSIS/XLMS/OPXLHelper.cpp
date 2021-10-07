@@ -310,17 +310,18 @@ namespace OpenMS
           bool second_res = false; // is there a residue the second side of the linker can attach to?
           for (Size k = 0; k < seq_first.size()-1; ++k)
           {
-            for (Size i = 0; i < cross_link_residue1.size(); ++i)
+            //for (Size i = 0; i < cross_link_residue1.size(); ++i)
+            for (const auto& residue : cross_link_residue1)
             {
-              if (cross_link_residue1[i].size() == 1 && seq_first[k] == *cross_link_residue1[i].c_str())
+              if (seq_first[k] == residue[0])
               {
                 first_res = true;
                 break;
               }
             }
-            for (Size i = 0; i < cross_link_residue2.size(); ++i)
+            for (const auto& residue : cross_link_residue2)
             {
-              if (cross_link_residue2[i].size() == 1 && seq_first[k] == *cross_link_residue2[i].c_str())
+              if (seq_first[k] == residue[0])
               {
                 second_res = true;
                 break;
@@ -334,25 +335,19 @@ namespace OpenMS
             // Monoisotopic weight of the peptide + cross-linker
             double cross_linked_peptide_mass = (*alpha_it)->peptide_mass + cross_link_mass;
 
-            // also only one peptide
-            OPXLDataStructs::XLCPrecursor precursor;
-            precursor.precursor_mass = cross_linked_peptide_mass;
-            precursor.alpha = *alpha_it;
-            precursor.beta = nullptr;
-
 #pragma omp critical (mass_to_candidates_access)
             {
-              mass_to_candidates.emplace_back(precursor);
-              precursor_correction_positions.emplace_back(pm);
+              mass_to_candidates.emplace_back(cross_linked_peptide_mass,
+                                               *alpha_it, nullptr);
+              precursor_correction_positions.push_back(pm);
             }
           }
         } // end of parallel loop over loop-link candidates
 
         // ################################ Enumerate Mono-Links #################
-        for (Size i = 0; i < cross_link_mass_mono_link.size(); i++)
+#pragma omp parallel for
+        for (double mono_link_mass : cross_link_mass_mono_link)
         {
-          double mono_link_mass = cross_link_mass_mono_link[i];
-
           min_peptide_mass = precursor_mass - mono_link_mass - allowed_error;
           max_peptide_mass = precursor_mass - mono_link_mass + allowed_error;
 
@@ -361,22 +356,16 @@ namespace OpenMS
           first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
           last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
 
-#pragma omp parallel for
           for (auto alpha_it = first_mono; alpha_it < last_mono; ++alpha_it)
           {
             // Monoisotopic weight of the peptide + cross-linker
             double cross_linked_peptide_mass = (*alpha_it)->peptide_mass + mono_link_mass;
 
-            // Make sure it is clear only one peptide is considered here.
-            OPXLDataStructs::XLCPrecursor precursor;
-            precursor.precursor_mass = cross_linked_peptide_mass;
-            precursor.alpha = *alpha_it;
-            precursor.beta = nullptr;
-
 #pragma omp critical (mass_to_candidates_access)
             {
-              mass_to_candidates.emplace_back(precursor);
-              precursor_correction_positions.emplace_back(pm);
+              mass_to_candidates.emplace_back(cross_linked_peptide_mass,
+                                              *alpha_it, nullptr);
+              precursor_correction_positions.push_back(pm);
             }
           } // end of loop over candidates for a specific mono-link mass
         } // end of loop over mono-link masses
@@ -409,16 +398,11 @@ namespace OpenMS
             // Monoisotopic weight of the first peptide + the second peptide + cross-linker
             double cross_linked_pair_mass = (*alpha_it)->peptide_mass + (*beta_it)->peptide_mass + cross_link_mass;
 
-            // this time both alpha_peptides have valid indices
-            OPXLDataStructs::XLCPrecursor precursor;
-            precursor.precursor_mass = cross_linked_pair_mass;
-            precursor.alpha = *alpha_it;
-            precursor.beta = *beta_it;
-
 #pragma omp critical (mass_to_candidates_access)
             {
-              mass_to_candidates.emplace_back(precursor);
-              precursor_correction_positions.emplace_back(pm);
+              mass_to_candidates.emplace_back(cross_linked_pair_mass,
+                                              *alpha_it, *beta_it);
+              precursor_correction_positions.push_back(pm);
             }
           } // end of loop over betas
         } // end of parallel loop over alphas
@@ -1932,25 +1916,8 @@ namespace OpenMS
               peptide_candidates.insert(old_it, candidate);
             }
             std::advance(old_it, reverse_count);
+            reverse_count = 0;
           }
-          /*
-          for (auto candidate : new_candidates)
-          {
-            bool add = true;
-            for (auto old_candidate : peptide_candidates)
-            {
-              if (candidate == old_candidate)
-              {
-                add = false;
-                break;
-              }
-            }
-            if (add)
-            {
-              peptide_candidates.push_back(candidate);
-            }
-          }
-           */
         }
       }
     }

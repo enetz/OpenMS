@@ -218,7 +218,7 @@ using namespace OpenMS;
     {
       fragment_mass_tolerance_xlinks_ = fragment_mass_tolerance_;
     }
-    std::sort(cross_link_mass_mono_link_.begin(), cross_link_mass_mono_link_.end(), std::greater< double >());
+    sort(cross_link_mass_mono_link_.begin(), cross_link_mass_mono_link_.end(), greater<>());
     set<String> fixed_unique(fixedModNames_.begin(), fixedModNames_.end());
 
     // deisotope if "true" or if "auto" and the tolerance is below the threshold (0.1 Da or 100 ppm)
@@ -417,7 +417,7 @@ using namespace OpenMS;
     double max_peptide_mass = max_precursor_mass - cross_link_mass_ + max_peptide_allowed_error;
 
     // search for the first mass greater than the maximum, cut off everything larger
-    vector<OPXLDataStructs::AASeqWithMass>::iterator last = upper_bound(peptide_masses.begin(), peptide_masses.end(), max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
+    auto last = upper_bound(peptide_masses.begin(), peptide_masses.end(), max_peptide_mass, OPXLDataStructs::AASeqWithMassComparator());
     vector<OPXLDataStructs::AASeqWithMass> filtered_peptide_masses;
     filtered_peptide_masses.assign(peptide_masses.begin(), last);
 
@@ -561,7 +561,7 @@ using namespace OpenMS;
       vector< OPXLDataStructs::CrossLinkSpectrumMatch > mainscore_csms_spectrum;
 
 #pragma omp parallel for schedule(guided)
-      for (auto& cross_link_candidate : cross_link_candidates)
+      for (auto& candidate : cross_link_candidates)
       {
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_linear_alpha;
         theoretical_spec_linear_alpha.reserve(1500);
@@ -569,23 +569,19 @@ using namespace OpenMS;
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_xlinks_alpha;
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_xlinks_beta;
 
-        bool type_is_cross_link = cross_link_candidate.getType() == OPXLDataStructs::CROSS;
-        bool type_is_loop = cross_link_candidate.getType() == OPXLDataStructs::LOOP;
+        bool type_is_cross_link = candidate.getType() == OPXLDataStructs::CROSS;
+        bool type_is_loop = candidate.getType() == OPXLDataStructs::LOOP;
         Size link_pos_B = 0;
         if (type_is_loop)
         {
-          link_pos_B = cross_link_candidate.cross_link_position.second;
+          link_pos_B = candidate.cross_link_position.second;
         }
-        AASequence alpha;
-        AASequence beta;
-        if (cross_link_candidate.alpha) { alpha = *cross_link_candidate.alpha; }
-        if (cross_link_candidate.beta) { beta = *cross_link_candidate.beta; }
 
-        specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_charge - 1, link_pos_B);
+        specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_alpha, *candidate.alpha, candidate.cross_link_position.first, precursor_charge - 1, link_pos_B);
         if (type_is_cross_link)
         {
           theoretical_spec_linear_beta.reserve(1500);
-          specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_beta, beta, cross_link_candidate.cross_link_position.second, precursor_charge - 1);
+          specGen_mainscore.getLinearIonSpectrum(theoretical_spec_linear_beta, *candidate.beta, candidate.cross_link_position.second, precursor_charge - 1);
         }
 
         // Something like this can happen, e.g. with a loop link connecting the first and last residue of a peptide
@@ -618,13 +614,13 @@ using namespace OpenMS;
         if (type_is_cross_link)
         {
           theoretical_spec_xlinks_beta.reserve(1500);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, cross_link_candidate, cross_link_mass_fragments_, true, 1, precursor_charge - 1);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, cross_link_candidate, cross_link_mass_fragments_, false, 1, precursor_charge - 1);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, candidate, cross_link_mass_fragments_, true, 1, precursor_charge - 1);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, candidate, cross_link_mass_fragments_, false, 1, precursor_charge - 1);
         }
         else
         {
           // Function for mono-links or loop-links
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, alpha, cross_link_candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_, 1, precursor_charge - 1, link_pos_B);
+          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, *candidate.alpha, candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_, 1, precursor_charge - 1, link_pos_B);
         }
 
         if (theoretical_spec_xlinks_alpha.empty() && (!type_is_cross_link || theoretical_spec_xlinks_beta.empty()))
@@ -675,8 +671,8 @@ using namespace OpenMS;
         }
 
         OPXLDataStructs::CrossLinkSpectrumMatch csm;
-        csm.cross_link = cross_link_candidate;
-        csm.precursor_correction = cross_link_candidate.precursor_correction;
+        csm.cross_link = candidate;
+        csm.precursor_correction = candidate.precursor_correction;
         double rel_error = OPXLHelper::computePrecursorError(csm, precursor_mz, precursor_charge);
 
         double new_match_odds_weight = 0.2;
@@ -875,16 +871,6 @@ using namespace OpenMS;
         double xcorrx_max = XQuestScores::xCorrelationPrescore(spectrum, theoretical_spec_xlinks, 0.1);
         double xcorrc_max = XQuestScores::xCorrelationPrescore(spectrum, theoretical_spec_linear, 0.1);
 
-        // Compute score from the 4 scores and 4 weights
-        // The weights are adapted from the xQuest algorithm (O. Rinner et al., 2008, "Identification of cross-linked peptides from large sequence databases"),
-        // they were determined by an Linear Discriminant Analysis on CID fragmentation data.
-        // The match-odds score does not work very well on HCD data and label-free cross-linkers (has the maximal possible value very often), so its weight was drastically reduced here.
-        double xcorrx_weight = 2.488;
-        double xcorrc_weight = 21.279;
-        double match_odds_weight = 1.973;
-        double wTIC_weight = 12.829;
-        double intsum_weight = 1.8;
-
         double xquest_score = xcorrx_weight * xcorrx_max + xcorrc_weight * xcorrc_max + match_odds_weight * csm.match_odds + wTIC_weight * wTICold + intsum_weight * intsum;
         csm.xquest_score = xquest_score;
 
@@ -1043,22 +1029,18 @@ using namespace OpenMS;
         }
 
         // write fragment annotations
-        vector<PeptideHit::PeakAnnotation> frag_annotations;
-
-        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_linear_alpha, theoretical_spec_linear_alpha, spectrum);
-        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_linear_beta, theoretical_spec_linear_beta, spectrum);
-        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum);
-        OPXLHelper::buildFragmentAnnotations(frag_annotations, matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum);
+        OPXLHelper::buildFragmentAnnotations(csm.frag_annotations, matched_spec_linear_alpha, theoretical_spec_linear_alpha, spectrum);
+        OPXLHelper::buildFragmentAnnotations(csm.frag_annotations, matched_spec_linear_beta, theoretical_spec_linear_beta, spectrum);
+        OPXLHelper::buildFragmentAnnotations(csm.frag_annotations, matched_spec_xlinks_alpha, theoretical_spec_xlinks_alpha, spectrum);
+        OPXLHelper::buildFragmentAnnotations(csm.frag_annotations, matched_spec_xlinks_beta, theoretical_spec_xlinks_beta, spectrum);
 
         // make annotations unique
-        sort(frag_annotations.begin(), frag_annotations.end());
-        vector<PeptideHit::PeakAnnotation>::iterator last_unique_anno = unique(frag_annotations.begin(), frag_annotations.end());
-        if (last_unique_anno != frag_annotations.end())
+        sort(csm.frag_annotations.begin(), csm.frag_annotations.end());
+        auto last_unique_anno = unique(csm.frag_annotations.begin(), csm.frag_annotations.end());
+        if (last_unique_anno != csm.frag_annotations.end())
         {
-          frag_annotations.erase(last_unique_anno, frag_annotations.end());
+          csm.frag_annotations.erase(last_unique_anno, csm.frag_annotations.end());
         }
-
-        csm.frag_annotations = frag_annotations;
 
 #pragma omp critical (all_csms_spectrum_access)
         {

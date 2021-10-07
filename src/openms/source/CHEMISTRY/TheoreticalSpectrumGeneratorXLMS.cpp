@@ -388,7 +388,6 @@ namespace OpenMS
       backward_losses = getBackwardLosses_(peptide);
     }
 
-
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
       if (add_b_ions_)
@@ -521,6 +520,11 @@ namespace OpenMS
         addPrecursorPeaks_(spectrum, charges, ion_names, frag_alpha, peptide, cross_link_masses, z);
       }
 
+    }
+
+    if (add_precursor_peaks_)
+    {
+      addPrecursorPeaks_(spectrum, charges, ion_names, precursor_mass, maxcharge);
     }
 
     if (add_charges_)
@@ -717,8 +721,8 @@ namespace OpenMS
       {
         mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
 
-        Size frag_index = i;
-        Size xlink_index = 0;
+        int frag_index = i;
+        int xlink_index = 0;
         for (double xlink_mass : cross_link_masses)
         {
           double pos((mono_weight + xlink_mass) / static_cast<double>(charge));

@@ -186,5 +186,15 @@ namespace OpenMS
         String add_c_ions_;
         String add_z_ions_;
         String add_losses_;
+
+        // Compute score from the 4 scores and 4 weights
+        // The weights are adapted from the xQuest algorithm (O. Rinner et al., 2008, "Identification of cross-linked peptides from large sequence databases"),
+        // they were determined by an Linear Discriminant Analysis on CID fragmentation data.
+        // The match-odds score does not work very well on HCD data and label-free cross-linkers (has the maximal possible value very often), so its weight was drastically reduced here.
+        static constexpr double xcorrx_weight = 2.488;
+        static constexpr double xcorrc_weight = 21.279;
+        static constexpr double match_odds_weight = 1.973;
+        static constexpr double wTIC_weight = 12.829;
+        static constexpr double intsum_weight = 1.8;
     };
 }

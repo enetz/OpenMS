@@ -312,10 +312,11 @@ namespace OpenMS
 
       struct XLCPrecursor
       {
-          float precursor_mass;
+          double precursor_mass;
           const AASeqWithMass* alpha;
           const AASeqWithMass* beta;
-
+          XLCPrecursor(double set_mass, const AASeqWithMass* set_alpha, const AASeqWithMass* set_beta) :
+            precursor_mass(set_mass), alpha(set_alpha), beta(set_beta) {};
       };
 
       struct XLCPrecursorComparator {
