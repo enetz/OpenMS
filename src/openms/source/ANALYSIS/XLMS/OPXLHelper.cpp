@@ -345,7 +345,6 @@ namespace OpenMS
         } // end of parallel loop over loop-link candidates
 
         // ################################ Enumerate Mono-Links #################
-#pragma omp parallel for
         for (double mono_link_mass : cross_link_mass_mono_link)
         {
           min_peptide_mass = precursor_mass - mono_link_mass - allowed_error;
@@ -356,6 +355,7 @@ namespace OpenMS
           first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
           last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
 
+#pragma omp parallel for
           for (auto alpha_it = first_mono; alpha_it < last_mono; ++alpha_it)
           {
             // Monoisotopic weight of the peptide + cross-linker
@@ -633,7 +633,7 @@ namespace OpenMS
            */
           for (auto& res : cross_link_residue2)
           {
-            if (String(seq_second[k]) == res)
+            if (string(1, seq_second[k]) == res)
             {
               link_pos_second.push_back(k);
               break;
@@ -660,7 +660,7 @@ namespace OpenMS
              */
             for (auto& res : cross_link_residue2)
             {
-              if (String(seq_first[k]) == res)
+              if (string(1, seq_first[k]) == res)
               {
                 link_pos_second.push_back(k);
                 break;
@@ -964,7 +964,7 @@ namespace OpenMS
         {
           for (auto& r : cross_link_residue1)
           {
-            if (String(1, seq_first[k]) == r) link_pos_first.push_back(k);
+            if (string(1, seq_first[k]) == r) link_pos_first.push_back(k);
           }
         }
         if (candidate.beta)
@@ -973,7 +973,7 @@ namespace OpenMS
           {
             for (auto& r : cross_link_residue2)
             {
-              if (String(1, seq_second[k]) == r) link_pos_second.push_back(k);
+              if (string(1, seq_second[k]) == r) link_pos_second.push_back(k);
             }
           }
         } else if(is_loop)
@@ -982,7 +982,7 @@ namespace OpenMS
           {
             for (auto& r : cross_link_residue2)
             {
-              if (String(1, seq_second[k]) == r) link_pos_second.push_back(k);
+              if (string(1, seq_first[k]) == r) link_pos_second.push_back(k);
             }
           }
         } else
@@ -1845,9 +1845,10 @@ namespace OpenMS
     for (int charge = max_charge; charge > 0; --charge)
     {
       auto first_peak = lower_bound(spectrum.begin(), spectrum.end(), peptides.front().peptide_mass / charge, Peak1D::MZLess());
-      auto last_peak = upper_bound(first_peak, spectrum.end(), peptides.back().peptide_mass / charge, Peak1D::MZLess());
-      if (first_peak == last_peak) continue;
+      //auto last_peak = upper_bound(first_peak, spectrum.end(), peptides.back().peptide_mass / charge, Peak1D::MZLess());
+      if (first_peak > spectrum.end() - 2) continue;
       auto second_peak = first_peak + 1;
+      auto last_peak = spectrum.end() - 1;
 
       std::vector<const OPXLDataStructs::AASeqWithMass*> new_candidates;
 

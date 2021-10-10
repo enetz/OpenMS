@@ -483,7 +483,7 @@ using namespace OpenMS;
           case NONE:
           {
             vector<const OPXLDataStructs::AASeqWithMass *> beta_candidates;
-            //beta_candidates.reserve(filtered_peptide_masses.size());
+            beta_candidates.reserve(filtered_peptide_masses.size());
             for (auto &peptide : filtered_peptide_masses)
             {
               beta_candidates.push_back(&peptide);
