@@ -727,11 +727,13 @@ namespace OpenMS
         {
           double pos((mono_weight + xlink_mass) / static_cast<double>(charge));
 
+
+
           addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, i, charge, ion_type + "X" + String(xlink_index));
 
           if (add_losses_ && forward_losses.size() >= i+2)
           {
-            String ion_name = "[" + ion_type + "$" + String(Residue::residueTypeToIonLetter(res_type)) + "X" + String(xlink_index) + "]";
+            String ion_name = "[" + ion_type + "X" + String(xlink_index) + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
             addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight, intensity, charge, ion_name, forward_losses[i+1]);
           }
 
@@ -760,7 +762,7 @@ namespace OpenMS
           addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + "X" + String(xlink_index));
           if (add_losses_ && backward_losses.size() >= i+2)
           {
-            String ion_name = "[" + ion_type + "$" + String(Residue::residueTypeToIonLetter(res_type)) + "X" + String(xlink_index) + "]";
+            String ion_name = "[" + ion_type + "X" + String(xlink_index) + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
             addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight, intensity, charge, ion_name, backward_losses[i+1]);
           }
 
@@ -878,7 +880,7 @@ namespace OpenMS
     p.setIntensity(pre_int_H2O_);
     if (add_metainfo_)
     {
-      ion_names.emplace_back("[M+H]-H2O");
+      ion_names.emplace_back("[M+H-H2O1]");
     }
     if (add_charges_)
     {
@@ -892,7 +894,7 @@ namespace OpenMS
       p.setIntensity(pre_int_H2O_);
       if (add_metainfo_)
       {
-        ion_names.emplace_back("[M+H]-H2O");
+        ion_names.emplace_back("[M+H-H2O1]");
       }
       if (add_charges_)
       {
@@ -907,7 +909,7 @@ namespace OpenMS
     p.setIntensity(pre_int_NH3_);
     if (add_metainfo_)
     {
-      ion_names.emplace_back("[M+H]-NH3");
+      ion_names.emplace_back("[M+H-H3N1]");
     }
     if (add_charges_)
     {
@@ -921,7 +923,7 @@ namespace OpenMS
       p.setIntensity(pre_int_NH3_);
       if (add_metainfo_)
       {
-        ion_names.emplace_back("[M+H]-NH3");
+        ion_names.emplace_back("[M+H-H3N1]");
       }
       if (add_charges_)
       {
@@ -959,7 +961,7 @@ namespace OpenMS
         spectrum.push_back(p);
         if (add_metainfo_)
         {
-          ion_names.emplace_back("[" + ion_type + "$" + String(i) + "X]");
+          ion_names.emplace_back("[" + ion_type + "X" + String(i) + "]");
         }
         if (add_charges_)
         {
@@ -976,7 +978,7 @@ namespace OpenMS
           spectrum.push_back(std::move(iso_peak));
           if (add_metainfo_)
           {
-            ion_names.emplace_back("[" + ion_type + "$" + String(i) + "X]");
+            ion_names.emplace_back("[" + ion_type + "X" + String(i) + "]");
           }
           if (add_charges_)
           {
@@ -991,7 +993,7 @@ namespace OpenMS
         p.setIntensity(pre_int_H2O_);
         if (add_metainfo_)
         {
-          ion_names.emplace_back("[" + ion_type + "$" + String(i) + "X]-H2O");
+          ion_names.emplace_back("[" + ion_type + "X" + String(i) + "-H2O1]");
         }
         if (add_charges_)
         {
@@ -1005,7 +1007,7 @@ namespace OpenMS
           p.setIntensity(pre_int_H2O_);
           if (add_metainfo_)
           {
-            ion_names.emplace_back("[" + ion_type + "$" + String(i) + "X]-H2O");
+            ion_names.emplace_back("[" + ion_type + "X" + String(i) + "-H2O1]");
           }
           if (add_charges_)
           {
@@ -1020,7 +1022,7 @@ namespace OpenMS
         p.setIntensity(pre_int_NH3_);
         if (add_metainfo_)
         {
-          ion_names.emplace_back("[" + ion_type + "$" + String(i) + "X]-NH3");
+          ion_names.emplace_back("[" + ion_type + "X" + String(i) + "-H3N1]");
         }
         if (add_charges_)
         {
@@ -1034,7 +1036,7 @@ namespace OpenMS
           p.setIntensity(pre_int_NH3_);
           if (add_metainfo_)
           {
-            ion_names.emplace_back("[" + ion_type + "$" + String(i) + "X]-NH3");
+            ion_names.emplace_back("[" + ion_type + "X" + String(i) + "-H3N1]");
           }
           if (add_charges_)
           {
