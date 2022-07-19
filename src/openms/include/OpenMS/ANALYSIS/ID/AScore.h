@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -85,8 +85,6 @@ namespace OpenMS
 
         @param	hit a PeptideHit
         @param real_spectrum spectrum mapped to hit
-        @param fmt fragment_mass_tolerance, when comparing real_spectrum to a theoretical spectrum of the amino acid sequence of hit.
-        @param number_of_phospho_sites which directs the method to search for this number of phosphorylated sites.
 
         @note the original sequence is saved in the PeptideHits as MetaValue Search_engine_sequence.
     */

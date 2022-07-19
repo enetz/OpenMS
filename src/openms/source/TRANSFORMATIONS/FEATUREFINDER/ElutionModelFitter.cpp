@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -34,6 +34,7 @@
 
 #include <OpenMS/TRANSFORMATIONS/FEATUREFINDER/ElutionModelFitter.h>
 
+#include <OpenMS/CONCEPT/LogStream.h>
 #include <OpenMS/ANALYSIS/MAPMATCHING/TransformationModelLinear.h>
 #include <OpenMS/MATH/STATISTICS/StatisticFunctions.h>
 #include <OpenMS/TRANSFORMATIONS/FEATUREFINDER/EGHTraceFitter.h>
@@ -198,6 +199,11 @@ void ElutionModelFitter::fitAndValidateModel_(
 
 void ElutionModelFitter::fitElutionModels(FeatureMap& features)
 {
+  if (features.empty())
+  {
+    throw Exception::MissingInformation(__FILE__, __LINE__, OPENMS_PRETTY_FUNCTION, "No features provided.");
+  }
+
   bool asymmetric = param_.getValue("asymmetric").toBool();
   double add_zeros = param_.getValue("add_zeros");
   bool weighted = !param_.getValue("unweighted_fit").toBool();
@@ -328,6 +334,19 @@ void ElutionModelFitter::fitElutionModels(FeatureMap& features)
   }
   delete fitter;
 
+  // check if fit worked for at least one feature
+  bool has_valid_models{false};
+  for (Feature& feature : features)
+  {
+    if (feature.getMetaValue("model_status") == "0 (valid)")
+    {
+      has_valid_models = true;
+      break;
+    }
+  }
+  // no valid feature e.g. because of empty file or blank? return empty features. (subsequent steps assume valid features)
+  if (!has_valid_models) { features.clear(); return; }
+  
   // find outliers in model parameters:
   if (width_limit > 0)
   {

@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -103,7 +103,7 @@ struct OPENMS_DLLAPI PScore
     @param fragment_mass_tolerance mass tolerance for matching peaks
     @param fragment_mass_tolerance_unit_ppm whether Thomson or ppm is used
     @param peak_level_spectra spectra for different peak levels (=filtered by maximum rank).
-    @param theo_spectra theoretical spectra as obtained e.g. from TheoreticalSpectrumGenerator
+    @param theo_spectrum Theoretical spectrum as obtained e.g. from TheoreticalSpectrumGenerator
     @param mz_window window in Thomson centered at each peak
    */ 
   static double computePScore(double fragment_mass_tolerance, bool fragment_mass_tolerance_unit_ppm, const std::map<Size, PeakSpectrum>& peak_level_spectra, const PeakSpectrum& theo_spectrum, double mz_window = 100.0);

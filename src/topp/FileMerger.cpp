@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -152,13 +152,13 @@ protected:
     TransformationDescription trafo;
     if (first_file) // no transformation necessary
     {
-      rt_offset_ = map.getMax()[0] + rt_gap_;
+      rt_offset_ = map.getMaxRT() + rt_gap_;
       trafo.fitModel("identity");
     }
     else // subsequent file -> apply transformation
     {
       TransformationDescription::DataPoints points(2);
-      double rt_min = map.getMin()[0], rt_max = map.getMax()[0];
+      double rt_min = map.getMinRT(), rt_max = map.getMaxRT();
       points[0] = make_pair(rt_min, rt_offset_);
       rt_offset_ += rt_max - rt_min;
       points[1] = make_pair(rt_max, rt_offset_);
@@ -185,7 +185,7 @@ protected:
     // file type
     FileHandler file_handler;
     FileTypes::Type force_type;
-    if (getStringOption_("in_type").size() > 0)
+    if (!getStringOption_("in_type").empty())
     {
       force_type = FileTypes::nameToType(getStringOption_("in_type"));
     }

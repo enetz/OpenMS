@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -105,7 +105,7 @@ namespace OpenMS
      * @param beta Spurious peptide emission probability
      * @param gamma Protein prior
      * @param p Marginalization norm
-     * @param pepPrior Peptide prior (defines at which evidence probability, additional evidence is beneficial)
+     * @param pep_prior Peptide prior (defines at which evidence probability, additional evidence is beneficial)
      */
     MessagePasserFactory<Label>(double alpha, double beta, double gamma, double p, double pep_prior);
 

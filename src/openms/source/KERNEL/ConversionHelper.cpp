@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -61,7 +61,7 @@ namespace OpenMS
     std::partial_sort(tmp.begin(),
                       tmp.begin() + n,
                       tmp.end(),
-                      reverseComparator(Peak2D::IntensityLess()));
+                      [](auto &left, auto &right) {Peak2D::IntensityLess cmp; return cmp(right, left);});
 
     for (Size element_index = 0; element_index < n; ++element_index)
     {

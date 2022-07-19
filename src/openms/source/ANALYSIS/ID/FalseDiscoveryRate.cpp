@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -32,12 +32,17 @@
 // $Authors: Andreas Bertsch, Chris Bielow $
 // --------------------------------------------------------------------------
 
+#include <boost/foreach.hpp> // must be first, otherwise Q_FOREACH macro will wreak havoc
+#include <boost/regex.hpp>
+
 #include <OpenMS/ANALYSIS/ID/FalseDiscoveryRate.h>
 #include <OpenMS/ANALYSIS/ID/IDScoreGetterSetter.h>
 #include <OpenMS/CONCEPT/LogStream.h>
+#include <OpenMS/DATASTRUCTURES/StringUtils.h>
+#include <OpenMS/FILTERING/ID/IDFilter.h>
+#include <OpenMS/METADATA/ProteinIdentification.h>
 
 #include <algorithm>
-#include <numeric>
 
 // #define FALSE_DISCOVERY_RATE_DEBUG
 // #undef  FALSE_DISCOVERY_RATE_DEBUG
@@ -63,13 +68,18 @@ namespace OpenMS
     defaults_.setValidStrings("add_decoy_proteins", {"true","false"});
     defaults_.setValue("conservative", "true", "If 'true' (D+1)/T instead of (D+1)/(T+D) is used as a formula.");
     defaults_.setValidStrings("conservative", {"true","false"});
-    //defaults_.setValue("equality_epsilon", 0, "The epsilon under which two scores are considered equal.");
-    //defaults_.setMinFloat("equality_epsilon", 0.0);
+    // TODO to be implemented. I.e., move parameter from FDR tool to here.
+    //defaults_.setValue("subprotein_level", "PSM", "Choose PSM or peptide or PSM+peptide");
+    //defaults_.setValidStrings("subprotein_level", {"PSM","peptide","PSM+peptide"});
     defaultsToParam_();
-
   }
 
-  void FalseDiscoveryRate::apply(vector<PeptideIdentification>& ids) const
+  bool isFirstBetterScore(double first, double second, bool isHigherBetter)
+  {
+    if (isHigherBetter) return first > second; else return first < second;
+  }
+
+  void FalseDiscoveryRate::apply(vector<PeptideIdentification>& ids, bool annotate_peptide_fdr) const
   {
     bool q_value = !param_.getValue("no_qvalues").toBool();
     bool use_all_hits = param_.getValue("use_all_hits").toBool();
@@ -143,6 +153,7 @@ namespace OpenMS
 #endif
         // get the scores of all peptide hits
         vector<double> target_scores, decoy_scores;
+        map<String, double> peptide_to_best_decoy_score, peptide_to_best_target_score;
         for (auto it = ids.begin(); it != ids.end(); ++it)
         {
           // if runs should be treated separately, the identifiers must be the same
@@ -165,19 +176,45 @@ namespace OpenMS
             }
 
             String target_decoy(it->getHits()[i].getMetaValue("target_decoy"));
+            const String peptide_sequence = it->getHits()[i].getSequence().toUnmodifiedString();
+            const double score = it->getHits()[i].getScore();
+
             if (target_decoy == "target" || target_decoy == "target+decoy")
             {
-              target_scores.push_back(it->getHits()[i].getScore());
+              target_scores.push_back(score);
+
+              if (annotate_peptide_fdr)
+              {
+                // store best score for peptide (unmodified sequence)              
+                auto [entry_it, success] = peptide_to_best_target_score.emplace(peptide_sequence, score); // try to construct in place (performance)
+
+                if (!success && // emplace failed because key was already present -> replace if current score is better?
+                    isFirstBetterScore(score, entry_it->second, higher_score_better)) 
+                {
+                  entry_it->second = score;
+                }                           
+              }
             }
             else
             {
               if (target_decoy == "decoy")
               {
-                decoy_scores.push_back(it->getHits()[i].getScore());
+                decoy_scores.push_back(score);
+
+                if (annotate_peptide_fdr)
+                {
+                  auto [entry_it, success] = peptide_to_best_decoy_score.emplace(peptide_sequence, score); // try to construct in place (performance)
+
+                  if (!success && // emplace failed because key was already present -> replace if current score is better?
+                      isFirstBetterScore(score, entry_it->second, higher_score_better)) 
+                  {
+                    entry_it->second = score;
+                  }
+                }
               }
               else
               {
-                if (target_decoy != "")
+                if (!target_decoy.empty())
                 {
                   throw Exception::InvalidValue(__FILE__, __LINE__, OPENMS_PRETTY_FUNCTION, "Unknown value of meta value 'target_decoy'", target_decoy);
                 }
@@ -282,6 +319,31 @@ namespace OpenMS
         map<double, double> score_to_fdr;
         calculateFDRs_(score_to_fdr, target_scores, decoy_scores, q_value, higher_score_better);
 
+        // calculate peptide FDR
+        if (annotate_peptide_fdr)
+        {
+          vector<double> decoy_peptide_scores, target_peptide_scores;
+          for (const auto& ps : peptide_to_best_decoy_score)
+          {
+            decoy_peptide_scores.push_back(ps.second);
+          }
+          for (const auto& ps : peptide_to_best_target_score)
+          {
+            target_peptide_scores.push_back(ps.second);
+          }      
+          map<double, double> score_to_peptide_fdr;
+          calculateFDRs_(score_to_peptide_fdr, target_peptide_scores, decoy_peptide_scores, q_value, higher_score_better);
+          // overwrite best peptide score with peptide q-value
+          for (auto& ps : peptide_to_best_decoy_score)
+          {
+            ps.second = score_to_peptide_fdr[ps.second];
+          }
+          for (auto& ps : peptide_to_best_target_score)
+          {
+            ps.second = score_to_peptide_fdr[ps.second];
+          }
+        }
+
         // annotate fdr
         for (auto it = ids.begin(); it != ids.end(); ++it)
         {
@@ -309,6 +371,28 @@ namespace OpenMS
               {
                 continue;
               }
+
+              if (annotate_peptide_fdr)
+              {
+                const String peptide_sequence = hit.getSequence().toUnmodifiedString();
+                double peptide_fdr;
+                if (meta_value == "decoy")
+                {
+                  peptide_fdr = peptide_to_best_decoy_score[peptide_sequence];
+                }
+                else
+                {
+                  peptide_fdr = peptide_to_best_target_score[peptide_sequence];
+                }
+                if (q_value)
+                {
+                  hit.setMetaValue("peptide q-value", peptide_fdr);
+                }
+                else
+                {
+                  hit.setMetaValue("peptide FDR", peptide_fdr);
+                }
+              }              
             }
             hit.setMetaValue(score_type, pit->getScore());
             hit.setScore(score_to_fdr[pit->getScore()]);
@@ -560,31 +644,31 @@ namespace OpenMS
     }
   }
 
-  IdentificationData::ScoreTypeRef FalseDiscoveryRate::applyToQueryMatches(
+  IdentificationData::ScoreTypeRef FalseDiscoveryRate::applyToObservationMatches(
       IdentificationData& id_data, IdentificationData::ScoreTypeRef score_ref)
   const
   {
     bool use_all_hits = param_.getValue("use_all_hits").toBool();
     bool include_decoys = param_.getValue("add_decoy_peptides").toBool();
     vector<double> target_scores, decoy_scores;
-    map<IdentificationData::IdentifiedMoleculeRef, bool> molecule_to_decoy;
-    map<IdentificationData::QueryMatchRef, double> match_to_score;
+    map<IdentificationData::IdentifiedMolecule, bool> molecule_to_decoy;
+    map<IdentificationData::ObservationMatchRef, double> match_to_score;
     if (use_all_hits)
     {
-      for (auto it = id_data.getMoleculeQueryMatches().begin();
-           it != id_data.getMoleculeQueryMatches().end(); ++it)
+      for (auto it = id_data.getObservationMatches().begin();
+           it != id_data.getObservationMatches().end(); ++it)
       {
-        handleQueryMatch_(it, score_ref, target_scores, decoy_scores,
+        handleObservationMatch_(it, score_ref, target_scores, decoy_scores,
                           molecule_to_decoy, match_to_score);
       }
     }
     else
     {
-      vector<IdentificationData::QueryMatchRef> best_matches =
-          id_data.getBestMatchPerQuery(score_ref);
-      for (auto match_ref : best_matches) // NOTE: performs copy, should not be necessary?
+      vector<IdentificationData::ObservationMatchRef> best_matches =
+          id_data.getBestMatchPerObservation(score_ref);
+      for (auto match_ref : best_matches)
       {
-        handleQueryMatch_(match_ref, score_ref, target_scores, decoy_scores,
+        handleObservationMatch_(match_ref, score_ref, target_scores, decoy_scores,
                           molecule_to_decoy, match_to_score);
       }
     }
@@ -607,37 +691,35 @@ namespace OpenMS
     }
     IdentificationData::ScoreTypeRef fdr_ref =
         id_data.registerScoreType(fdr_score);
-    for (IdentificationData::MoleculeQueryMatches::iterator it =
-        id_data.getMoleculeQueryMatches().begin(); it !=
-                                                   id_data.getMoleculeQueryMatches().end(); ++it)
+    for (IdentificationData::ObservationMatches::iterator it =
+           id_data.getObservationMatches().begin(); it !=
+           id_data.getObservationMatches().end(); ++it)
     {
       if (!include_decoys)
       {
-        auto pos = molecule_to_decoy.find(it->identified_molecule_ref);
+        auto pos = molecule_to_decoy.find(it->identified_molecule_var);
         if ((pos != molecule_to_decoy.end()) && pos->second) continue;
       }
       auto pos = match_to_score.find(it);
       if (pos == match_to_score.end()) continue;
       double fdr = score_to_fdr.at(pos->second);
-      // @TODO: find a more efficient way to add a score
-      // IdentificationData::MoleculeQueryMatch copy(*it);
-      // copy.scores.push_back(make_pair(fdr_ref, fdr));
-      // id_data.registerMoleculeQueryMatch(copy);
       id_data.addScore(it, fdr_ref, fdr);
     }
     return fdr_ref;
   }
 
 
-  void FalseDiscoveryRate::handleQueryMatch_(
-    IdentificationData::QueryMatchRef match_ref,
+  void FalseDiscoveryRate::handleObservationMatch_(
+    IdentificationData::ObservationMatchRef match_ref,
     IdentificationData::ScoreTypeRef score_ref,
     vector<double>& target_scores, vector<double>& decoy_scores,
-    map<IdentificationData::IdentifiedMoleculeRef, bool>& molecule_to_decoy,
-    map<IdentificationData::QueryMatchRef, double>& match_to_score) const
+    map<IdentificationData::IdentifiedMolecule, bool>& molecule_to_decoy,
+    map<IdentificationData::ObservationMatchRef, double>& match_to_score) const
   {
+    const IdentificationData::IdentifiedMolecule& molecule_var =
+      match_ref->identified_molecule_var;
     IdentificationData::MoleculeType molecule_type =
-      match_ref->getMoleculeType();
+      molecule_var.getMoleculeType();
     if (molecule_type == IdentificationData::MoleculeType::COMPOUND)
     {
       return; // compounds don't have parents with target/decoy status
@@ -645,21 +727,19 @@ namespace OpenMS
     pair<double, bool> score = match_ref->getScore(score_ref);
     if (!score.second) return; // no score of this type
     match_to_score[match_ref] = score.first;
-    IdentificationData::IdentifiedMoleculeRef molecule_ref =
-      match_ref->identified_molecule_ref;
-    auto pos = molecule_to_decoy.find(molecule_ref);
+    auto pos = molecule_to_decoy.find(molecule_var);
     bool is_decoy;
     if (pos == molecule_to_decoy.end()) // new molecule
     {
       if (molecule_type == IdentificationData::MoleculeType::PROTEIN)
       {
-        is_decoy = match_ref->getIdentifiedPeptideRef()->allParentsAreDecoys();
+        is_decoy = molecule_var.getIdentifiedPeptideRef()->allParentsAreDecoys();
       }
       else // if (molecule_type == IdentificationData::MoleculeType::RNA)
       {
-        is_decoy = match_ref->getIdentifiedOligoRef()->allParentsAreDecoys();
+        is_decoy = molecule_var.getIdentifiedOligoRef()->allParentsAreDecoys();
       }
-      molecule_to_decoy[molecule_ref] = is_decoy;
+      molecule_to_decoy[molecule_var] = is_decoy;
     }
     else
     {
@@ -861,7 +941,7 @@ namespace OpenMS
     bool use_all_hits = param_.getValue("use_all_hits").toBool();
 
     ScoreToTgtDecLabelPairs scores_labels;
-    IDScoreGetterSetter::getScores_(scores_labels, ids, use_all_hits, identifier);
+    IDScoreGetterSetter::getScores_(scores_labels, ids, [&identifier](const PeptideIdentification& id){return identifier == id.getIdentifier();}, use_all_hits);
 
     if (scores_labels.empty())
     {
@@ -880,7 +960,7 @@ namespace OpenMS
     return rocN(scores_labels, fp_cutoff == 0 ? scores_labels.size() : fp_cutoff);
   }
 
-  double FalseDiscoveryRate::rocN(const ConsensusMap& ids, Size fp_cutoff) const
+  double FalseDiscoveryRate::rocN(const ConsensusMap& ids, Size fp_cutoff, bool include_unassigned_peptides) const
   {
     bool higher_score_better(false);
     // Check first ID in a feature for the score orientation.
@@ -896,7 +976,7 @@ namespace OpenMS
     bool use_all_hits = param_.getValue("use_all_hits").toBool();
 
     ScoreToTgtDecLabelPairs scores_labels;
-    IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, ids, use_all_hits);
+    IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, ids, include_unassigned_peptides, use_all_hits);
 
     if (scores_labels.empty())
     {
@@ -915,13 +995,13 @@ namespace OpenMS
     return rocN(scores_labels, fp_cutoff == 0 ? scores_labels.size() : fp_cutoff);
   }
 
-  double FalseDiscoveryRate::rocN(const ConsensusMap& ids, Size fp_cutoff, const String& identifier) const
+  double FalseDiscoveryRate::rocN(const ConsensusMap& ids, Size fp_cutoff, const String& identifier, bool include_unassigned_peptides) const
   {
     bool higher_score_better(ids[0].getPeptideIdentifications().begin()->isHigherScoreBetter());
     bool use_all_hits = param_.getValue("use_all_hits").toBool();
 
     ScoreToTgtDecLabelPairs scores_labels;
-    IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, ids, use_all_hits, identifier);
+    IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, ids, include_unassigned_peptides, [&identifier](const PeptideIdentification& id){return identifier == id.getIdentifier();}, use_all_hits);
 
     if (scores_labels.empty())
     {
@@ -940,7 +1020,6 @@ namespace OpenMS
     return rocN(scores_labels, fp_cutoff == 0 ? scores_labels.size() : fp_cutoff);
   }
 
-  //TODO implement per charge estimation
   void FalseDiscoveryRate::applyBasic(ConsensusMap & cmap, bool include_unassigned_peptides)
   {
     bool q_value = !param_.getValue("no_qvalues").toBool();
@@ -974,15 +1053,17 @@ namespace OpenMS
           for (int c = chargeRange.first; c <= chargeRange.second; ++c)
           {
             if (c == 0) continue;
-            IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, cmap, include_unassigned_peptides, all_hits, c, protID.getIdentifier());
+            IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, cmap, include_unassigned_peptides,
+             [&protID](const PeptideIdentification& id){return protID.getIdentifier() == id.getIdentifier();}, all_hits,
+             [&c](const PeptideHit& hit){return c == hit.getCharge();});
             map<double, double> scores_to_fdr;
             calculateFDRBasic_(scores_to_fdr, scores_labels, q_value, higher_score_better);
-            IDScoreGetterSetter::setPeptideScoresForMap_(scores_to_fdr, cmap, include_unassigned_peptides, score_type, higher_score_better, add_decoy_peptides, c,  protID.getIdentifier());
+            IDScoreGetterSetter::setPeptideScoresForMap_(scores_to_fdr, cmap, include_unassigned_peptides, score_type, higher_score_better, add_decoy_peptides, c, protID.getIdentifier());
           }
         }
         else
         {
-          IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, cmap, include_unassigned_peptides, all_hits, protID.getIdentifier());
+          IDScoreGetterSetter::getPeptideScoresFromMap_(scores_labels, cmap, include_unassigned_peptides, [&protID](const PeptideIdentification& id){return protID.getIdentifier() == id.getIdentifier();}, all_hits);
           map<double, double> scores_to_fdr;
           calculateFDRBasic_(scores_to_fdr, scores_labels, q_value, higher_score_better);
           IDScoreGetterSetter::setPeptideScoresForMap_(scores_to_fdr, cmap, include_unassigned_peptides, score_type, higher_score_better, add_decoy_peptides, protID.getIdentifier());
@@ -999,7 +1080,7 @@ namespace OpenMS
   }
 
   //TODO Add another overload that iterates over a vector. to be consistent with old interface
-  //TODO Make it return a double for the AUC
+  //TODO Make it return a double for the AUC or max FDR (i.e., without cutoff)
   void FalseDiscoveryRate::applyBasic(ProteinIdentification & id, bool groups_too)
   {
     bool add_decoy_proteins = param_.getValue("add_decoy_proteins").toBool();
@@ -1056,8 +1137,68 @@ namespace OpenMS
     scores_to_FDR.clear();
   }
 
+  void FalseDiscoveryRate::applyBasic(const std::vector<ProteinIdentification> & run_info, std::vector<PeptideIdentification> & ids)
+  {
+    if (ids.empty()) return;
+    bool treat_runs_separately = param_.getValue("treat_runs_separately").toBool();
+    bool split_charge_variants = param_.getValue("split_charge_variants").toBool();
+    // TODO decide on param interface. Consolidate with FDR tool parameters.
+    //  Then pass the bool to the applyBasic calls.
+    //bool best_per_pep = param_.getValue("pepFDR").toBool();
 
-  void FalseDiscoveryRate::applyBasic(std::vector<PeptideIdentification> & ids)
+    String identifier = "";
+    bool higher_score_better = true;
+    if (treat_runs_separately)
+    {
+      for (const auto& run : run_info)
+      {
+        identifier = run.getIdentifier();
+        for (const auto& pepid : ids)
+        {
+          if (pepid.getIdentifier() == identifier)
+          {
+            higher_score_better = pepid.isHigherScoreBetter();
+          }
+        }
+        if (split_charge_variants)
+        {
+          pair<int, int> chargeRange = run.getSearchParameters().getChargeRange();
+          for (int c = chargeRange.first; c <= chargeRange.second; ++c)
+          {
+            if (c == 0) continue;
+            applyBasic(ids, higher_score_better, c, identifier);
+          }
+        }
+        else
+        {
+          applyBasic(ids, higher_score_better, 0, identifier);
+        }
+        
+      }
+    }
+    else if (split_charge_variants)
+    {
+      pair<int, int> chargeRange = {10000,-10000};
+      for (const auto& run : run_info)
+      {
+        chargeRange.first = std::min(run.getSearchParameters().getChargeRange().first, chargeRange.first);
+        chargeRange.second = std::max(run.getSearchParameters().getChargeRange().first, chargeRange.second);
+      }
+      higher_score_better = ids[0].isHigherScoreBetter();
+      for (int c = chargeRange.first; c <= chargeRange.second; ++c)
+      {
+        if (c == 0) continue;
+        applyBasic(ids, higher_score_better, c);
+      }
+    }
+    else // altogether
+    {
+      higher_score_better = ids[0].isHigherScoreBetter();
+      applyBasic(ids, higher_score_better);
+    }
+  }
+
+  void FalseDiscoveryRate::applyBasic(std::vector<PeptideIdentification> & ids, bool higher_score_better, int charge, String identifier, bool only_best_per_pep)
   {
     bool q_value = !param_.getValue("no_qvalues").toBool();
     //TODO Check naming conventions. Ontology?
@@ -1067,36 +1208,67 @@ namespace OpenMS
 
     bool add_decoy_peptides = param_.getValue("add_decoy_peptides").toBool();
 
-    //TODO this assumes all runs have the same ordering! Otherwise do it per identifier.
-    bool higher_score_better(ids.begin()->isHigherScoreBetter());
-
-    //TODO not yet implemented
-    //bool treat_runs_separately = param_.getValue("treat_runs_separately").toBool();
-
     ScoreToTgtDecLabelPairs scores_labels;
     std::map<double,double> scores_to_FDR;
-
-    std::vector<int> charges = {0};
-    std::vector<String> identifiers = {""};
-    // if charge states or separate runs: look ahead for possible values and add them to the vecs above
-
-    for (const String& identifier : identifiers)
+    auto idcheck = [&identifier](const PeptideIdentification& id){return identifier == id.getIdentifier();};
+    
+    if (charge == 0 && !only_best_per_pep)
     {
-      for (const int& charge : charges)
+      if (identifier.empty())
       {
-        //TODO setScores also should have a filter mechanism!!
-        IDScoreGetterSetter::getScores_(scores_labels, ids, use_all_hits, charge, identifier);
-        if (scores_labels.empty())
-        {
-         OPENMS_LOG_ERROR << "No scores for run " << identifier << " and charge " << charge << std::endl;
-          throw Exception::MissingInformation(__FILE__, __LINE__, OPENMS_PRETTY_FUNCTION, "No scores could be extracted!");
-        }
-        calculateFDRBasic_(scores_to_FDR, scores_labels, q_value, higher_score_better);
-        if (!scores_labels.empty())
-          IDScoreGetterSetter::setScores_<PeptideIdentification>(scores_to_FDR, ids, score_type, false, add_decoy_peptides);
-        scores_to_FDR.clear();
+        IDScoreGetterSetter::getScores_(scores_labels, ids, use_all_hits);
+      }
+      else
+      {
+        IDScoreGetterSetter::getScores_(scores_labels, ids, idcheck, use_all_hits);
       }
     }
+    else
+    {
+      if (!only_best_per_pep /*&& charge != 0*/)
+      {
+        if (identifier.empty())
+        {
+          IDScoreGetterSetter::getScores_(scores_labels, ids, use_all_hits, [&charge](const PeptideHit& hit){return charge == hit.getCharge();});
+        }
+        else
+        {
+          IDScoreGetterSetter::getScores_(scores_labels, ids, idcheck, use_all_hits, [&charge](const PeptideHit& hit){return charge == hit.getCharge();});
+        }
+      }
+      else if (charge == 0 /* && only_best_per_pep */)
+      {
+        if (identifier.empty())
+        {
+          IDScoreGetterSetter::getScores_(scores_labels, ids, use_all_hits, [](const PeptideHit& hit){return hit.metaValueExists("best_per_peptide") && int(hit.getMetaValue("best_per_peptide")) == 1;});
+        }
+        else
+        {
+          IDScoreGetterSetter::getScores_(scores_labels, ids, idcheck, use_all_hits, [](const PeptideHit& hit){return hit.metaValueExists("best_per_peptide") && int(hit.getMetaValue("best_per_peptide")) == 1;});
+        }
+      }
+      else /*charge != 0 && only_best_per_pep */
+      {
+        if (identifier.empty())
+        {
+          IDScoreGetterSetter::getScores_(scores_labels, ids, use_all_hits, [&charge](const PeptideHit& hit){return (charge == hit.getCharge()) && hit.metaValueExists("best_per_peptide") && int(hit.getMetaValue("best_per_peptide")) == 1;});
+        }
+        else
+        {
+          IDScoreGetterSetter::getScores_(scores_labels, ids, idcheck, use_all_hits, [&charge](const PeptideHit& hit){return (charge == hit.getCharge()) && hit.metaValueExists("best_per_peptide") && int(hit.getMetaValue("best_per_peptide")) == 1;});
+        }
+      }
+
+    }
+    
+    if (scores_labels.empty())
+    {
+      throw Exception::MissingInformation(__FILE__, __LINE__, OPENMS_PRETTY_FUNCTION, "No scores could be extracted for FDR!");
+    }
+    calculateFDRBasic_(scores_to_FDR, scores_labels, q_value, higher_score_better);
+    if (!scores_labels.empty())
+      IDScoreGetterSetter::setScores_<PeptideIdentification>(scores_to_FDR, ids, score_type, false, add_decoy_peptides);
+    scores_to_FDR.clear();
   }
 
   //TODO could be implemented for PeptideIDs, too
@@ -1133,7 +1305,7 @@ namespace OpenMS
 
 
   //TODO remove?
-  double FalseDiscoveryRate::applyEvaluateProteinIDs(const std::vector<ProteinIdentification>& ids, double pepCutoff, UInt fpCutoff, double diffWeight)
+  double FalseDiscoveryRate::applyEvaluateProteinIDs(const std::vector<ProteinIdentification>& ids, double pepCutoff, UInt fpCutoff, double diffWeight) const
   {
     //TODO not yet supported (if ever)
     //bool treat_runs_separately = param_.getValue("treat_runs_separately").toBool();
@@ -1154,7 +1326,7 @@ namespace OpenMS
         rocN(scores_labels, fpCutoff) * (1 - diffWeight);
   }
 
-  double FalseDiscoveryRate::applyEvaluateProteinIDs(const ProteinIdentification& ids, double pepCutoff, UInt fpCutoff, double diffWeight)
+  double FalseDiscoveryRate::applyEvaluateProteinIDs(const ProteinIdentification& ids, double pepCutoff, UInt fpCutoff, double diffWeight) const
   {
     if (ids.getScoreType() != "Posterior Probability")
     {
@@ -1172,7 +1344,7 @@ namespace OpenMS
     return (1.0 - diff) * (1.0 - diffWeight) + auc * diffWeight;
   }
 
-  double FalseDiscoveryRate::applyEvaluateProteinIDs(ScoreToTgtDecLabelPairs& scores_labels, double pepCutoff, UInt fpCutoff, double diffWeight)
+  double FalseDiscoveryRate::applyEvaluateProteinIDs(ScoreToTgtDecLabelPairs& scores_labels, double pepCutoff, UInt fpCutoff, double diffWeight) const
   {
     std::sort(scores_labels.rbegin(), scores_labels.rend());
     double diff = diffEstimatedEmpirical(scores_labels, pepCutoff);
@@ -1183,7 +1355,9 @@ namespace OpenMS
     return (1.0 - diff) * (1.0 - diffWeight) + auc * diffWeight;
   }
 
-  void FalseDiscoveryRate::applyPickedProteinFDR(ProteinIdentification & id, const String& decoy_prefix)
+  //TODO this probably could work on group level, too, but only if peptide-level decoys were used, such that
+  // decoys are indistinguishable iff targets are indistinguishable
+  void FalseDiscoveryRate::applyPickedProteinFDR(ProteinIdentification & id, String decoy_string, bool prefix, bool groups_too)
   {
     bool add_decoy_proteins = param_.getValue("add_decoy_proteins").toBool();
     bool q_value = !param_.getValue("no_qvalues").toBool();
@@ -1193,9 +1367,43 @@ namespace OpenMS
     //TODO this assumes all runs have the same ordering! Otherwise do it per identifier.
     bool higher_score_better(id.isHigherScoreBetter());
 
+    if (decoy_string.empty())
+    {
+      auto r = FalseDiscoveryRate::DecoyStringHelper::findDecoyString(id);
+      if (!r.success)
+      {
+        r.is_prefix = true;
+        r.name = "DECOY_";
+        OPENMS_LOG_WARN << "Unable to determine decoy string automatically (not enough decoys were detected)! Using default " << (r.is_prefix ? "prefix" : "suffix") << " decoy string '" << r.name << "'\n"
+        << "If you think that this is incorrect, please provide a decoy_string and its position manually!" << std::endl;
+      }
+      prefix = r.is_prefix;
+      decoy_string = r.name;
+      // decoy string and position was extracted successfully
+      OPENMS_LOG_INFO << "Using " << (prefix ? "prefix" : "suffix") << " decoy string '" << decoy_string << "'" << std::endl;
+    }
+
     ScoreToTgtDecLabelPairs scores_labels;
     std::map<double,double> scores_to_FDR;
-    IDScoreGetterSetter::getPickedProteinScores_(scores_labels, id, decoy_prefix);
+    std::unordered_map<String, ScoreToTgtDecLabelPair> picked_scores;
+    IDScoreGetterSetter::getPickedProteinScores_(picked_scores, id, decoy_string, prefix);
+    scores_labels.reserve(picked_scores.size());
+
+    if (groups_too)
+    {
+      IDScoreGetterSetter::getPickedProteinGroupScores_(picked_scores, scores_labels, id.getIndistinguishableProteins(), decoy_string, prefix);
+      calculateFDRBasic_(scores_to_FDR, scores_labels, q_value, higher_score_better);
+      IDScoreGetterSetter::setScores_(scores_to_FDR, id.getIndistinguishableProteins(), score_type, false);
+      scores_to_FDR.clear();
+      scores_labels.clear();
+    }
+
+    // for single proteins just take all scores
+    for (auto& kv : picked_scores)
+    {
+      scores_labels.emplace_back(std::move(kv.second)); // move all. We do not need them anymore
+    }
+
     if (scores_labels.empty())
     {
       throw Exception::MissingInformation(__FILE__, __LINE__, OPENMS_PRETTY_FUNCTION, "No scores could be extracted for FDR calculation!");
@@ -1203,6 +1411,7 @@ namespace OpenMS
     calculateFDRBasic_(scores_to_FDR, scores_labels, q_value, higher_score_better);
     IDScoreGetterSetter::setScores_(scores_to_FDR, id, score_type, false, add_decoy_proteins);
     scores_to_FDR.clear();
+    scores_labels.clear();
   }
 
   //TODO the following two methods assume sortedness. Add precondition and/or doxygen comment
@@ -1398,14 +1607,14 @@ namespace OpenMS
     }
 
     //uniquify scores and add decoy proportions
-    size_t decoys = 0;
+    double decoys = 0.; // double to account for "partial" decoys
     double last_score = scores_labels[0].first;
 
     size_t j = 0;
     for (; j < scores_labels.size(); ++j)
     {
-      //TODO think about double comparison here, but an equal should actually be fine here.
-      if (scores_labels[j].first != last_score)
+      //Although we do not really care about equality we compare with tolerance to make it (more?) compiler independent.
+      if (std::abs(scores_labels[j].first - last_score) > 1e-12)
       {
         #ifdef FALSE_DISCOVERY_RATE_DEBUG
         std::cerr << "Recording score: " << last_score << " with " << decoys << " decoys at index+1 = " << (j+1) << " -> fdr: " << decoys/(j+1.0) << std::endl;
@@ -1413,30 +1622,34 @@ namespace OpenMS
         //we are using the conservative formula (Decoy + 1) / (Tgts)
         if (conservative)
         {
-          scores_to_FDR[last_score] = (decoys+1.0)/(j+1.0-decoys);
+          scores_to_FDR[last_score] = (decoys+1.0)/(double(j)+1.0-decoys);
         }
         else
         {
-          scores_to_FDR[last_score] = (decoys+1.0)/(j+1.0);
+          scores_to_FDR[last_score] = (decoys+1.0)/(double(j)+1.0);
         }
 
         last_score = scores_labels[j].first;
       }
 
+      decoys += 1. - scores_labels[j].second;
+
+      /* The following was for the binary interpretation. Now we allow for partial decoy contributions as above
       if (!scores_labels[j].second)
       {
         decoys++;
       }
+      */
     }
 
     // in case there is only one score and generally to include the last score, I guess we need to do this
     if (conservative)
     {
-      scores_to_FDR[last_score] = (decoys+1.0)/(j+1.0-decoys);
+      scores_to_FDR[last_score] = (decoys+1.0)/(double(j)+1.0-decoys);
     }
     else
     {
-      scores_to_FDR[last_score] = (decoys+1.0)/(j+1.0);
+      scores_to_FDR[last_score] = (decoys+1.0)/(double(j)+1.0);
     }
 
     if (qvalue) //apply a cumulative minimum on the map (from low to high fdrs)
@@ -1467,6 +1680,142 @@ namespace OpenMS
       }
 
     }
+  }
+
+  using DecoyStringToAffixCount = std::unordered_map<std::string, std::pair<Size, Size>>;
+  using CaseInsensitiveToCaseSensitiveDecoy = std::unordered_map<std::string, std::string>;
+  /**
+    @brief Heuristic to determine the decoy string given a set of protein names
+
+    Tested decoy strings are "decoy", "dec", "reverse", "rev", "__id_decoy", "xxx", "shuffled", "shuffle", "pseudo" and "random".
+    Both prefix and suffix is tested and if one of the candidates above is found in at least 40% of all proteins,
+    it is returned as the winner (see DecoyHelper::Result).
+  */
+   FalseDiscoveryRate::DecoyStringHelper::Result FalseDiscoveryRate::DecoyStringHelper::findDecoyString(const ProteinIdentification& proteins)
+  {
+    // common decoy strings in FASTA files
+    // note: decoy prefixes/suffices must be provided in lower case
+    static const std::vector<std::string> affixes{ "decoy", "dec", "reverse", "rev", "reversed", "__id_decoy", "xxx", "shuffled", "shuffle", "pseudo", "random" };
+
+    // map decoys to counts of occurrences as prefix/suffix
+    DecoyStringToAffixCount decoy_count;
+    // map case insensitive strings back to original case (as used in fasta)
+    CaseInsensitiveToCaseSensitiveDecoy decoy_case_sensitive;
+
+    // setup prefix- and suffix regex strings
+    // TODO extend regex to allow skipping the underscore? i.e. with "?"
+    const std::string regexstr_prefix = std::string("^(") + ListUtils::concatenate<std::string>(affixes, "_*|") + "_*)";
+    const std::string regexstr_suffix = std::string("(_") + ListUtils::concatenate<std::string>(affixes, "*|_") + ")$";
+
+    // setup regexes
+    const boost::regex pattern_prefix(regexstr_prefix);
+    const boost::regex pattern_suffix(regexstr_suffix);
+
+    Size all_prefix_occur(0), all_suffix_occur(0), all_proteins_count(0);
+
+    for (const auto& prot : proteins.getHits())
+    {
+      all_proteins_count += 1;
+
+      boost::smatch sm;
+      const String& seq = prot.getAccession();
+
+      String seq_lower = seq;
+      seq_lower.toLower();
+
+      // search for prefix
+      bool found_prefix = boost::regex_search(seq_lower, sm, pattern_prefix);
+      if (found_prefix)
+      {
+        std::string match = sm[0];
+        all_prefix_occur++;
+
+        // increase count of observed prefix
+        decoy_count[match].first++;
+
+        // store observed (case sensitive and with special characters)
+        std::string seq_decoy = StringUtils::prefix(seq, match.length());
+        decoy_case_sensitive[match] = seq_decoy;
+      }
+
+      // search for suffix
+      bool found_suffix = boost::regex_search(seq_lower, sm, pattern_suffix);
+      if (found_suffix)
+      {
+        std::string match = sm[0];
+        all_suffix_occur++;
+
+        // increase count of observed suffix
+        decoy_count[match].second++;
+
+        // store observed (case sensitive and with special characters)
+        std::string seq_decoy = StringUtils::suffix(seq, match.length());
+        decoy_case_sensitive[match] = seq_decoy;
+      }
+    }
+
+    // DEBUG ONLY: print counts of found decoys
+    for (auto &a : decoy_count)
+    {
+      OPENMS_LOG_DEBUG << a.first << "\t" << a.second.first << "\t" << a.second.second << std::endl;
+    }
+
+    // less than 30% of proteins are decoys -> won't be able to determine a decoy string and its position
+    // return default values
+    if (static_cast<double>(all_prefix_occur + all_suffix_occur) < 0.3 * static_cast<double>(all_proteins_count))
+    {
+      OPENMS_LOG_ERROR << "Unable to determine decoy string (not enough occurrences; <30%)!" << std::endl;
+      return {false, "?", true};
+    }
+
+    if (all_prefix_occur == all_suffix_occur)
+    {
+      OPENMS_LOG_ERROR << "Unable to determine decoy string (prefix and suffix occur equally often)!" << std::endl;
+      return {false, "?", true};
+    }
+
+    // Decoy prefix occurred at least 80% of all prefixes + observed in at least 30% of all proteins -> set it as prefix decoy
+    for (const auto& pair : decoy_count)
+    {
+      const std::string & case_insensitive_decoy_string = pair.first;
+      const std::pair<Size, Size>& prefix_suffix_counts = pair.second;
+      double freq_prefix = static_cast<double>(prefix_suffix_counts.first) / static_cast<double>(all_prefix_occur);
+      double freq_prefix_in_proteins = static_cast<double>(prefix_suffix_counts.first) / static_cast<double>(all_proteins_count);
+
+      if (freq_prefix >= 0.8 && freq_prefix_in_proteins >= 0.3)
+      {
+        if (prefix_suffix_counts.first != all_prefix_occur)
+        {
+          OPENMS_LOG_WARN << "More than one decoy prefix observed!" << std::endl;
+          OPENMS_LOG_WARN << "Using most frequent decoy prefix (" << (int)(freq_prefix * 100) << "%)" << std::endl;
+        }
+
+        return { true, decoy_case_sensitive[case_insensitive_decoy_string], true};
+      }
+    }
+
+    // Decoy suffix occurred at least 80% of all suffixes + observed in at least 30% of all proteins -> set it as suffix decoy
+    for (const auto& pair : decoy_count)
+    {
+      const std::string& case_insensitive_decoy_string = pair.first;
+      const std::pair<Size, Size>& prefix_suffix_counts = pair.second;
+      double freq_suffix = static_cast<double>(prefix_suffix_counts.second) / static_cast<double>(all_suffix_occur);
+      double freq_suffix_in_proteins = static_cast<double>(prefix_suffix_counts.second) / static_cast<double>(all_proteins_count);
+
+      if (freq_suffix >= 0.8 && freq_suffix_in_proteins >= 0.3)
+      {
+        if (prefix_suffix_counts.second != all_suffix_occur)
+        {
+          OPENMS_LOG_WARN << "More than one decoy suffix observed!" << std::endl;
+          OPENMS_LOG_WARN << "Using most frequent decoy suffix (" << (int)(freq_suffix * 100) << "%)" << std::endl;
+        }
+
+        return { true, decoy_case_sensitive[case_insensitive_decoy_string], false};
+      }
+    }
+
+    OPENMS_LOG_ERROR << "Unable to determine decoy string and its position. Please provide a decoy string and its position as parameters." << std::endl;
+    return {false, "?", true};
   }
 
 } // namespace OpenMS

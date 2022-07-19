@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -37,10 +37,10 @@
 #include <OpenMS/ANALYSIS/MAPMATCHING/FeatureMapping.h>
 
 #include <OpenMS/SYSTEM/File.h>
-#include <OpenMS/FORMAT/FeatureXMLFile.h>
 
 #include <unordered_map>
 #include <QString>
+#include <QStringList>
 
 using namespace std;
 
@@ -152,7 +152,7 @@ namespace OpenMS
       void preprocessingSirius(const String& featureinfo,
                                const MSExperiment& spectra,
                                FeatureMapping::FeatureMappingInfo& fm_info,
-                               FeatureMapping::FeatureToMs2Indices& feature_mapping);
+                               FeatureMapping::FeatureToMs2Indices& feature_mapping) const;
 
       /**
       @brief logs number of features and spectra used
@@ -165,7 +165,7 @@ namespace OpenMS
       */
       void logFeatureSpectraNumber(const String& featureinfo,
                                    const FeatureMapping::FeatureToMs2Indices& feature_mapping,
-                                   const MSExperiment& spectra);
+                                   const MSExperiment& spectra) const;
 
       /**
       @brief Call SIRIUS with QProcess

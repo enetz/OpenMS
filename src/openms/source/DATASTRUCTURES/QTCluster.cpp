@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -40,6 +40,7 @@
 
 #include <numeric> // for make_pair
 #include <algorithm> // for set_intersection
+#include <iterator> // for inserter
 
 using std::map;
 using std::vector;
@@ -128,7 +129,7 @@ namespace OpenMS
     return data_->neighbors_.size() + 1; // + 1 for the center
   }
 
-  bool QTCluster::operator<(const QTCluster& rhs)
+  bool QTCluster::operator<(const QTCluster& rhs) const
   {
     OPENMS_PRECONDITION(finalized_,
         "Cannot perform operation on cluster that is not finalized")
@@ -532,8 +533,4 @@ namespace OpenMS
     data_->tmp_neighbors_.clear();
   }
 
-  bool operator<(const QTCluster& q1, const QTCluster& q2)
-  {
-    return q1.getCurrentQuality() < q2.getCurrentQuality(); 
-  }
 } // namespace OpenMS

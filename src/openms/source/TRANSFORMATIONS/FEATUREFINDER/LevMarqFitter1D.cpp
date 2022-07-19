@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -33,12 +33,14 @@
 // --------------------------------------------------------------------------
 
 #include <OpenMS/TRANSFORMATIONS/FEATUREFINDER/LevMarqFitter1D.h>
+
+#include <unsupported/Eigen/NonLinearOptimization>
 #include <fstream>
 
 namespace OpenMS
 {
 
-    void LevMarqFitter1D::optimize_(Eigen::VectorXd& x_init, GenericFunctor& functor)
+    void LevMarqFitter1D::optimize_(Eigen::VectorXd& x_init, GenericFunctor& functor) const
     {
       //TODO: this function is copy&paste from TraceFitter.h. Make a generic wrapper for
       //LM optimization
@@ -71,3 +73,4 @@ namespace OpenMS
 
 
 } // namespace OpenMS
+

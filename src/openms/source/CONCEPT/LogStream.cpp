@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -49,6 +49,9 @@
 #include <OpenMS/CONCEPT/LogStream.h>
 #include <OpenMS/CONCEPT/StreamHandler.h>
 
+#include <sstream>
+#include <iostream>
+
 #define BUFFER_LENGTH 32768
 
 using namespace std;
@@ -81,7 +84,7 @@ namespace OpenMS
       syncLF_();
       {
         clearCache();
-        if (incomplete_line_.size() > 0)
+        if (!incomplete_line_.empty())
         {
           distribute_(incomplete_line_);
         }

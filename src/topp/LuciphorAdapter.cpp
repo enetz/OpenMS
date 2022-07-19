@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -593,7 +593,7 @@ protected:
     ProteinIdentification::SearchParameters search_params;
 
     String error = parseLuciphorOutput_(out, l_psms, lookup);
-    if (error != "")
+    if (!error.empty())
     {
       error = "Error: LuciPHOr2 output is not correctly formated. " + error;
       writeLog_(error);

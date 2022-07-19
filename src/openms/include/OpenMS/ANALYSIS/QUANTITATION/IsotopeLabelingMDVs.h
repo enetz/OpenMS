@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -34,27 +34,10 @@
 
 #pragma once
 
-#include <OpenMS/config.h>
-
-//Kernal classes
-#include <OpenMS/CHEMISTRY/ISOTOPEDISTRIBUTION/CoarseIsotopePatternGenerator.h>
-#include <OpenMS/CHEMISTRY/ISOTOPEDISTRIBUTION/IsotopeDistribution.h>
-#include <OpenMS/MATH/STATISTICS/StatisticFunctions.h>
 #include <OpenMS/DATASTRUCTURES/DefaultParamHandler.h>
-#include <OpenMS/DATASTRUCTURES/Utils/MatrixUtils.h>
 #include <OpenMS/DATASTRUCTURES/Matrix.h>
 #include <OpenMS/KERNEL/FeatureMap.h>
 #include <OpenMS/KERNEL/Feature.h>
-
-//Standard library
-#include <cstddef> // for size_t & ptrdiff_t
-#include <vector>
-#include <string>
-#include <cmath>
-#include <numeric>
-//#include <unordered_map>
-#include <algorithm>
-#include <Eigen/Dense>
 
 namespace OpenMS
 {
@@ -71,7 +54,7 @@ namespace OpenMS
     IsotopeLabelingMDVs();
 
     /// Destructor
-    ~IsotopeLabelingMDVs();
+    ~IsotopeLabelingMDVs() override;
     //@}
     
     enum class DerivatizationAgent

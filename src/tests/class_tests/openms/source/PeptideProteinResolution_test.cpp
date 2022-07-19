@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry               
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 // 
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -48,8 +48,8 @@ START_TEST(PeptideProteinResolution, "$Id$")
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 
-PeptideProteinResolution* ptr = 0;
-PeptideProteinResolution* null_ptr = 0;
+PeptideProteinResolution* ptr = nullptr;
+PeptideProteinResolution* null_ptr = nullptr;
 START_SECTION(PeptideProteinResolution())
 {
 	ptr = new PeptideProteinResolution();

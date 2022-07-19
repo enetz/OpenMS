@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -45,9 +45,7 @@
 #include <utility>
 #include <boost/bind.hpp>
 
-namespace OpenMS
-{
-  namespace DIAHelpers
+namespace OpenMS::DIAHelpers
   {
 
     void adjustExtractionWindow(double& right, double& left, const double& mz_extract_window, const bool& mz_extraction_ppm)
@@ -408,4 +406,3 @@ namespace OpenMS
 //std::vector<std::pair<double, double> > & isotopeMasses, uint32_t charge)
 
   }
-}

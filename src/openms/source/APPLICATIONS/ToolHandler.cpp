@@ -2,7 +2,7 @@
 //                   OpenMS -- Open-Source Mass Spectrometry
 // --------------------------------------------------------------------------
 // Copyright The OpenMS Team -- Eberhard Karls University Tuebingen,
-// ETH Zurich, and Freie Universitaet Berlin 2002-2021.
+// ETH Zurich, and Freie Universitaet Berlin 2002-2022.
 //
 // This software is released under a three-clause BSD license:
 //  * Redistributions of source code must retain the above copyright
@@ -101,11 +101,9 @@ namespace OpenMS
     tools_map["MassTraceExtractor"] = Internal::ToolDescription("MassTraceExtractor", "Signal processing and preprocessing");
     tools_map["MRMMapper"] = Internal::ToolDescription("MRMMapper", "Targeted Experiments");
     tools_map["MSGFPlusAdapter"] = Internal::ToolDescription("MSGFPlusAdapter", "Identification");
-    tools_map["MyriMatchAdapter"] = Internal::ToolDescription("MyriMatchAdapter", "Identification");
     tools_map["MzTabExporter"] = Internal::ToolDescription("MzTabExporter", "File Handling");
     tools_map["NoiseFilterGaussian"] = Internal::ToolDescription("NoiseFilterGaussian", "Signal processing and preprocessing");
     tools_map["NoiseFilterSGolay"] = Internal::ToolDescription("NoiseFilterSGolay", "Signal processing and preprocessing");
-    tools_map["OMSSAAdapter"] = Internal::ToolDescription("OMSSAAdapter", "Identification");
     tools_map["OpenPepXL"] = Internal::ToolDescription("OpenPepXL", "Identification");
     tools_map["OpenPepXLLF"] = Internal::ToolDescription("OpenPepXLLF", "Identification");
     tools_map["OpenSwathAnalyzer"] = Internal::ToolDescription("OpenSwathAnalyzer", "Targeted Experiments");
@@ -270,9 +268,10 @@ namespace OpenMS
   {
     // for internal tools, query TOPP and UTILS for a match
     Internal::ToolDescription ret;
-    if (getUtilList().has(toolname))
+    const auto& utils = getUtilList();
+    if (utils.find(toolname) != utils.end())
     {
-      return getUtilList()[toolname].types;
+      return utils.at(toolname).types;
     }
     else
     {
@@ -285,7 +284,7 @@ namespace OpenMS
       {
         tools = getTOPPToolList();
       }
-      if (tools.has(toolname))
+      if (tools.find(toolname) != tools.end())
       {
         return tools[toolname].types;
       }
@@ -295,8 +294,10 @@ namespace OpenMS
 
   bool ToolHandler::checkDuplicated(const String& toolname)
   {
-    bool in_utils = getUtilList().has(toolname);
-    bool in_tools = getTOPPToolList().has(toolname);
+    ToolListType utilmap = getUtilList();
+    ToolListType toppmap = getTOPPToolList();
+    bool in_utils = utilmap.find(toolname) != utilmap.end();
+    bool in_tools = toppmap.find(toolname) != toppmap.end();
     bool duplicated = in_utils && in_tools;
     return duplicated;
   }
@@ -443,11 +444,11 @@ namespace OpenMS
     ToolListType tools = getTOPPToolList(true);
     ToolListType utils = getUtilList();
     String s;
-    if (tools.has(toolname))
+    if (tools.find(toolname) != tools.end())
     {
       s = tools[toolname].category;
     }
-    else if (utils.has(toolname))
+    else if (utils.find(toolname) != utils.end())
     {
       s = utils[toolname].category;
     }
