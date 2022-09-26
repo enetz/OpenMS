@@ -79,6 +79,15 @@ namespace OpenMS
         ResidueModification::TermSpecificity term_spec_alpha;
         ResidueModification::TermSpecificity term_spec_beta;
         int precursor_correction = 0;
+        uint32_t first_peak_index_alpha = 0;
+        uint32_t second_peak_index_alpha = 0;
+        uint32_t first_peak_index_beta = 0;
+        uint32_t second_peak_index_beta = 0;
+        double first_peak_pep_error_alpha = 0;
+        double second_peak_pep_error_alpha = 0;
+        double first_peak_pep_error_beta = 0;
+        double second_peak_pep_error_beta = 0;
+        bool alpha_beta_switched = false;
 
         ProteinProteinCrossLinkType getType() const
         {
@@ -179,6 +188,130 @@ namespace OpenMS
       };
 
       /**
+        * @brief The CrossLinkSpectrumMatch struct represents a PSM between a ProteinProteinCrossLink and a spectrum in OpenPepXL.
+
+          This struct contains a ProteinProteinCrossLink and indices to one or two spectra.
+          It also contains the results of a match between the ProteinProteinCrossLink and these spectra as scores and peak annotations.
+          Used as a temporary container to collect results efficiently, since only a few top matches will be kept for each experimental spectrum for output.
+        */
+      struct CleavableCrossLinkSpectrumMatch
+      {
+        /// structure of the cross-link
+        ProteinProteinCrossLink cross_link;
+
+        /// reference to pair of spectra
+        Size scan_index_light = 0;
+        Size scan_index_heavy = 0;
+
+        /// final score
+        double score = 0;
+
+        /// rank among the matches to the same spectrum
+        Size rank = 0;
+
+        /// counts, scores and other data for xQuest-like output
+        double xquest_score = 0;
+        double pre_score = 0;
+        double percTIC = 0;
+        double wTIC = 0;
+        double wTICold = 0;
+        double int_sum = 0;
+        double intsum_alpha = 0;
+        double intsum_beta = 0;
+        double total_current = 0;
+        double precursor_error_ppm = 0;
+
+        double match_odds = 0;
+        double match_odds_alpha = 0;
+        double match_odds_beta = 0;
+        double match_odds_c_alpha = 0;
+        double match_odds_x_alpha = 0;
+        double match_odds_c_beta = 0;
+        double match_odds_x_beta = 0;
+
+        double log_occupancy = 0;
+        double log_occupancy_alpha = 0;
+        double log_occupancy_beta = 0;
+        double xcorrx_max = 0;
+        double xcorrc_max = 0;
+
+        Size spectrum_size = 0;
+        Size theo_spec_linear_alpha = 0;
+        Size theo_spec_xlink_alpha = 0;
+        Size theo_spec_linear_beta = 0;
+        Size theo_spec_xlink_beta = 0;
+        Size matched_linear_alpha = 0;
+        Size matched_linear_beta = 0;
+        Size matched_xlink_alpha = 0;
+        Size matched_xlink_beta = 0;
+
+        double first_peak_pep_error_alpha = 0;
+        double second_peak_pep_error_alpha = 0;
+        double first_peak_pep_error_beta = 0;
+        double second_peak_pep_error_beta = 0;
+
+        double pair_peptide_error = 0;
+        double first_peak_error_alpha = 0;
+        double second_peak_error_alpha = 0;
+        double first_peak_error_beta = 0;
+        double second_peak_error_beta = 0;
+
+        Size peak_pairs = 0;
+        Size peak_singles_alpha = 0;
+        Size peak_pairs_alpha = 0;
+        Size peak_singles_beta = 0;
+        Size peak_pairs_beta = 0;
+
+        double pair_coverage = 0;
+        double pair_coverage_alpha = 0;
+        double pair_coverage_beta = 0;
+
+        double pair_TIC = 0;
+        double pair_int = 0;
+        double pair_int_alpha = 0;
+        double singles_int_alpha = 0;
+        double pair_int_beta = 0;
+        double singles_int_beta = 0;
+
+        double linear_coverage_alpha = 0.0;
+        double xlink_coverage_alpha = 0.0;
+        double linear_coverage_beta = 0.0;
+        double xlink_coverage_beta = 0.0;
+        float first_peak_int_alpha = 0.0;
+        float second_peak_int_alpha = 0.0;
+        float first_peak_int_beta = 0.0;
+        float second_peak_int_beta = 0.0;
+
+        double num_iso_peaks_mean = 0;
+        double num_iso_peaks_mean_linear_alpha = 0;
+        double num_iso_peaks_mean_linear_beta = 0;
+        double num_iso_peaks_mean_xlinks_alpha = 0;
+        double num_iso_peaks_mean_xlinks_beta = 0;
+
+        double ppm_error_abs_sum_linear_alpha = 0;
+        double ppm_error_abs_sum_linear_beta = 0;
+        double ppm_error_abs_sum_xlinks_alpha = 0;
+        double ppm_error_abs_sum_xlinks_beta = 0;
+        double ppm_error_abs_sum_linear = 0;
+        double ppm_error_abs_sum_xlinks = 0;
+        double ppm_error_abs_sum_alpha = 0;
+        double ppm_error_abs_sum_beta = 0;
+        double ppm_error_abs_sum = 0;
+
+        int precursor_correction = 0;
+
+        double precursor_total_intensity = 0;
+        double precursor_target_intensity = 0;
+        double precursor_signal_proportion = 0;
+        Size precursor_target_peak_count = 0;
+        Size precursor_residual_peak_count = 0;
+
+        std::vector<PeptideHit::PeakAnnotation> frag_annotations;
+
+        Size peptide_id_index = 0;
+      };
+
+      /**
         * @brief Comparator to sort CrossLinkSpectrumMatches by the main score
 
        */
@@ -201,6 +334,26 @@ namespace OpenMS
           return a.score < b.score;
         }
       };
+
+    struct CCLSMScoreComparator
+    {
+      bool operator() (const CleavableCrossLinkSpectrumMatch& a, const CleavableCrossLinkSpectrumMatch& b)
+      {
+        if (a.score == b.score)
+        {
+          // in rare cases when the sequences are the same, multiple candidates with different cross-linked positions can have the same score
+          // that leads to ambiguous sorting and may cause differences between compilers
+          // in those cases we prefer higher positions (just like the score),
+          // because the lower position might be an N-term link, which is usually less likely and all other positions are equal (because the score is equal)
+          if (a.cross_link.cross_link_position.first == b.cross_link.cross_link_position.first)
+          {
+            return a.cross_link.cross_link_position.second < b.cross_link.cross_link_position.second;
+          }
+          return a.cross_link.cross_link_position.first < b.cross_link.cross_link_position.first;
+        }
+        return a.score < b.score;
+      }
+    };
 
       /**
        * @brief The XLPrecursor struct represents a cross-link candidate in the process of filtering candidates by precursor masses in OpenPepXL.
@@ -294,28 +447,35 @@ namespace OpenMS
         }
       };
 
-      struct AASeqWithMassPtrComparator
-      {
-          bool operator() (const AASeqWithMass* a, const AASeqWithMass* b) const
+      struct PeptideCandidate {
+          const AASeqWithMass* peptide;
+          uint32_t first_peak_index;
+          uint32_t second_peak_index;
+          double first_peak_pep_error;
+          double second_peak_pep_error;
+      };
+
+      struct PeptideCandidateComparator {
+          bool operator() (const PeptideCandidate& a, const PeptideCandidate& b)
           {
-            return a->peptide_mass < b->peptide_mass;
+            return a.peptide->peptide_mass < b.peptide->peptide_mass;
           }
-          bool operator() (const AASeqWithMass* a, double b) const
+          bool operator() (const PeptideCandidate& a, double b)
           {
-            return a->peptide_mass < b;
+            return a.peptide->peptide_mass < b;
           }
-          bool operator() (double a, const AASeqWithMass* b) const
+          bool operator() (double a, const PeptideCandidate& b)
           {
-            return a < b->peptide_mass;
+            return a < b.peptide->peptide_mass;
           }
       };
 
       struct XLCPrecursor
       {
           double precursor_mass;
-          const AASeqWithMass* alpha;
-          const AASeqWithMass* beta;
-          XLCPrecursor(double set_mass, const AASeqWithMass* set_alpha, const AASeqWithMass* set_beta) :
+          const PeptideCandidate* alpha;
+          const PeptideCandidate* beta;
+          XLCPrecursor(double set_mass, const PeptideCandidate* set_alpha, const PeptideCandidate* set_beta) :
             precursor_mass(set_mass), alpha(set_alpha), beta(set_beta) {};
       };
 

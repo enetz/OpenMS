@@ -46,8 +46,6 @@
 
 // turn on additional debug output
 // #define DEBUG_OPXLHELPER
- #define DEBUG_PREFILTER
-
 
 using namespace std;
 
@@ -248,8 +246,8 @@ namespace OpenMS
     return mass_to_candidates;
   }
 
-    vector<OPXLDataStructs::XLCPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<const OPXLDataStructs::AASeqWithMass*>& alpha_peptides,
-                                                                                  const vector<const OPXLDataStructs::AASeqWithMass*>& beta_peptides,
+    vector<OPXLDataStructs::XLCPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::PeptideCandidate>& alpha_peptides,
+                                                                                  const vector<OPXLDataStructs::PeptideCandidate>& beta_peptides,
                                                                                   double cross_link_mass,
                                                                                   const DoubleList& cross_link_mass_mono_link,
                                                                                   const StringList& cross_link_residue1,
@@ -266,7 +264,7 @@ namespace OpenMS
 
       // compute a very conservative total upper bound, based on the heaviest possible linear peptide
       // can be used instead of alpha_peptides.end() in all cases for this precursor mass
-      auto conservative_upper_bound = upper_bound(alpha_peptides.cbegin(), alpha_peptides.cend(), max_precursor, OPXLDataStructs::AASeqWithMassPtrComparator());
+      auto conservative_upper_bound = upper_bound(alpha_peptides.cbegin(), alpha_peptides.cend(), max_precursor, OPXLDataStructs::PeptideCandidateComparator());
 
       // initialize additional iterators
       // the upper bounds for a precursor mass can be used as the lower bounds
@@ -298,13 +296,13 @@ namespace OpenMS
         double min_peptide_mass = precursor_mass - cross_link_mass - allowed_error;
         double max_peptide_mass = precursor_mass - cross_link_mass + allowed_error;
 
-        first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
-        last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
+        first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+        last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
 
 #pragma omp parallel for
         for (auto alpha_it = first_loop; alpha_it < last_loop; ++alpha_it)
         {
-          const String& seq_first = (*alpha_it)->unmodified_seq;
+          const String& seq_first = alpha_it->peptide->unmodified_seq;
           // test if this peptide could have loop-links: one cross-link with both sides attached to the same peptide
           bool first_res = false; // is there a residue the first side of the linker can attach to?
           bool second_res = false; // is there a residue the second side of the linker can attach to?
@@ -333,12 +331,12 @@ namespace OpenMS
           if (first_res && second_res)
           {
             // Monoisotopic weight of the peptide + cross-linker
-            double cross_linked_peptide_mass = (*alpha_it)->peptide_mass + cross_link_mass;
+            double cross_linked_peptide_mass = alpha_it->peptide->peptide_mass + cross_link_mass;
 
 #pragma omp critical (mass_to_candidates_access)
             {
               mass_to_candidates.emplace_back(cross_linked_peptide_mass,
-                                               *alpha_it, nullptr);
+                                              &*alpha_it, nullptr);
               precursor_correction_positions.push_back(pm);
             }
           }
@@ -352,41 +350,43 @@ namespace OpenMS
 
           // mono-link masses are sorted in descending order
           // so we can use the results from the last search as a new lower bounds for both searches again
-          first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
-          last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
+          first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+          last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
 
 #pragma omp parallel for
           for (auto alpha_it = first_mono; alpha_it < last_mono; ++alpha_it)
           {
             // Monoisotopic weight of the peptide + cross-linker
-            double cross_linked_peptide_mass = (*alpha_it)->peptide_mass + mono_link_mass;
+            double cross_linked_peptide_mass = alpha_it->peptide->peptide_mass + mono_link_mass;
 
 #pragma omp critical (mass_to_candidates_access)
             {
               mass_to_candidates.emplace_back(cross_linked_peptide_mass,
-                                              *alpha_it, nullptr);
+                                              &*alpha_it, nullptr);
               precursor_correction_positions.push_back(pm);
             }
           } // end of loop over candidates for a specific mono-link mass
         } // end of loop over mono-link masses
 
+        if (beta_peptides.empty()) return mass_to_candidates;
+
         // ################################ Enumerate Cross-Links #################
         // constrain the conservative upper bound even more,
-        // because we have to fit in two alpha_peptides this time
-        // maximal mass: difference between precursor mass and the smallest peptide + cross-linker
-        max_peptide_mass = precursor_mass - cross_link_mass - beta_peptides[0]->peptide_mass + allowed_error;
-        last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::AASeqWithMassPtrComparator());
+        // because we have to fit in two peptides this time
+        // maximal mass: difference between precursor mass and the smallest beta_peptide + cross-linker
+
+        max_peptide_mass = precursor_mass - cross_link_mass - beta_peptides[0].peptide->peptide_mass + allowed_error;
+        last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
 
 #pragma omp parallel for
         for (auto alpha_it = alpha_peptides.begin(); alpha_it < last_alpha; ++alpha_it)
         {
           // Constrain search for beta
-          double min_peptide_mass_beta = precursor_mass - cross_link_mass - (*alpha_it)->peptide_mass - allowed_error;
-          double max_peptide_mass_beta = precursor_mass - cross_link_mass - (*alpha_it)->peptide_mass + allowed_error;
+          double min_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_it->peptide->peptide_mass - allowed_error;
+          double max_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_it->peptide->peptide_mass + allowed_error;
 
-          // the last_alpha upper bound is also a conservative upper bound here
-          auto first_beta = lower_bound(beta_peptides.begin(), beta_peptides.end(), min_peptide_mass_beta, OPXLDataStructs::AASeqWithMassPtrComparator());
-          auto last_beta = upper_bound(beta_peptides.begin(), beta_peptides.end(), max_peptide_mass_beta, OPXLDataStructs::AASeqWithMassPtrComparator());
+          auto first_beta = lower_bound(beta_peptides.begin(), beta_peptides.end(), min_peptide_mass_beta, OPXLDataStructs::PeptideCandidateComparator());
+          auto last_beta = upper_bound(beta_peptides.begin(), beta_peptides.end(), max_peptide_mass_beta, OPXLDataStructs::PeptideCandidateComparator());
 
           if (first_beta == last_beta)
           {
@@ -396,12 +396,12 @@ namespace OpenMS
           for (auto beta_it = first_beta; beta_it < last_beta; ++beta_it)
           {
             // Monoisotopic weight of the first peptide + the second peptide + cross-linker
-            double cross_linked_pair_mass = (*alpha_it)->peptide_mass + (*beta_it)->peptide_mass + cross_link_mass;
+            double cross_linked_pair_mass = alpha_it->peptide->peptide_mass + beta_it->peptide->peptide_mass + cross_link_mass;
 
 #pragma omp critical (mass_to_candidates_access)
             {
               mass_to_candidates.emplace_back(cross_linked_pair_mass,
-                                              *alpha_it, *beta_it);
+                                              &*alpha_it, &*beta_it);
               precursor_correction_positions.push_back(pm);
             }
           } // end of loop over betas
@@ -411,16 +411,16 @@ namespace OpenMS
     }
 
   std::vector<OPXLDataStructs::AASeqWithMass> OPXLHelper::digestDatabase(
-    vector<FASTAFile::FASTAEntry> fasta_db,
-    EnzymaticDigestion digestor,
+    const vector<FASTAFile::FASTAEntry>& fasta_db,
+    const ProteaseDigestion& digestor,
     Size min_peptide_length,
-    StringList cross_link_residue1,
-    StringList cross_link_residue2,
+    const StringList& cross_link_residue1,
+    const StringList& cross_link_residue2,
     const ModifiedPeptideGenerator::MapToResidueType& fixed_modifications,
     const ModifiedPeptideGenerator::MapToResidueType& variable_modifications,
     Size max_variable_mods_per_peptide)
   {
-    multimap<StringView, AASequence> processed_peptides;
+    multimap<StringView, Size> processed_peptides;
     vector<OPXLDataStructs::AASeqWithMass> peptide_masses;
 
     bool n_term_linker = false;
@@ -499,15 +499,12 @@ namespace OpenMS
         }
         if (skip) continue;
 
-        bool already_processed = false;
-
-        if (processed_peptides.find(*cit) != processed_peptides.end())
+        auto prev_pep = processed_peptides.find(*cit);
+        if (prev_pep != processed_peptides.end())
         {
-          // peptide (and all modified variants) already processed so skip it
-          already_processed = true;
+          // peptide (and all modified variants) already processed so add the protein identifier and skip it
+          continue;
         }
-
-        if (already_processed) continue;
 
         vector<AASequence> all_modified_peptides;
 
@@ -525,8 +522,8 @@ namespace OpenMS
           pep_mass.position = position;
           pep_mass.unmodified_seq = cit->getString();
 
-          processed_peptides.insert(pair<StringView, AASequence>(*cit, candidate));
           peptide_masses.push_back(pep_mass);
+          processed_peptides.insert({*cit, peptide_masses.size() - 1});
         }
       }
     }
@@ -723,6 +720,7 @@ namespace OpenMS
             continue;
           }
 
+          cross_link_candidate.alpha_beta_switched = !alpha_first;
           if (alpha_first)
           {
             cross_link_candidate.alpha = peptide_first;
@@ -787,6 +785,7 @@ namespace OpenMS
           for (Size x = 0; x < link_pos_first.size(); ++x)
           {
             OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate;
+            cross_link_candidate.alpha_beta_switched = !alpha_first;
             if (alpha_first)
             {
               cross_link_candidate.alpha = peptide_first;
@@ -839,6 +838,7 @@ namespace OpenMS
             OPXLDataStructs::ProteinProteinCrossLink cross_link_candidate;
             cross_link_candidate.cross_linker_name = cross_link_name;
             cross_link_candidate.precursor_correction = precursor_corrections[i];
+            cross_link_candidate.alpha_beta_switched = !alpha_first;
             if (alpha_first)
             {
               cross_link_candidate.alpha = peptide_first;
@@ -935,22 +935,21 @@ namespace OpenMS
         OPXLDataStructs::XLCPrecursor candidate = candidates[i];
         vector <SignedSize> link_pos_first;
         vector <SignedSize> link_pos_second;
-        const AASequence* peptide_first = &(candidate.alpha->peptide_seq);
-        OPXLDataStructs::PeptidePosition peptide_pos_first = candidate.alpha->position;
+        const AASequence* peptide_first = &(candidate.alpha->peptide->peptide_seq);
+        OPXLDataStructs::PeptidePosition peptide_pos_first = candidate.alpha->peptide->position;
         const AASequence* peptide_second = nullptr;
         OPXLDataStructs::PeptidePosition peptide_pos_second = OPXLDataStructs::INTERNAL;
-        String seq_first = candidate.alpha->unmodified_seq;
+        String seq_first = candidate.alpha->peptide->unmodified_seq;
         String seq_second;
         if (candidate.beta)
         {
-          peptide_second = &(candidate.beta->peptide_seq);
-          peptide_pos_second = candidate.beta->position;
-          seq_second = candidate.beta->unmodified_seq;
+          peptide_second = &(candidate.beta->peptide->peptide_seq);
+          peptide_pos_second = candidate.beta->peptide->position;
+          seq_second = candidate.beta->peptide->unmodified_seq;
         }
 
         // mono-links and loop-links with different masses can be generated for the same precursor mass, but only one of them can be valid each time.
         // Find out which is the case. But it should not happen often enough to slow down the tool significantly.
-        //TODO(Ruben): Check why i need to create a string from the residue for comparison
         bool is_loop = false;
         for (Size f = 0; f < allowed_error_vector.size(); ++f)
         {
@@ -1046,6 +1045,17 @@ namespace OpenMS
               cross_link_candidate.cross_link_position.second = link_pos_second[y];
               cross_link_candidate.term_spec_alpha = ResidueModification::ANYWHERE;
               cross_link_candidate.term_spec_beta = ResidueModification::ANYWHERE;
+              cross_link_candidate.first_peak_index_alpha = candidate.alpha->first_peak_index;
+              cross_link_candidate.second_peak_index_alpha = candidate.alpha->second_peak_index;
+              cross_link_candidate.first_peak_pep_error_alpha = candidate.alpha->first_peak_pep_error;
+              cross_link_candidate.second_peak_pep_error_alpha = candidate.alpha->second_peak_pep_error;
+              if (peptide_second)
+              {
+                cross_link_candidate.first_peak_index_beta = candidate.beta->first_peak_index;
+                cross_link_candidate.second_peak_index_beta = candidate.beta->second_peak_index;
+                cross_link_candidate.first_peak_pep_error_beta = candidate.beta->first_peak_pep_error;
+                cross_link_candidate.second_peak_pep_error_beta = candidate.beta->second_peak_pep_error;
+              }
             }
             else
             {
@@ -1055,6 +1065,14 @@ namespace OpenMS
               cross_link_candidate.cross_link_position.second = link_pos_first[x];
               cross_link_candidate.term_spec_alpha = ResidueModification::ANYWHERE;
               cross_link_candidate.term_spec_beta = ResidueModification::ANYWHERE;
+              cross_link_candidate.first_peak_index_alpha = candidate.beta->first_peak_index;
+              cross_link_candidate.second_peak_index_alpha = candidate.beta->second_peak_index;
+              cross_link_candidate.first_peak_index_beta = candidate.alpha->first_peak_index;
+              cross_link_candidate.second_peak_index_beta = candidate.alpha->second_peak_index;
+              cross_link_candidate.first_peak_pep_error_alpha = candidate.alpha->first_peak_pep_error;
+              cross_link_candidate.second_peak_pep_error_alpha = candidate.alpha->second_peak_pep_error;
+              cross_link_candidate.first_peak_pep_error_beta = candidate.alpha->first_peak_pep_error;
+              cross_link_candidate.second_peak_pep_error_beta = candidate.alpha->second_peak_pep_error;
             }
             // Cross-linker mass is only one of the mono-link masses, if there is no second position (second == -1), otherwise the normal linker mass
             if (link_pos_second[y] != -1)
@@ -1115,6 +1133,17 @@ namespace OpenMS
                 cross_link_candidate.cross_link_position.second = mod_pos;
                 cross_link_candidate.term_spec_alpha = ResidueModification::ANYWHERE;
                 cross_link_candidate.term_spec_beta = second_spec;
+                cross_link_candidate.first_peak_index_alpha = candidate.alpha->first_peak_index;
+                cross_link_candidate.second_peak_index_alpha = candidate.alpha->second_peak_index;
+                cross_link_candidate.first_peak_pep_error_alpha = candidate.alpha->first_peak_pep_error;
+                cross_link_candidate.second_peak_pep_error_alpha = candidate.alpha->second_peak_pep_error;
+                if (peptide_second)
+                {
+                  cross_link_candidate.first_peak_index_beta = candidate.beta->first_peak_index;
+                  cross_link_candidate.second_peak_index_beta = candidate.beta->second_peak_index;
+                  cross_link_candidate.first_peak_pep_error_beta = candidate.beta->first_peak_pep_error;
+                  cross_link_candidate.second_peak_pep_error_beta = candidate.beta->second_peak_pep_error;
+                }
               }
               else
               {
@@ -1124,6 +1153,14 @@ namespace OpenMS
                 cross_link_candidate.cross_link_position.second = link_pos_first[x];
                 cross_link_candidate.term_spec_alpha = second_spec;
                 cross_link_candidate.term_spec_beta = ResidueModification::ANYWHERE;
+                cross_link_candidate.first_peak_index_alpha = candidate.beta->first_peak_index;
+                cross_link_candidate.second_peak_index_alpha = candidate.beta->second_peak_index;
+                cross_link_candidate.first_peak_index_beta = candidate.alpha->first_peak_index;
+                cross_link_candidate.second_peak_index_beta = candidate.alpha->second_peak_index;
+                cross_link_candidate.first_peak_pep_error_alpha = candidate.alpha->first_peak_pep_error;
+                cross_link_candidate.second_peak_pep_error_alpha = candidate.alpha->second_peak_pep_error;
+                cross_link_candidate.first_peak_pep_error_beta = candidate.beta->first_peak_pep_error;
+                cross_link_candidate.second_peak_pep_error_beta = candidate.beta->second_peak_pep_error;
               }
               // If second peptide has a term specificity, there must be a second peptide, so we don't have to consider mono or loop-links
               cross_link_candidate.cross_linker_mass = cross_link_mass;
@@ -1166,7 +1203,18 @@ namespace OpenMS
                 cross_link_candidate.cross_link_position.first = mod_pos;
                 cross_link_candidate.cross_link_position.second = link_pos_second[x];
                 cross_link_candidate.term_spec_alpha = first_spec;
-                cross_link_candidate.term_spec_beta = ResidueModification::ANYWHERE;;
+                cross_link_candidate.term_spec_beta = ResidueModification::ANYWHERE;
+                cross_link_candidate.first_peak_index_alpha = candidate.alpha->first_peak_index;
+                cross_link_candidate.second_peak_index_alpha = candidate.alpha->second_peak_index;
+                cross_link_candidate.first_peak_pep_error_alpha = candidate.alpha->first_peak_pep_error;
+                cross_link_candidate.second_peak_pep_error_alpha = candidate.alpha->second_peak_pep_error;
+                if (peptide_second)
+                {
+                  cross_link_candidate.first_peak_index_beta = candidate.beta->first_peak_index;
+                  cross_link_candidate.second_peak_index_beta = candidate.beta->second_peak_index;
+                  cross_link_candidate.first_peak_pep_error_beta = candidate.beta->first_peak_pep_error;
+                  cross_link_candidate.second_peak_pep_error_beta = candidate.beta->second_peak_pep_error;
+                }
               }
               else
               {
@@ -1176,6 +1224,14 @@ namespace OpenMS
                 cross_link_candidate.cross_link_position.second = mod_pos;
                 cross_link_candidate.term_spec_alpha = ResidueModification::ANYWHERE;;
                 cross_link_candidate.term_spec_beta = first_spec;
+                cross_link_candidate.first_peak_index_alpha = candidate.beta->first_peak_index;
+                cross_link_candidate.second_peak_index_alpha = candidate.beta->second_peak_index;
+                cross_link_candidate.first_peak_index_beta = candidate.alpha->first_peak_index;
+                cross_link_candidate.second_peak_index_beta = candidate.alpha->second_peak_index;
+                cross_link_candidate.first_peak_pep_error_alpha = candidate.alpha->first_peak_pep_error;
+                cross_link_candidate.second_peak_pep_error_alpha = candidate.alpha->second_peak_pep_error;
+                cross_link_candidate.first_peak_pep_error_beta = candidate.beta->first_peak_pep_error;
+                cross_link_candidate.second_peak_pep_error_beta = candidate.beta->second_peak_pep_error;
               }
               // Cross-linker mass is only one of the mono-link masses, if there is no second position (second == -1), otherwise the normal linker mass
               if (link_pos_second[x] != -1)
@@ -1440,6 +1496,7 @@ namespace OpenMS
       ph_alpha.setMetaValue("precursor_signal_proportion", top_csms_spectrum[i].precursor_signal_proportion);
       ph_alpha.setMetaValue("precursor_target_peak_count", top_csms_spectrum[i].precursor_target_peak_count);
       ph_alpha.setMetaValue("precursor_residual_peak_count", top_csms_spectrum[i].precursor_residual_peak_count);
+      ph_alpha.setMetaValue("precursor_correction", top_csms_spectrum[i].precursor_correction);
 
       ph_alpha.setMetaValue("selected", "false");
 
@@ -1447,6 +1504,321 @@ namespace OpenMS
 
 #ifdef DEBUG_OPXLHELPER
 #pragma omp critical (LOG_DEBUG_access)
+      OPENMS_LOG_DEBUG << "Annotations of size " << ph_alpha.getPeakAnnotations().size() << endl;
+#endif
+
+      if (top_csms_spectrum[i].cross_link.getType() == OPXLDataStructs::CROSS)
+      {
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_BETA_SEQUENCE, (*top_csms_spectrum[i].cross_link.beta).toString());
+
+        ph_beta.setSequence(*top_csms_spectrum[i].cross_link.beta);
+        ph_beta.setCharge(precursor_charge);
+        ph_beta.setScore(top_csms_spectrum[i].score);
+
+        ph_beta.setMetaValue("xl_chain", "MS:1002510"); // receiver
+        ph_beta.setMetaValue(Constants::UserParam::SPECTRUM_REFERENCE, spectra[scan_index].getNativeID());
+        ph_beta.setMetaValue("spectrum_index", scan_index);
+
+        phs.push_back(ph_alpha);
+        phs.push_back(ph_beta);
+      }
+      else
+      {
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_BETA_SEQUENCE, "-");
+        phs.push_back(ph_alpha);
+      }
+
+      peptide_id.setRT(spectrum_light.getRT());
+      peptide_id.setMZ(precursor_mz);
+      String specIDs;
+      if (scan_index_heavy != scan_index)
+      {
+        specIDs = spectra[scan_index].getNativeID() + "," + spectra[scan_index_heavy].getNativeID();
+      }
+      else
+      {
+        specIDs = spectra[scan_index].getNativeID();
+      }
+
+      peptide_id.setMetaValue(Constants::UserParam::SPECTRUM_REFERENCE, specIDs);
+      peptide_id.setHits(phs);
+      peptide_id.setScoreType(Constants::UserParam::OPENPEPXL_SCORE);
+
+// This critical section is called this way, because access to all_top_csms also happens in OpenPepXLAlgorithm and OpenPepXLLFAlgorithm.
+// Access to peptide_ids is also critical, but it is only accessed here during parallel processing.
+#pragma omp critical (all_top_csms_access)
+      {
+        peptide_ids.push_back(peptide_id);
+        all_top_csms[all_top_csms_current_index][i].peptide_id_index = peptide_ids.size()-1;
+      }
+    }
+  }
+
+  void OPXLHelper::buildPeptideIDs(std::vector<PeptideIdentification> & peptide_ids, const std::vector< OPXLDataStructs::CleavableCrossLinkSpectrumMatch > & top_csms_spectrum, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > > & all_top_csms, Size all_top_csms_current_index, const PeakMap & spectra, Size scan_index, Size scan_index_heavy)
+  {
+    for (Size i = 0; i < top_csms_spectrum.size(); ++i)
+    {
+      PeptideIdentification peptide_id;
+
+      const PeakSpectrum& spectrum_light = spectra[scan_index];
+      double precursor_charge = spectrum_light.getPrecursors()[0].getCharge();
+      double precursor_mz = spectrum_light.getPrecursors()[0].getMZ();
+
+      String xltype = "cross-link";
+      SignedSize alpha_pos = top_csms_spectrum[i].cross_link.cross_link_position.first;
+      SignedSize beta_pos = top_csms_spectrum[i].cross_link.cross_link_position.second;
+
+      if (top_csms_spectrum[i].cross_link.getType() == OPXLDataStructs::MONO)
+      {
+        xltype = "mono-link";
+      }
+      else if (top_csms_spectrum[i].cross_link.getType() == OPXLDataStructs::LOOP)
+      {
+        xltype = "loop-link";
+      }
+
+      PeptideHit ph_alpha, ph_beta;
+      // Set monolink as a modification or add MetaValue for cross-link identity and mass
+      AASequence seq_alpha = *top_csms_spectrum[i].cross_link.alpha;
+      ResidueModification::TermSpecificity alpha_term_spec = top_csms_spectrum[i].cross_link.term_spec_alpha;
+      if (top_csms_spectrum[i].cross_link.getType() == OPXLDataStructs::MONO)
+      {
+        vector< String > mods;
+        const String residue = seq_alpha[alpha_pos].getOneLetterCode();
+
+#ifdef DEBUG_OPXLHELPER
+        #pragma omp critical (LOG_DEBUG_access)
+        OPENMS_LOG_DEBUG << "Searching mono-link for " << residue << " | " << alpha_pos << endl;
+#endif
+        ModificationsDB::getInstance()->searchModificationsByDiffMonoMass(mods, top_csms_spectrum[i].cross_link.cross_linker_mass, 0.001, residue, ResidueModification::ANYWHERE);
+
+#ifdef DEBUG_OPXLHELPER
+        #pragma omp critical (LOG_DEBUG_access)
+        OPENMS_LOG_DEBUG << "number of modifications fitting the diff mass: " << mods.size() << endl;
+#endif
+
+        bool mod_set = false;
+        if (mods.size() > 0) // If several mods have the same diff mass, try to resolve ambiguity by cross-linker name (e.g. DSS and BS3 are different reagents, but have the same result after the reaction)
+        {
+          for (Size s = 0; s < mods.size(); ++s)
+          {
+            if (mods[s].hasSubstring(top_csms_spectrum[i].cross_link.cross_linker_name))
+            {
+#ifdef DEBUG_OPXLHELPER
+              #pragma omp critical (LOG_DEBUG_access)
+              OPENMS_LOG_DEBUG << "applied modification: " << mods[s] << endl;
+#endif
+              seq_alpha.setModification(alpha_pos, mods[s]);
+              mod_set = true;
+              break;
+            }
+          }
+        }
+        else if (mods.size() == 0 && (alpha_pos == 0 || alpha_pos == static_cast<int>(seq_alpha.size())-1))
+        {
+#ifdef DEBUG_OPXLHELPER
+          #pragma omp critical (LOG_DEBUG_access)
+          OPENMS_LOG_DEBUG << "No residue specific mono-link found, searching for terminal mods..." << endl;
+#endif
+          ModificationsDB::getInstance()->searchModificationsByDiffMonoMass(mods, top_csms_spectrum[i].cross_link.cross_linker_mass, 0.001, "", alpha_term_spec);
+          if (mods.size() > 0)
+          {
+            Size mod_index = 0;
+            for (Size s = 0; s < mods.size(); ++s)
+            {
+              if (mods[s].hasSubstring(top_csms_spectrum[i].cross_link.cross_linker_name))
+              {
+                mod_index = s;
+              }
+            }
+            if (alpha_term_spec == ResidueModification::N_TERM)
+            {
+#ifdef DEBUG_OPXLHELPER
+              #pragma omp critical (LOG_DEBUG_access)
+              OPENMS_LOG_DEBUG << "Setting N-term mono-link: " << mods[mod_index] << endl;
+#endif
+              seq_alpha.setNTerminalModification(mods[mod_index]);
+            }
+            else
+            {
+#ifdef DEBUG_OPXLHELPER
+              #pragma omp critical (LOG_DEBUG_access)
+              OPENMS_LOG_DEBUG << "Setting C-term mono-link: " << mods[mod_index] << endl;
+#endif
+              seq_alpha.setCTerminalModification(mods[mod_index]);
+            }
+            mod_set = true;
+          }
+        }
+
+        if ( (mods.size() > 0) && (!mod_set) ) // If resolving by name did not work, use any with matching diff mass
+        {
+          seq_alpha.setModification(alpha_pos, mods[0]);
+          mod_set = true;
+          ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_MOD, mods[0]);
+        }
+        if (!mod_set) // If no equivalent mono-link exists in the UNIMOD or XLMOD databases, use the given name to construct a placeholder
+        {
+          String mod_name = String("unknown mono-link " + top_csms_spectrum[i].cross_link.cross_linker_name + " mass " + String(top_csms_spectrum[i].cross_link.cross_linker_mass));
+          ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_MOD, mod_name);
+        }
+      }
+      else
+      {
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_MOD, top_csms_spectrum[i].cross_link.cross_linker_name);
+      }
+      ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_MASS, DataValue(top_csms_spectrum[i].cross_link.cross_linker_mass));
+
+      String alpha_term = "ANYWHERE";
+      if (alpha_term_spec == ResidueModification::N_TERM)
+      {
+        alpha_term = "N_TERM";
+      }
+      else if (alpha_term_spec == ResidueModification::C_TERM)
+      {
+        alpha_term = "C_TERM";
+      }
+
+      ResidueModification::TermSpecificity beta_term_spec = top_csms_spectrum[i].cross_link.term_spec_beta;
+      String beta_term = "ANYWHERE";
+      if (beta_term_spec == ResidueModification::N_TERM)
+      {
+        beta_term = "N_TERM";
+      }
+      else if (beta_term_spec == ResidueModification::C_TERM)
+      {
+        beta_term = "C_TERM";
+      }
+
+      vector<PeptideHit> phs;
+      if (beta_pos >= 0)
+      {
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_POS2, DataValue(beta_pos));
+      }
+      else
+      {
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_POS2, DataValue("-"));
+      }
+
+      ph_alpha.setSequence(seq_alpha);
+      ph_alpha.setCharge(precursor_charge);
+      ph_alpha.setScore(top_csms_spectrum[i].score);
+      ph_alpha.setRank(DataValue(i+1));
+
+      ph_alpha.setMetaValue("xl_chain", "MS:1002509");  // donor (longer, heavier, alphabetically earlier)
+      ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_POS1, DataValue(alpha_pos));
+      ph_alpha.setMetaValue(Constants::UserParam::SPECTRUM_REFERENCE, spectra[scan_index].getNativeID());
+      ph_alpha.setMetaValue("spectrum_index", scan_index);
+      ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_TYPE, xltype);
+      ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_RANK, DataValue(i + 1));
+      ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_TERM_SPEC_ALPHA, alpha_term);
+      ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_XL_TERM_SPEC_BETA, beta_term);
+      ph_alpha.setMetaValue(Constants::UserParam::ISOTOPE_ERROR, top_csms_spectrum[i].precursor_correction);
+
+      if (scan_index_heavy != scan_index)
+      {
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_HEAVY_SPEC_RT, spectra[scan_index_heavy].getRT());
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_HEAVY_SPEC_MZ, spectra[scan_index_heavy].getPrecursors()[0].getMZ());
+        ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_HEAVY_SPEC_REF, spectra[scan_index_heavy].getNativeID());
+        ph_alpha.setMetaValue("spectrum_index_heavy", scan_index_heavy);
+      }
+      ph_alpha.setMetaValue(Constants::UserParam::PRECURSOR_ERROR_PPM_USERPARAM, top_csms_spectrum[i].precursor_error_ppm);
+
+      ph_alpha.setMetaValue(Constants::UserParam::OPENPEPXL_SCORE, top_csms_spectrum[i].score); // important for Percolator feature set because the PeptideHit score might be overwritten by a q-value
+      ph_alpha.setMetaValue("OpenPepXL:xquest_score", top_csms_spectrum[i].xquest_score);
+      ph_alpha.setMetaValue("OpenPepXL:xcorr xlink", top_csms_spectrum[i].xcorrx_max);
+      ph_alpha.setMetaValue("OpenPepXL:xcorr common", top_csms_spectrum[i].xcorrc_max);
+      ph_alpha.setMetaValue("OpenPepXL:match-odds", top_csms_spectrum[i].match_odds);
+      ph_alpha.setMetaValue("OpenPepXL:match-odds-linear-alpha", top_csms_spectrum[i].match_odds_c_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:match-odds-linear-beta", top_csms_spectrum[i].match_odds_c_beta);
+      ph_alpha.setMetaValue("OpenPepXL:match-odds-xlink-alpha" , top_csms_spectrum[i].match_odds_x_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:match-odds-xlink-beta", top_csms_spectrum[i].match_odds_x_beta);
+      ph_alpha.setMetaValue("OpenPepXL:intsum", top_csms_spectrum[i].int_sum);
+      ph_alpha.setMetaValue("OpenPepXL:intsum_alpha", top_csms_spectrum[i].intsum_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:intsum_beta", top_csms_spectrum[i].intsum_beta);
+      ph_alpha.setMetaValue("OpenPepXL:total_current", top_csms_spectrum[i].total_current);
+
+      ph_alpha.setMetaValue("OpenPepXL:first_peak_pep_error_alpha", top_csms_spectrum[i].first_peak_pep_error_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:second_peak_pep_error_alpha", top_csms_spectrum[i].second_peak_pep_error_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:first_peak_pep_error_beta", top_csms_spectrum[i].first_peak_pep_error_beta);
+      ph_alpha.setMetaValue("OpenPepXL:second_peak_pep_error_beta", top_csms_spectrum[i].second_peak_pep_error_beta);
+
+      ph_alpha.setMetaValue("OpenPepXL:peak_pairs", top_csms_spectrum[i].peak_pairs);
+
+      ph_alpha.setMetaValue("OpenPepXL:pair_peptide_error", top_csms_spectrum[i].pair_peptide_error);
+      ph_alpha.setMetaValue("OpenPepXL:first_peak_error_alpha", top_csms_spectrum[i].first_peak_error_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:second_peak_error_alpha", top_csms_spectrum[i].second_peak_error_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:first_peak_error_beta", top_csms_spectrum[i].first_peak_error_beta);
+      ph_alpha.setMetaValue("OpenPepXL:second_peak_error_beta", top_csms_spectrum[i].second_peak_error_beta);
+
+      ph_alpha.setMetaValue("OpenPepXL:peak_singles_alpha", top_csms_spectrum[i].peak_singles_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:peak_pairs_alpha", top_csms_spectrum[i].peak_pairs_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:peak_singles_beta", top_csms_spectrum[i].peak_singles_beta);
+      ph_alpha.setMetaValue("OpenPepXL:peak_pairs_beta", top_csms_spectrum[i].peak_pairs_beta);
+
+      ph_alpha.setMetaValue("OpenPepXL:pair_coverage", top_csms_spectrum[i].pair_coverage);
+      ph_alpha.setMetaValue("OpenPepXL:pair_coverage_alpha", top_csms_spectrum[i].pair_coverage_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:pair_coverage_beta", top_csms_spectrum[i].pair_coverage_beta);
+
+      ph_alpha.setMetaValue("OpenPepXL:pair_int", top_csms_spectrum[i].pair_int);
+      ph_alpha.setMetaValue("OpenPepXL:pair_TIC", top_csms_spectrum[i].pair_TIC);
+      ph_alpha.setMetaValue("OpenPepXL:pair_int_alpha", top_csms_spectrum[i].pair_int_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:singles_int_alpha", top_csms_spectrum[i].singles_int_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:pair_int_beta", top_csms_spectrum[i].pair_int_beta);
+      ph_alpha.setMetaValue("OpenPepXL:singles_int_beta", top_csms_spectrum[i].singles_int_beta);
+
+      ph_alpha.setMetaValue("OpenPepXL:linear_coverage_alpha", top_csms_spectrum[i].linear_coverage_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:xlink_coverage_alpha", top_csms_spectrum[i].xlink_coverage_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:linear_coverage_beta", top_csms_spectrum[i].linear_coverage_beta);
+      ph_alpha.setMetaValue("OpenPepXL:xlink_coverage_beta", top_csms_spectrum[i].xlink_coverage_beta);
+
+      ph_alpha.setMetaValue("OpenPepXL:first_peak_int_alpha", top_csms_spectrum[i].first_peak_int_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:second_peak_int_alpha", top_csms_spectrum[i].second_peak_int_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:first_peak_int_beta", top_csms_spectrum[i].first_peak_int_beta);
+      ph_alpha.setMetaValue("OpenPepXL:second_peak_int_beta", top_csms_spectrum[i].second_peak_int_beta);
+
+      ph_alpha.setMetaValue("OpenPepXL:wTIC", top_csms_spectrum[i].wTIC);
+      ph_alpha.setMetaValue("OpenPepXL:TIC", top_csms_spectrum[i].percTIC);
+      ph_alpha.setMetaValue("OpenPepXL:prescore", top_csms_spectrum[i].pre_score);
+
+      ph_alpha.setMetaValue("OpenPepXL:log_occupancy", top_csms_spectrum[i].log_occupancy);
+      ph_alpha.setMetaValue("OpenPepXL:log_occupancy_alpha", top_csms_spectrum[i].log_occupancy_alpha);
+      ph_alpha.setMetaValue("OpenPepXL:log_occupancy_beta", top_csms_spectrum[i].log_occupancy_beta);
+
+      ph_alpha.setMetaValue("spectrum_size", top_csms_spectrum[i].spectrum_size);
+      ph_alpha.setMetaValue("theo_spec_linear_alpha", top_csms_spectrum[i].theo_spec_linear_alpha);
+      ph_alpha.setMetaValue("theo_spec_xlink_alpha", top_csms_spectrum[i].theo_spec_xlink_alpha);
+      ph_alpha.setMetaValue("theo_spec_linear_beta", top_csms_spectrum[i].theo_spec_linear_beta);
+      ph_alpha.setMetaValue("theo_spec_xlink_beta", top_csms_spectrum[i].theo_spec_xlink_beta);
+      ph_alpha.setMetaValue("matched_xlink_alpha",top_csms_spectrum[i].matched_xlink_alpha);
+      ph_alpha.setMetaValue("matched_xlink_beta",top_csms_spectrum[i].matched_xlink_beta);
+      ph_alpha.setMetaValue("matched_linear_alpha",top_csms_spectrum[i].matched_linear_alpha);
+      ph_alpha.setMetaValue("matched_linear_beta",top_csms_spectrum[i].matched_linear_beta);
+
+      ph_alpha.setMetaValue("ppm_error_abs_sum_linear_alpha", top_csms_spectrum[i].ppm_error_abs_sum_linear_alpha);
+      ph_alpha.setMetaValue("ppm_error_abs_sum_linear_beta", top_csms_spectrum[i].ppm_error_abs_sum_linear_beta);
+      ph_alpha.setMetaValue("ppm_error_abs_sum_xlinks_alpha", top_csms_spectrum[i].ppm_error_abs_sum_xlinks_alpha);
+      ph_alpha.setMetaValue("ppm_error_abs_sum_xlinks_beta", top_csms_spectrum[i].ppm_error_abs_sum_xlinks_beta);
+
+      ph_alpha.setMetaValue("ppm_error_abs_sum_linear", top_csms_spectrum[i].ppm_error_abs_sum_linear);
+      ph_alpha.setMetaValue("ppm_error_abs_sum_xlinks", top_csms_spectrum[i].ppm_error_abs_sum_xlinks);
+      ph_alpha.setMetaValue("ppm_error_abs_sum_alpha", top_csms_spectrum[i].ppm_error_abs_sum_alpha);
+      ph_alpha.setMetaValue("ppm_error_abs_sum_beta", top_csms_spectrum[i].ppm_error_abs_sum_beta);
+      ph_alpha.setMetaValue("ppm_error_abs_sum", top_csms_spectrum[i].ppm_error_abs_sum);
+
+      ph_alpha.setMetaValue("precursor_total_intensity", top_csms_spectrum[i].precursor_total_intensity);
+      ph_alpha.setMetaValue("precursor_target_intensity", top_csms_spectrum[i].precursor_target_intensity);
+      ph_alpha.setMetaValue("precursor_signal_proportion", top_csms_spectrum[i].precursor_signal_proportion);
+      ph_alpha.setMetaValue("precursor_target_peak_count", top_csms_spectrum[i].precursor_target_peak_count);
+      ph_alpha.setMetaValue("precursor_residual_peak_count", top_csms_spectrum[i].precursor_residual_peak_count);
+      ph_alpha.setMetaValue("precursor_correction", top_csms_spectrum[i].precursor_correction);
+
+      ph_alpha.setMetaValue("selected", "false");
+
+      ph_alpha.setPeakAnnotations(top_csms_spectrum[i].frag_annotations);
+
+#ifdef DEBUG_OPXLHELPER
+      #pragma omp critical (LOG_DEBUG_access)
       OPENMS_LOG_DEBUG << "Annotations of size " << ph_alpha.getPeakAnnotations().size() << endl;
 #endif
 
@@ -1833,55 +2205,228 @@ namespace OpenMS
 
   void OPXLHelper::collectPeptideCandidates(const PeakSpectrum &spectrum,
                                             const vector<OPXLDataStructs::AASeqWithMass> &peptides,
-                                            const DoubleList &mass_diffs, const DoubleList& remaining_frag_mass,
-                                            double max_error, int max_charge,
-                                            list<const OPXLDataStructs::AASeqWithMass*> &peptide_candidates)
+                                            const vector<pair<double, double> >& fragment_masses,
+                                            double max_fragment_error, bool max_fragment_error_ppm, int max_charge,
+                                            list<OPXLDataStructs::PeptideCandidate> &peptide_candidates)
   {
-#ifdef DEBUG_PREFILTER
-    clock_t time = clock();
-#endif
+    PeakSpectrum::IntegerDataArray exp_charges;
+    if (!spectrum.getIntegerDataArrays().empty())
+    {
+      exp_charges = spectrum.getIntegerDataArrays()[0];
+    }
 
 #pragma omp parallel for
     for (int charge = max_charge; charge > 0; --charge)
     {
-      auto first_peak = lower_bound(spectrum.begin(), spectrum.end(), peptides.front().peptide_mass / charge, Peak1D::MZLess());
-      //auto last_peak = upper_bound(first_peak, spectrum.end(), peptides.back().peptide_mass / charge, Peak1D::MZLess());
+      //auto first_peak = lower_bound(spectrum.begin(), spectrum.end(), peptides.front().peptide_mass / charge, Peak1D::MZLess());
+      auto first_peak = spectrum.begin();
+      auto last_peak = spectrum.end() - 1;
+      if (!exp_charges.empty())
+      {
+        auto c = exp_charges[first_peak - spectrum.begin()];
+        while (first_peak < last_peak && c && c != charge)
+        {
+          ++first_peak;
+          c = exp_charges[first_peak - spectrum.begin()];
+        }
+      }
       if (first_peak > spectrum.end() - 2) continue;
       auto second_peak = first_peak + 1;
-      auto last_peak = spectrum.end() - 1;
+      if (!exp_charges.empty())
+      {
+        auto c = exp_charges[second_peak - spectrum.begin()];
+        while (second_peak < last_peak && c && c != charge)
+        {
+          ++second_peak;
+          c = exp_charges[second_peak - spectrum.begin()];
+        }
+      }
+      if (second_peak > last_peak) continue;
 
-      std::vector<const OPXLDataStructs::AASeqWithMass*> new_candidates;
+      std::vector<OPXLDataStructs::PeptideCandidate> new_candidates;
 
       while (first_peak < last_peak)
       {
+        double max_error_first = max_fragment_error_ppm ? (first_peak->getMZ() - Constants::PROTON_MASS_U) * charge * 1e-6 * max_fragment_error : max_fragment_error;
+        double max_error_second = max_fragment_error_ppm ? (second_peak->getMZ() - Constants::PROTON_MASS_U) * charge * 1e-6 * max_fragment_error : max_fragment_error;
+        double max_error = std::sqrt(std::pow(max_error_first, 2) + std::pow(max_error_second, 2));
         double diff = (second_peak->getMZ() - first_peak->getMZ()) * charge;
-        for (Size mass_index = 0; mass_index < mass_diffs.size(); ++mass_index)
+
+        for (const auto& masses : fragment_masses)
         {
-          if (diff > mass_diffs[mass_index] - max_error && diff < mass_diffs[mass_index] + max_error)
+          bool added = false;
+          double expected_diff = masses.second - masses.first;
+          if (expected_diff > diff - max_error && expected_diff < diff + max_error)
           {
-            double pep_mass = (first_peak->getMZ() - Constants::PROTON_MASS_U) * charge - remaining_frag_mass[mass_index];
-            auto peptide = lower_bound(peptides.begin(), peptides.end(), pep_mass - max_error, OPXLDataStructs::AASeqWithMassComparator());
-            if (peptide == peptides.end()) {
+            double first_peak_pep_mass = (first_peak->getMZ() - Constants::PROTON_MASS_U) * charge - masses.first;
+            double second_peak_pep_mass = (second_peak->getMZ() - Constants::PROTON_MASS_U) * charge - masses.second;
+            /*
+            double first_min_mass = (first_peak->getMZ() - max_error_first - Constants::PROTON_MASS_U) * charge - masses.first;
+            double first_max_mass = (first_peak->getMZ() + max_error_first - Constants::PROTON_MASS_U) * charge - masses.first;
+            double second_min_mass = (second_peak->getMZ() - max_error_second - Constants::PROTON_MASS_U) * charge - masses.second;
+            double second_max_mass = (second_peak->getMZ() + max_error_second - Constants::PROTON_MASS_U) * charge - masses.second;
+             */
+            double first_max_error = max_fragment_error_ppm ? first_peak_pep_mass * 1e-6 * max_fragment_error : max_fragment_error;
+            double second_max_error = max_fragment_error_ppm ? second_peak_pep_mass * 1e-6 * max_fragment_error : max_fragment_error;
+            double min_mass = max(first_peak_pep_mass - first_max_error, second_peak_pep_mass - second_max_error);
+            double max_mass = min(first_peak_pep_mass + first_max_error, second_peak_pep_mass + second_max_error);
+
+            auto peptide = lower_bound(peptides.begin(), peptides.end(), min_mass, OPXLDataStructs::AASeqWithMassComparator());
+            if (peptide != peptides.end())
+            {
+              while (peptide->peptide_mass < max_mass)// + max_peptide_error)
+              {
+                new_candidates.emplace_back();
+                new_candidates.back().peptide = &*peptide;
+                new_candidates.back().first_peak_index = first_peak - spectrum.begin();
+                new_candidates.back().second_peak_index = second_peak - spectrum.begin();
+                //The error is calculated to ppm
+                new_candidates.back().first_peak_pep_error =
+                        ((first_peak_pep_mass - peptide->peptide_mass) / peptide->peptide_mass) * 1e6;
+                new_candidates.back().second_peak_pep_error =
+                        ((second_peak_pep_mass - peptide->peptide_mass) / peptide->peptide_mass) * 1e6;
+                ++peptide;
+              }
+            } else
+            {
               break;
             }
-            while (peptide->peptide_mass < pep_mass + max_error)
-            {
-//#pragma omp critical (new_candidates_access)
-              new_candidates.push_back(&*peptide);
-              ++peptide;
-            }
+            //added = true;
+            //break;
+          }
+          /*
+          if (added) {
             break;
           }
+           */
         }
-        if (diff > mass_diffs.back() || second_peak == last_peak)
+        if (diff > (fragment_masses.back().second - fragment_masses.back().first) || second_peak == last_peak)
         {
           ++first_peak;
+          if (!exp_charges.empty())
+          {
+            auto c = exp_charges[first_peak - spectrum.begin()];
+            while (first_peak < last_peak && c && c != charge)
+            {
+              ++first_peak;
+              c = exp_charges[first_peak - spectrum.begin()];
+            }
+          }
           second_peak = first_peak + 1;
         } else {
           ++second_peak;
         }
+        if (!exp_charges.empty())
+        {
+          auto c = exp_charges[second_peak - spectrum.begin()];
+          while (second_peak < last_peak && c && c != charge)
+          {
+            ++second_peak;
+            c = exp_charges[second_peak - spectrum.begin()];
+          }
+        }
       }
       if (new_candidates.empty()) continue;
+      sort(new_candidates.begin(), new_candidates.end(), OPXLDataStructs::PeptideCandidateComparator());
+#pragma omp critical (peptide_candidates_access)
+      {
+        if (peptide_candidates.empty())
+        {
+          //peptide_candidates.assign(new_candidates.begin(), new_candidates.end());
+          peptide_candidates.push_back(new_candidates[0]);
+        }
+        auto old_it = peptide_candidates.begin();
+        int reverse_count = -1;
+        bool add = true;
+        for (auto candidate : new_candidates)
+        {
+          while (old_it != peptide_candidates.end() &&
+                 old_it->peptide->peptide_mass < candidate.peptide->peptide_mass)
+          {
+            ++old_it;
+          }
+          add = true;
+          while (old_it != peptide_candidates.end() &&
+                 old_it->peptide->peptide_mass == candidate.peptide->peptide_mass)
+          {
+            if (old_it->peptide == candidate.peptide)
+            {
+              if (std::abs(candidate.first_peak_pep_error) + std::abs(candidate.second_peak_pep_error) <
+                  std::abs(old_it->first_peak_pep_error) + std::abs(old_it->second_peak_pep_error))
+              {
+                old_it->first_peak_index = candidate.first_peak_index;
+                old_it->second_peak_index = candidate.second_peak_index;
+                old_it->first_peak_pep_error = candidate.first_peak_pep_error;
+                old_it->second_peak_pep_error = candidate.second_peak_pep_error;
+              }
+              add = false;
+              break;
+            }
+            ++old_it;
+            --reverse_count;
+          }
+          if (add)
+          {
+            peptide_candidates.insert(old_it, candidate);
+          } else
+          {
+            ++reverse_count;
+          }
+          std::advance(old_it, reverse_count);
+          reverse_count = -1;
+        }
+      }
+    }
+  }
+
+  void OPXLHelper::filterPeptideCandidates(const PeakSpectrum &spectrum,
+                                           const vector<OPXLDataStructs::AASeqWithMass> &peptides,
+                                            const DoubleList& fragment_masses, double max_fragment_error,
+                                            bool max_fragment_error_ppm, int max_charge,
+                                            list<OPXLDataStructs::PeptideCandidate> &peptide_candidates)
+  {
+    PeakSpectrum::IntegerDataArray exp_charges;
+    if (!spectrum.getIntegerDataArrays().empty())
+    {
+      exp_charges = spectrum.getIntegerDataArrays()[0];
+    }
+
+#pragma omp parallel for
+    for (int charge = max_charge; charge > 0; --charge)
+    {
+      vector<OPXLDataStructs::PeptideCandidate> new_candidates;
+
+      for (Size i = 0; i < spectrum.size(); ++i)
+      {
+        if (!exp_charges.empty() && exp_charges[i] && exp_charges[i] != charge)
+        {
+          continue;
+        }
+        const auto& peak = spectrum[i];
+        double peak_mass = (peak.getMZ() - Constants::PROTON_MASS_U) * charge;
+        double max_error = max_fragment_error_ppm ? peak_mass * 1e-6 * max_fragment_error : max_fragment_error;
+
+        for (double frag_mass : fragment_masses)
+        {
+          double mass = peak_mass - frag_mass;
+          auto first_pep = lower_bound(peptides.begin(), peptides.end(), mass - max_error,
+                                       OPXLDataStructs::AASeqWithMassComparator());
+          auto last_pep = upper_bound(first_pep, peptides.end(), mass + max_error,
+                                      OPXLDataStructs::AASeqWithMassComparator());
+          while (first_pep < last_pep)
+          {
+            new_candidates.push_back({
+                                       &*first_pep,
+                                       static_cast<uint32_t>(i), 0,
+                                       ((mass - first_pep->peptide_mass) / first_pep->peptide_mass) * 1e6,
+                                       0
+                                     });
+            ++first_pep;
+          }
+        }
+      }
+      if (new_candidates.empty()) continue;
+      std::sort(new_candidates.begin(), new_candidates.end(), OPXLDataStructs::PeptideCandidateComparator());
 #pragma omp critical (peptide_candidates_access)
       {
         if (peptide_candidates.empty())
@@ -1895,15 +2440,15 @@ namespace OpenMS
           for (auto candidate : new_candidates)
           {
             while (old_it != peptide_candidates.end() &&
-                  (*old_it)->peptide_mass < candidate->peptide_mass)
+                   old_it->peptide->peptide_mass < candidate.peptide->peptide_mass)
             {
               ++old_it;
             }
             add = true;
             while (old_it != peptide_candidates.end() &&
-                   (*old_it)->peptide_mass == candidate->peptide_mass)
+                   old_it->peptide->peptide_mass == candidate.peptide->peptide_mass)
             {
-              if (*old_it == candidate)
+              if (old_it->peptide == candidate.peptide)
               {
                 add = false;
                 break;
@@ -1913,7 +2458,6 @@ namespace OpenMS
             }
             if (add)
             {
-              //peptide_candidates.push_back(candidate);
               peptide_candidates.insert(old_it, candidate);
             }
             std::advance(old_it, reverse_count);
@@ -1922,13 +2466,6 @@ namespace OpenMS
         }
       }
     }
-
-    //std::sort(peptide_candidates.begin(), peptide_candidates.end(), OPXLDataStructs::AASeqWithMassPtrComparator());
-
-#ifdef DEBUG_PREFILTER
-    std::cout << "Prefilter took: " << (clock() - time) << " ms" << std::endl;
-#endif
-
   }
 
   std::vector <OPXLDataStructs::ProteinProteinCrossLink> OPXLHelper::collectPrecursorCandidates(const IntList& precursor_correction_steps,
@@ -2004,8 +2541,8 @@ namespace OpenMS
                                                                                                   double precursor_mass,
                                                                                                   double precursor_mass_tolerance,
                                                                                                   bool precursor_mass_tolerance_unit_ppm,
-                                                                                                  const std::vector<const OPXLDataStructs::AASeqWithMass*>& alpha_peptide_masses,
-                                                                                                  const std::vector<const OPXLDataStructs::AASeqWithMass*>& beta_peptide_masses,
+                                                                                                  const std::vector<OPXLDataStructs::PeptideCandidate>& alpha_peptide_masses,
+                                                                                                  const std::vector<OPXLDataStructs::PeptideCandidate>& beta_peptide_masses,
                                                                                                   double cross_link_mass,
                                                                                                   const DoubleList& cross_link_mass_mono_link,
                                                                                                   const StringList& cross_link_residue1,
@@ -2048,6 +2585,7 @@ namespace OpenMS
       }
 
       // an empty vector of sequence tags implies no filtering should be done in this case
+      // Not functional for cleavable cross linker!
       if (use_sequence_tags)
       {
         Size candidates_size = candidates.size();
@@ -2070,7 +2608,26 @@ namespace OpenMS
       return cross_link_candidates;
     }
 
-    double OPXLHelper::computePrecursorError(OPXLDataStructs::CrossLinkSpectrumMatch csm, double precursor_mz, int precursor_charge)
+    double OPXLHelper::computePrecursorError(const OPXLDataStructs::CrossLinkSpectrumMatch& csm, double precursor_mz, int precursor_charge)
+    {
+      // Error calculation
+      double weight = csm.cross_link.alpha->getMonoWeight();
+      if (csm.cross_link.getType() == OPXLDataStructs::CROSS)
+      {
+        weight += csm.cross_link.beta->getMonoWeight() + csm.cross_link.cross_linker_mass;
+      }
+      else
+      {
+        weight += csm.cross_link.cross_linker_mass;
+      }
+      double precursor_mass = (precursor_mz * static_cast<double>(precursor_charge)) - (static_cast<double>(precursor_charge) * Constants::PROTON_MASS_U)
+                              - (static_cast<double>(csm.precursor_correction) * Constants::C13C12_MASSDIFF_U);
+      double error = precursor_mass - weight;
+      double rel_error = (error / precursor_mass) / 1e-6;
+      return rel_error;
+    }
+
+    double OPXLHelper::computePrecursorError(const OPXLDataStructs::CleavableCrossLinkSpectrumMatch& csm, double precursor_mz, int precursor_charge)
     {
       // Error calculation
       double weight = csm.cross_link.alpha->getMonoWeight();
@@ -2135,6 +2692,52 @@ namespace OpenMS
       }
     }
 
+  void OPXLHelper::isoPeakMeans(OPXLDataStructs::CleavableCrossLinkSpectrumMatch& csm, DataArrays::IntegerDataArray& num_iso_peaks_array, std::vector< std::pair< Size, Size > >& matched_spec_linear_alpha, std::vector< std::pair< Size, Size > >& matched_spec_linear_beta, std::vector< std::pair< Size, Size > >& matched_spec_xlinks_alpha, std::vector< std::pair< Size, Size > >& matched_spec_xlinks_beta)
+  {
+    csm.num_iso_peaks_mean = Math::mean(num_iso_peaks_array.begin(), num_iso_peaks_array.end());
+
+    vector< double > iso_peaks_linear_alpha;
+    vector< double > iso_peaks_linear_beta;
+    vector< double > iso_peaks_xlinks_alpha;
+    vector< double > iso_peaks_xlinks_beta;
+
+    if (!matched_spec_linear_alpha.empty())
+    {
+      for (const auto& match : matched_spec_linear_alpha)
+      {
+        iso_peaks_linear_alpha.push_back(num_iso_peaks_array[match.second]);
+      }
+      csm.num_iso_peaks_mean_linear_alpha = Math::mean(iso_peaks_linear_alpha.begin(), iso_peaks_linear_alpha.end());
+    }
+
+    if (!matched_spec_linear_beta.empty())
+    {
+      for (const auto& match : matched_spec_linear_beta)
+      {
+        iso_peaks_linear_beta.push_back(num_iso_peaks_array[match.second]);
+      }
+      csm.num_iso_peaks_mean_linear_beta = Math::mean(iso_peaks_linear_beta.begin(), iso_peaks_linear_beta.end());
+    }
+
+    if (!matched_spec_xlinks_alpha.empty())
+    {
+      for (const auto& match : matched_spec_xlinks_alpha)
+      {
+        iso_peaks_xlinks_alpha.push_back(num_iso_peaks_array[match.second]);
+      }
+      csm.num_iso_peaks_mean_xlinks_alpha = Math::mean(iso_peaks_xlinks_alpha.begin(), iso_peaks_xlinks_alpha.end());
+    }
+
+    if (!matched_spec_xlinks_beta.empty())
+    {
+      for (const auto& match : matched_spec_xlinks_beta)
+      {
+        iso_peaks_xlinks_beta.push_back(num_iso_peaks_array[match.second]);
+      }
+      csm.num_iso_peaks_mean_xlinks_beta = Math::mean(iso_peaks_xlinks_beta.begin(), iso_peaks_xlinks_beta.end());
+    }
+  }
+
     void OPXLHelper::filterPrecursorsByTags(std::vector <OPXLDataStructs::XLPrecursor>& candidates, std::vector< int >& precursor_correction_positions, const std::vector<std::string>& tags)
     {
       std::vector <OPXLDataStructs::XLPrecursor> filtered_candidates;
@@ -2187,7 +2790,7 @@ namespace OpenMS
         // iterate over copies, so that we can reverse them
         for (std::string tag : tags)
         {
-          if (candidates[i].alpha->unmodified_seq.hasSubstring(tag) || candidates[i].beta->unmodified_seq.hasSubstring(tag))
+          if (candidates[i].alpha->peptide->unmodified_seq.hasSubstring(tag) || candidates[i].beta->peptide->unmodified_seq.hasSubstring(tag))
           {
 #pragma omp critical (filtered_candidates_access)
             {
@@ -2198,7 +2801,7 @@ namespace OpenMS
           }
 
           std::reverse(tag.begin(), tag.end());
-          if (candidates[i].alpha->unmodified_seq.hasSubstring(tag) || candidates[i].beta->unmodified_seq.hasSubstring(tag))
+          if (candidates[i].alpha->peptide->unmodified_seq.hasSubstring(tag) || candidates[i].beta->peptide->unmodified_seq.hasSubstring(tag))
           {
 #pragma omp critical (filtered_candidates_access)
             {

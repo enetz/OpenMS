@@ -110,12 +110,36 @@ namespace OpenMS
              * @param intensity_cutoff Peaks will only be aligned if intensity1 / intensity2 > intensity_cutoff, with intensity1 being the lower of the two compared peaks and intensity2 the higher one. Set to 0 to ignore intensity differences.
              */
             static void getSpectrumAlignmentSimple(
-                  std::vector<std::pair<Size, Size> > & alignment,
-                  double fragment_mass_tolerance,
-                  bool fragment_mass_tolerance_unit_ppm,
-                  const std::vector< SimpleTSGXLMS::SimplePeak >& theo_spectrum,
-                  const PeakSpectrum& exp_spectrum,
-                  const DataArrays::IntegerDataArray& exp_charges);
+                    std::vector<std::pair<Size, Size> > & alignment,
+                    double fragment_mass_tolerance,
+                    bool fragment_mass_tolerance_unit_ppm,
+                    const std::vector< SimpleTSGXLMS::SimplePeak >& theo_spectrum,
+                    const PeakSpectrum& exp_spectrum,
+                    const DataArrays::IntegerDataArray& exp_charges);
+
+
+            /**
+             * @brief  Count the number of peaks that form a peak pair that fits the cleavable crosslinker
+             *
+             * @param aligned_peaks The matched peaks for this spectrum
+             * @param spectrum The original spectrum
+             * @param singles This will contain the number of single peaks
+             * @param pairs This will contain the number of peak pairs
+             * @param singles_int This will contain the intensity of all single peaks
+             * @param pairs_int This will contain the intensity of all peak pairs
+             * @param mass_diff Expected mass difference between a peak pair
+             * @param fragment_tolerance
+             * @param fragment_tolerance_ppm
+             * @param max_charge
+             * @param losses_added
+             * @param isotopes_added
+             */
+            static void getMatchedXLinkPeakPairs(std::vector<std::pair<Size, Size> > aligned_peaks,
+                                                 const MSSpectrum& spectrum,
+                                                 Size& singles, Size& pairs, double& singles_int, double& pairs_int,
+                                                 double mass_diff, double fragment_tolerance, bool fragment_tolerance_ppm,
+                                                 int max_charge);
+
   };
 
 }

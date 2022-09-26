@@ -452,14 +452,14 @@ namespace OpenMS
     return;
   }
 
-  void TheoreticalSpectrumGeneratorXLMS::getXLinkIonSpectrum(PeakSpectrum &spectrum, AASequence &peptide, Size link_pos, double precursor_mass, const DoubleList& cross_link_masses, bool frag_alpha, int mincharge, int maxcharge, Size link_pos_2) const
+  void TheoreticalSpectrumGeneratorXLMS::getXLinkIonSpectrum(PeakSpectrum &spectrum, AASequence &peptide, Size link_pos, double precursor_mass, const DoubleList& cross_link_fragments, const StringList& fragment_labels, bool frag_alpha, int mincharge, int maxcharge, Size link_pos_2) const
   {
     PeakSpectrum::IntegerDataArray charges;
     PeakSpectrum::StringDataArray ion_names;
 
     if (add_charges_)
     {
-      if (spectrum.getIntegerDataArrays().size() > 0)
+      if (!spectrum.getIntegerDataArrays().empty())
       {
         charges = spectrum.getIntegerDataArrays()[0];
       }
@@ -467,7 +467,7 @@ namespace OpenMS
     }
     if (add_metainfo_)
     {
-      if (spectrum.getStringDataArrays().size() > 0)
+      if (!spectrum.getStringDataArrays().empty())
       {
         ion_names = spectrum.getStringDataArrays()[0];
       }
@@ -483,43 +483,39 @@ namespace OpenMS
       backward_losses = getBackwardLosses_(peptide);
     }
 
-
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
+
+      addXLinkUnfracturedPepPeaks_(spectrum, charges, ion_names, peptide, z, cross_link_fragments, fragment_labels, frag_alpha);
+
       if (add_b_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_masses, frag_alpha, Residue::BIon, forward_losses, backward_losses, z, link_pos_2);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::BIon, forward_losses, backward_losses, z, link_pos_2);
       }
       if (add_y_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_masses, frag_alpha, Residue::YIon, forward_losses, backward_losses, z, link_pos_2);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::YIon, forward_losses, backward_losses, z, link_pos_2);
       }
       if (add_a_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_masses, frag_alpha, Residue::AIon, forward_losses, backward_losses, z, link_pos_2);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::AIon, forward_losses, backward_losses, z, link_pos_2);
       }
       if (add_x_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_masses, frag_alpha, Residue::XIon, forward_losses, backward_losses, z, link_pos_2);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::XIon, forward_losses, backward_losses, z, link_pos_2);
       }
       if (add_c_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_masses, frag_alpha, Residue::CIon, forward_losses, backward_losses, z, link_pos_2);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::CIon, forward_losses, backward_losses, z, link_pos_2);
       }
       if (add_z_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_masses, frag_alpha, Residue::ZIon, forward_losses, backward_losses, z, link_pos_2);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::ZIon, forward_losses, backward_losses, z, link_pos_2);
       }
       if (add_k_linked_ions_)
       {
         addKLinkedIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, precursor_mass, frag_alpha, z);
       }
-      if (add_precursor_peaks_)
-      {
-        //addPrecursorPeaks_(spectrum, charges, ion_names, precursor_mass, z);
-        addPrecursorPeaks_(spectrum, charges, ion_names, frag_alpha, peptide, cross_link_masses, z);
-      }
-
     }
 
     if (add_precursor_peaks_)
@@ -529,7 +525,7 @@ namespace OpenMS
 
     if (add_charges_)
     {
-      if (spectrum.getIntegerDataArrays().size() > 0)
+      if (!spectrum.getIntegerDataArrays().empty())
       {
         spectrum.getIntegerDataArrays()[0] = charges;
       }
@@ -540,7 +536,7 @@ namespace OpenMS
     }
     if (add_metainfo_)
     {
-      if (spectrum.getStringDataArrays().size() > 0)
+      if (!spectrum.getStringDataArrays().empty())
       {
         spectrum.getStringDataArrays()[0] = ion_names;
       }
@@ -551,7 +547,6 @@ namespace OpenMS
     }
 
     spectrum.sortByPosition();
-    return;
   }
 
   void TheoreticalSpectrumGeneratorXLMS::addXLinkIonPeaks_(PeakSpectrum & spectrum, DataArrays::IntegerDataArray & charges, DataArrays::StringDataArray & ion_names, AASequence & peptide, Size link_pos, double precursor_mass, bool frag_alpha, Residue::ResidueType res_type, std::vector< LossIndex > & forward_losses, std::vector< LossIndex > & backward_losses, int charge, Size link_pos_2) const
@@ -675,7 +670,7 @@ namespace OpenMS
     return;
   }
 
-  void TheoreticalSpectrumGeneratorXLMS::addXLinkIonPeaks_(PeakSpectrum &spectrum, DataArrays::IntegerDataArray &charges, DataArrays::StringDataArray &ion_names, AASequence &peptide, Size link_pos, const DoubleList& cross_link_masses, bool frag_alpha, Residue::ResidueType res_type, vector<LossIndex> &forward_losses, vector<LossIndex> &backward_losses, int charge, Size link_pos_2) const
+  void TheoreticalSpectrumGeneratorXLMS::addXLinkIonPeaks_(PeakSpectrum &spectrum, DataArrays::IntegerDataArray &charges, DataArrays::StringDataArray &ion_names, AASequence &peptide, Size link_pos, const DoubleList& cross_link_fragments, const StringList& fragment_labels, bool frag_alpha, Residue::ResidueType res_type, vector<LossIndex> &forward_losses, vector<LossIndex> &backward_losses, int charge, Size link_pos_2) const
   {
     if (peptide.empty())
     {
@@ -683,22 +678,10 @@ namespace OpenMS
       return;
     }
 
-    String ion_type;
-    if (frag_alpha)
-    {
-      ion_type = "alpha|";
-    }
-    else
-    {
-      ion_type = "beta|";
-    }
+    String ion_type = frag_alpha ? "alpha|" : "beta|";
 
     // second link position, in case of a loop-link
-    Size link_pos_B = link_pos_2;
-    if (link_pos_2 == 0)
-    {
-      link_pos_B = link_pos;
-    }
+    Size link_pos_B = link_pos_2 == 0 ? link_pos : link_pos_2;
 
     double intensity(1);
     switch (res_type)
@@ -721,28 +704,26 @@ namespace OpenMS
       {
         mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
 
-        int frag_index = i;
-        int xlink_index = 0;
-        for (double xlink_mass : cross_link_masses)
+        Size frag_index = i;
+
+        for (Size j = 0; j < cross_link_fragments.size(); ++j)
         {
-          double pos((mono_weight + xlink_mass) / static_cast<double>(charge));
+          
+          double pos((mono_weight + cross_link_fragments[j]) / charge);
 
-
-
-          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, i, charge, ion_type + "X" + String(xlink_index));
+          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, i, charge, ion_type + fragment_labels[j]);
 
           if (add_losses_ && forward_losses.size() >= i+2)
           {
-            String ion_name = "[" + ion_type + "X" + String(xlink_index) + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
-            addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight, intensity, charge, ion_name, forward_losses[i+1]);
+            String ion_name = "[" + ion_type + fragment_labels[j] + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
+            addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight + cross_link_fragments[j], intensity, charge, ion_name, forward_losses[i+1]);
           }
 
           if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
           {
             pos += Constants::C13C12_MASSDIFF_U / static_cast<double>(charge);
-            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + "X" + String(xlink_index));
+            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + fragment_labels[j]);
           }
-          ++xlink_index;
         }
       }
     }
@@ -754,24 +735,193 @@ namespace OpenMS
         mono_weight -= peptide[i].getMonoWeight(Residue::Internal);
 
         Size frag_index = peptide.size() - 1 - i;
-        Size xlink_index = 0;
-        for (double xlink_mass : cross_link_masses)
-        {
-          double pos((mono_weight + xlink_mass) / static_cast<double>(charge));
 
-          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + "X" + String(xlink_index));
+        for (Size j = 0; j < cross_link_fragments.size(); ++j)
+        {
+          double pos((mono_weight + cross_link_fragments[j]) / charge);
+
+          addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + fragment_labels[j]);
           if (add_losses_ && backward_losses.size() >= i+2)
           {
-            String ion_name = "[" + ion_type + "X" + String(xlink_index) + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
-            addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight, intensity, charge, ion_name, backward_losses[i+1]);
+            String ion_name = "[" + ion_type + fragment_labels[j] + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]";
+            addXLinkIonLosses_(spectrum, charges, ion_names, mono_weight + cross_link_fragments[j], intensity, charge, ion_name, backward_losses[i+1]);
           }
 
           if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
           {
-            pos += Constants::C13C12_MASSDIFF_U / static_cast<double>(charge);
-            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + "X" + String(xlink_index));
+            pos += Constants::C13C12_MASSDIFF_U / charge;
+            addPeak_(spectrum, charges, ion_names, pos, intensity, res_type, frag_index, charge, ion_type + fragment_labels[j]);
           }
-          ++xlink_index;
+        }
+      }
+    }
+  }
+
+  void TheoreticalSpectrumGeneratorXLMS::addXLinkUnfracturedPepPeaks_(PeakSpectrum &spectrum,
+                                                                      DataArrays::IntegerDataArray &charges,
+                                                                      DataArrays::StringDataArray &ion_names,
+                                                                      AASequence &peptide, int charge,
+                                                                      const DoubleList &cross_link_fragments,
+                                                                      const StringList& fragment_labels, bool frag_alpha) const
+  {
+    if (peptide.empty())
+    {
+      cout << "Warning: Attempt at creating XLink Ions Spectrum from empty string!" << endl;
+      return;
+    }
+
+    String ion_type = frag_alpha ? "alpha|" : "beta|";
+    bool add_isotope_peaks = add_isotopes_ && max_isotope_ > 1;
+
+    double mono_weight = peptide.getMonoWeight(Residue::Full, charge);
+
+    double mono_pos(mono_weight);
+
+    spectrum.emplace_back(mono_pos / charge, static_cast<float>(pre_int_));
+    if (add_metainfo_)
+    {
+      ion_names.emplace_back("[" + ion_type + "$" + "Pep]");
+    }
+    if (add_charges_)
+    {
+      charges.push_back(charge);
+    }
+    if (add_isotope_peaks)
+    {
+      spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_);
+      if (add_metainfo_)
+      {
+        ion_names.emplace_back("[" + ion_type + "$" + "Pep]");
+      }
+      if (add_charges_)
+      {
+        charges.push_back(charge);
+      }
+    }
+
+    //water loss peaks
+    double loss_mono_pos = mono_pos - EmpiricalFormula("H2O").getMonoWeight();
+    spectrum.emplace_back(loss_mono_pos / charge, pre_int_H2O_);
+    if (add_metainfo_)
+    {
+      ion_names.emplace_back("[" + ion_type + "$" + "Pep-H2O1]");
+    }
+    if (add_charges_)
+    {
+      charges.push_back(charge);
+    }
+    if (add_isotope_peaks)
+    {
+      spectrum.emplace_back((loss_mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_H2O_);
+      if (add_metainfo_)
+      {
+        ion_names.emplace_back("[" + ion_type + "$" + "Pep-H2O1]");
+      }
+      if (add_charges_)
+      {
+        charges.push_back(charge);
+      }
+    }
+
+    //ammonia loss peaks
+    loss_mono_pos = mono_pos - EmpiricalFormula("NH3").getMonoWeight();
+    spectrum.emplace_back(loss_mono_pos / charge, pre_int_NH3_);
+    if (add_metainfo_)
+    {
+      ion_names.emplace_back("[" + ion_type + "$" + "Pep-H3N1]");
+    }
+    if (add_charges_)
+    {
+      charges.push_back(charge);
+    }
+    if (add_isotope_peaks)
+    {
+      spectrum.emplace_back((loss_mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_NH3_);
+      if (add_metainfo_)
+      {
+        ion_names.emplace_back("[" + ion_type + "$" + "Pep-H3N1]");
+      }
+      if (add_charges_)
+      {
+        charges.push_back(charge);
+      }
+    }
+
+    /*
+    Size xlink_index = 0;
+    for (double xlink_mass : cross_link_fragments)
+     */
+    for (Size j = 0; j < cross_link_fragments.size(); ++j)
+    {
+      mono_pos = mono_weight + cross_link_fragments[j];
+
+      spectrum.emplace_back(mono_pos / charge, static_cast<float>(pre_int_));
+      if (add_metainfo_)
+      {
+        ion_names.emplace_back("[" + ion_type + "$" + fragment_labels[j] + "Pep]");
+      }
+      if (add_charges_)
+      {
+        charges.push_back(charge);
+      }
+      if (add_isotope_peaks)
+      {
+        spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_);
+        if (add_metainfo_)
+        {
+          ion_names.emplace_back("[" + ion_type + "$" + fragment_labels[j] + "Pep]");
+        }
+        if (add_charges_)
+        {
+          charges.push_back(charge);
+        }
+      }
+
+      //water loss peaks
+      loss_mono_pos = mono_pos - EmpiricalFormula("H2O").getMonoWeight();
+      spectrum.emplace_back(loss_mono_pos / charge, pre_int_H2O_);
+      if (add_metainfo_)
+      {
+        ion_names.emplace_back("[" + ion_type + "$" + fragment_labels[j] + "Pep-H2O1]");
+      }
+      if (add_charges_)
+      {
+        charges.push_back(charge);
+      }
+      if (add_isotope_peaks)
+      {
+        spectrum.emplace_back((loss_mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_H2O_);
+        if (add_metainfo_)
+        {
+          ion_names.emplace_back("[" + ion_type + "$" + fragment_labels[j] + "Pep-H2O1]");
+        }
+        if (add_charges_)
+        {
+          charges.push_back(charge);
+        }
+      }
+
+      //ammonia loss peaks
+      loss_mono_pos = mono_pos - EmpiricalFormula("NH3").getMonoWeight();
+      spectrum.emplace_back(loss_mono_pos / charge, pre_int_NH3_);
+      if (add_metainfo_)
+      {
+        ion_names.emplace_back("[" + ion_type + "$" + fragment_labels[j] + "Pep-H3N1]");
+      }
+      if (add_charges_)
+      {
+        charges.push_back(charge);
+      }
+      if (add_isotope_peaks)
+      {
+        spectrum.emplace_back((loss_mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_NH3_);
+        if (add_metainfo_)
+        {
+          ion_names.emplace_back("[" + ion_type + "$" + fragment_labels[j] + "Pep-H3N1]");
+        }
+        if (add_charges_)
+        {
+          charges.push_back(charge);
         }
       }
     }
@@ -782,10 +932,7 @@ namespace OpenMS
   {
     if (pos < 0) {return;}
 
-    Peak1D p;
-    p.setMZ(pos);
-    p.setIntensity(intensity);
-    spectrum.push_back(p);
+    spectrum.emplace_back(pos, static_cast<float>(intensity));
     if (add_metainfo_)
     {
       ion_names.emplace_back("[" + ion_type + "$" + String(Residue::residueTypeToIonLetter(res_type)) + String(frag_index) + "]");
@@ -842,12 +989,14 @@ namespace OpenMS
 
   void TheoreticalSpectrumGeneratorXLMS::addPrecursorPeaks_(PeakSpectrum & spectrum, DataArrays::IntegerDataArray & charges, DataArrays::StringDataArray & ion_names, double precursor_mass, int charge) const
   {
-    Peak1D p;
+    //Peak1D p;
 
     // precursor peak
     double mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge));
-    p.setMZ(mono_pos / static_cast<double>(charge));
-    p.setIntensity(pre_int_);
+    spectrum.emplace_back(mono_pos / charge, pre_int_);
+    //p.setMZ(mono_pos / static_cast<double>(charge));
+    //p.setIntensity(pre_int_);
+    //spectrum.push_back(p);
     if (add_metainfo_)
     {
       ion_names.emplace_back("[M+H]");
@@ -856,12 +1005,10 @@ namespace OpenMS
     {
       charges.push_back(charge);
     }
-    spectrum.push_back(p);
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
-      double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      p.setMZ(pos);
-      p.setIntensity(pre_int_);
+      //spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_);
+      spectrum.emplace_back(mono_pos + (Constants::C13C12_MASSDIFF_U / charge), pre_int_);
       if (add_metainfo_)
       {
         ion_names.emplace_back("[M+H]");
@@ -870,70 +1017,61 @@ namespace OpenMS
       {
         charges.push_back(charge);
       }
-      spectrum.push_back(p);
     }
 
     // loss peaks of the precursor
     // loss of water
-    mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - EmpiricalFormula("H2O").getMonoWeight();
-    p.setMZ(mono_pos / static_cast<double>(charge));
-    p.setIntensity(pre_int_H2O_);
+    mono_pos -= EmpiricalFormula("H2O").getMonoWeight();
+    spectrum.emplace_back(mono_pos / charge, pre_int_H2O_);
     if (add_metainfo_)
     {
-      ion_names.emplace_back("[M+H-H2O1]");
+      ion_names.emplace_back("[M+H]-H2O");
     }
     if (add_charges_)
     {
       charges.push_back(charge);
     }
-    spectrum.push_back(p);
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
-      double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      p.setMZ(pos);
-      p.setIntensity(pre_int_H2O_);
+      //spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_H2O_);
+      spectrum.emplace_back(mono_pos + (Constants::C13C12_MASSDIFF_U / charge), pre_int_H2O_);
       if (add_metainfo_)
       {
-        ion_names.emplace_back("[M+H-H2O1]");
+        ion_names.emplace_back("[M+H]-H2O");
       }
       if (add_charges_)
       {
         charges.push_back(charge);
       }
-      spectrum.push_back(p);
     }
 
     //loss of ammonia
     mono_pos = precursor_mass + (Constants::PROTON_MASS_U * static_cast<double>(charge)) - EmpiricalFormula("NH3").getMonoWeight();
-    p.setMZ(mono_pos / static_cast<double>(charge));
-    p.setIntensity(pre_int_NH3_);
+    spectrum.emplace_back(mono_pos / charge, pre_int_NH3_);
     if (add_metainfo_)
     {
-      ion_names.emplace_back("[M+H-H3N1]");
+      ion_names.emplace_back("[M+H]-NH3");
     }
     if (add_charges_)
     {
       charges.push_back(charge);
     }
-    spectrum.push_back(p);
     if (add_isotopes_ && max_isotope_ >= 2) // add second isotopic peak with fast method, if two or more peaks are asked for
     {
-      double pos = mono_pos + (Constants::C13C12_MASSDIFF_U / static_cast<double>(charge));
-      p.setMZ(pos);
-      p.setIntensity(pre_int_NH3_);
+      //spectrum.emplace_back((mono_pos + Constants::C13C12_MASSDIFF_U) / charge, pre_int_NH3_);
+      spectrum.emplace_back(mono_pos + (Constants::C13C12_MASSDIFF_U / charge), pre_int_NH3_);
       if (add_metainfo_)
       {
-        ion_names.emplace_back("[M+H-H3N1]");
+        ion_names.emplace_back("[M+H]-NH3");
       }
       if (add_charges_)
       {
         charges.push_back(charge);
       }
-      spectrum.push_back(p);
     }
   }
 
-  void TheoreticalSpectrumGeneratorXLMS::addPrecursorPeaks_(PeakSpectrum & spectrum, DataArrays::IntegerDataArray & charges, DataArrays::StringDataArray & ion_names, bool alpha, AASequence& peptide, const DoubleList& cross_link_masses, int charge) const
+  void TheoreticalSpectrumGeneratorXLMS::addPrecursorPeaks_(PeakSpectrum & spectrum, DataArrays::IntegerDataArray & charges, DataArrays::StringDataArray & ion_names, bool alpha, AASequence& peptide, const DoubleList& cross_link_fragments, double cross_linker_mass, int charge) const
   {
 
     if (peptide.empty())
@@ -945,12 +1083,12 @@ namespace OpenMS
 
     double mono_weight = peptide.getMonoWeight(Residue::Full, charge);
     //Add the peak of the unfractured peptide without a cross linker (No need since this is covered in the linear spectrum)
-    DoubleList masses(cross_link_masses);
-    masses.insert(masses.begin(), 0);
+    DoubleList masses(cross_link_fragments);
+    masses.push_back(cross_linker_mass);
 
-    for (Size i = 0; i < masses.size(); ++i)
+    for (Size i = 0; i < cross_link_fragments.size(); ++i)
     {
-      double xlink_mass(masses[i]);
+      double xlink_mass(cross_link_fragments[i]);
       double mono_pos((mono_weight + xlink_mass) / static_cast<double>(charge));
 
       if (mono_pos >= 0)
@@ -1307,7 +1445,7 @@ namespace OpenMS
     return;
   }
 
-  void TheoreticalSpectrumGeneratorXLMS::getXLinkIonSpectrum(PeakSpectrum &spectrum, OPXLDataStructs::ProteinProteinCrossLink &crosslink, const DoubleList &cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const
+  void TheoreticalSpectrumGeneratorXLMS::getXLinkIonSpectrum(PeakSpectrum &spectrum, OPXLDataStructs::ProteinProteinCrossLink &crosslink, const DoubleList &cross_link_fragments, const StringList& fragment_labels, bool frag_alpha, int mincharge, int maxcharge) const
   {
     if (!crosslink.alpha)
     {
@@ -1324,7 +1462,7 @@ namespace OpenMS
 
     if (add_charges_)
     {
-      if (spectrum.getIntegerDataArrays().size() > 0)
+      if (!spectrum.getIntegerDataArrays().empty())
       {
         charges = spectrum.getIntegerDataArrays()[0];
       }
@@ -1332,7 +1470,7 @@ namespace OpenMS
     }
     if (add_metainfo_)
     {
-      if (spectrum.getStringDataArrays().size() > 0)
+      if (!spectrum.getStringDataArrays().empty())
       {
         ion_names = spectrum.getStringDataArrays()[0];
       }
@@ -1341,7 +1479,6 @@ namespace OpenMS
 
     std::vector< LossIndex > forward_losses;
     std::vector< LossIndex > backward_losses;
-    LossIndex losses_peptide2;
 
     AASequence peptide = frag_alpha ? *crosslink.alpha : *crosslink.beta;
     Size link_pos = frag_alpha ? crosslink.cross_link_position.first : crosslink.cross_link_position.second;
@@ -1354,40 +1491,49 @@ namespace OpenMS
 
     for (Int z = mincharge; z <= maxcharge; ++z)
     {
+
+      addXLinkUnfracturedPepPeaks_(spectrum, charges, ion_names, peptide, z, cross_link_fragments, fragment_labels, frag_alpha);
+
       if (add_b_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::BIon, forward_losses, backward_losses, z, 0);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::BIon, forward_losses, backward_losses, z, 0);
       }
       if (add_y_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::YIon, forward_losses, backward_losses, z, 0);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::YIon, forward_losses, backward_losses, z, 0);
       }
       if (add_a_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::AIon, forward_losses, backward_losses, z, 0);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::AIon, forward_losses, backward_losses, z, 0);
       }
       if (add_x_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::XIon, forward_losses, backward_losses, z, 0);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::XIon, forward_losses, backward_losses, z, 0);
       }
       if (add_c_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::CIon, forward_losses, backward_losses, z, 0);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::CIon, forward_losses, backward_losses, z, 0);
       }
       if (add_z_ions_)
       {
-        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_mass, frag_alpha, Residue::ZIon, forward_losses, backward_losses, z, 0);
+        addXLinkIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, cross_link_fragments, fragment_labels, frag_alpha, Residue::ZIon, forward_losses, backward_losses, z, 0);
       }
       if (add_k_linked_ions_ && !crosslink.beta->empty())
       {
         double precursor_mass = crosslink.alpha->getMonoWeight() + crosslink.beta->getMonoWeight() + crosslink.cross_linker_mass;
         addKLinkedIonPeaks_(spectrum, charges, ion_names, peptide, link_pos, precursor_mass, frag_alpha, z);
       }
-      if (add_precursor_peaks_)
-      {
-        addPrecursorPeaks_(spectrum, charges, ion_names, frag_alpha, peptide, cross_link_mass, z);
-      }
 
+    }
+
+    if (add_precursor_peaks_)
+    {
+      double precursor_mass = crosslink.alpha->getMonoWeight() + crosslink.cross_linker_mass;
+      if (!crosslink.beta->empty())
+      {
+        precursor_mass += crosslink.beta->getMonoWeight();
+      }
+      addPrecursorPeaks_(spectrum, charges, ion_names, precursor_mass, maxcharge + 1);
     }
 
     if (add_charges_)

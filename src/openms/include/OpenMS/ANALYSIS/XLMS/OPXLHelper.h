@@ -38,7 +38,7 @@
 #include <OpenMS/ANALYSIS/XLMS/OPXLDataStructs.h>
 #include <OpenMS/CHEMISTRY/ResidueModification.h>
 #include <OpenMS/FORMAT/FASTAFile.h>
-#include <OpenMS/CHEMISTRY/EnzymaticDigestion.h>
+#include <OpenMS/CHEMISTRY/ProteaseDigestion.h>
 #include <OpenMS/CHEMISTRY/ModifiedPeptideGenerator.h>
 #include <numeric>
 
@@ -139,8 +139,8 @@ namespace OpenMS
                                                                                     double precursor_mass_tolerance,
                                                                                     bool precursor_mass_tolerance_unit_ppm);
 
-      static std::vector<OPXLDataStructs::XLCPrecursor> enumerateCrossLinksAndMasses(const std::vector<const OPXLDataStructs::AASeqWithMass*>& alpha_peptides,
-                                                                                    const std::vector<const OPXLDataStructs::AASeqWithMass*>& beta_peptides,
+      static std::vector<OPXLDataStructs::XLCPrecursor> enumerateCrossLinksAndMasses(const std::vector<OPXLDataStructs::PeptideCandidate>& alpha_peptides,
+                                                                                    const std::vector<OPXLDataStructs::PeptideCandidate>& beta_peptides,
                                                                                     double cross_link_mass_light,
                                                                                     const DoubleList& cross_link_mass_mono_link,
                                                                                     const StringList& cross_link_residue1,
@@ -170,8 +170,8 @@ namespace OpenMS
        * @param c_term_linker True, if the cross-linker can react with the C-terminal of a protein
        * @return A vector of AASeqWithMass containing the peptides, their masses and information about terminal peptides
        */
-      static std::vector<OPXLDataStructs::AASeqWithMass> digestDatabase(std::vector<FASTAFile::FASTAEntry> fasta_db,
-        EnzymaticDigestion digestor, Size min_peptide_length, StringList cross_link_residue1, StringList cross_link_residue2,
+      static std::vector<OPXLDataStructs::AASeqWithMass> digestDatabase(const std::vector<FASTAFile::FASTAEntry>& fasta_db,
+        const ProteaseDigestion& digestor, Size min_peptide_length, const StringList& cross_link_residue1, const StringList& cross_link_residue2,
         const ModifiedPeptideGenerator::MapToResidueType& fixed_modifications,
         const ModifiedPeptideGenerator::MapToResidueType& variable_modifications,
         Size max_variable_mods_per_peptide);
@@ -240,6 +240,18 @@ namespace OpenMS
        */
       static void buildPeptideIDs(std::vector<PeptideIdentification> & peptide_ids, const std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > & top_csms_spectrum, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > > & all_top_csms, Size all_top_csms_current_index, const PeakMap & spectra, Size scan_index, Size scan_index_heavy);
 
+    /**
+      * @brief Builds PeptideIdentifications and PeptideHits (Overload for cleavable crosslinkers)
+      * @param peptide_ids The vector of PeptideIdentifications for the whole experiment. The created PepIds will be pushed on this one.
+      * @param top_csms_spectrum All CrossLinkSpectrumMatches from the current spectrum to be written out
+      * @param all_top_csms A vector of all CrossLinkSpectrumMatches of the experiment, that is also extended in this function
+      * @param all_top_csms_current_index The index of the current spectrum in all_top_csms (some spectra have no matches, so this is not equal to the spectrum index)
+      * @param spectra The searched spectra as a PeakMap
+      * @param scan_index The index of the current spectrum
+      * @param scan_index_heavy The index of the heavy spectrum in a spectrum pair with labeled linkers
+      */
+      static void buildPeptideIDs(std::vector<PeptideIdentification> & peptide_ids, const std::vector< OPXLDataStructs::CleavableCrossLinkSpectrumMatch > & top_csms_spectrum, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > > & all_top_csms, Size all_top_csms_current_index, const PeakMap & spectra, Size scan_index, Size scan_index_heavy);
+
       /**
        * @brief adds MetaValues for cross-link positions to PeptideHits
        * @param peptide_ids The vector of peptide_ids containing XL-MS search results with alpha and beta PeptideHits, after mapping of peptides to proteins
@@ -297,16 +309,22 @@ namespace OpenMS
        * @param remaining_frag_mass The weight of the xlinker fragment that is attached to the peptide (has to be same length then mass_diffs)
        * @param max_error Maximal error for peptide identification
        * @param max_charge Highest charge to consider
-       * @param peptide_candidates The found peptides get stored here, sorted by peptide mass (can already have candidates)
+       * @param peptide_candidates The found peptides get stored here, sorted by peptide mass (can already contain candidates)
        */
 
       static void collectPeptideCandidates(const PeakSpectrum& spectrum,
                                            const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
-                                           const DoubleList& mass_diffs,
-                                           const DoubleList& remaining_frag_mass,
-                                           double max_error,
+                                           const std::vector<std::pair<double, double> >& fragment_masses,
+                                           double max_fragment_error, bool max_fragment_error_ppm,
                                            int max_charge,
-                                           std::list<const OPXLDataStructs::AASeqWithMass*>& peptide_candidates);
+                                           std::list<OPXLDataStructs::PeptideCandidate>& peptide_candidates);
+
+      static void filterPeptideCandidates(const PeakSpectrum& spectrum,
+                                          const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
+                                           const DoubleList& fragment_masses,
+                                           double max_fragment_error, bool max_fragment_error_ppm,
+                                           int max_charge,
+                                           std::list<OPXLDataStructs::PeptideCandidate>& peptide_candidates);
 
       /**
        * @brief Searches for cross-link candidates for a MS/MS spectrum
@@ -344,8 +362,8 @@ namespace OpenMS
                                                                                                double precursor_mass,
                                                                                                double precursor_mass_tolerance,
                                                                                                bool precursor_mass_tolerance_unit_ppm,
-                                                                                               const std::vector<const OPXLDataStructs::AASeqWithMass*>& alpha_peptide_masses,
-                                                                                               const std::vector<const OPXLDataStructs::AASeqWithMass*>& beta_peptide_masses,
+                                                                                               const std::vector<OPXLDataStructs::PeptideCandidate>& alpha_peptide_masses,
+                                                                                               const std::vector<OPXLDataStructs::PeptideCandidate>& beta_peptide_masses,
                                                                                                double cross_link_mass,
                                                                                                const DoubleList& cross_link_mass_mono_link,
                                                                                                const StringList& cross_link_residue1,
@@ -361,7 +379,16 @@ namespace OpenMS
        * @param precursor_mz The precursor mz of the MS/MS spectrum
        * @param precursor_charge The charge of the precursor
        */
-      static double computePrecursorError(OPXLDataStructs::CrossLinkSpectrumMatch csm, double precursor_mz, int precursor_charge);
+      static double computePrecursorError(const OPXLDataStructs::CrossLinkSpectrumMatch& csm, double precursor_mz, int precursor_charge);
+
+      /**
+       * @brief Computes the mass error of a precursor mass to a hit (Overload for cleavable crosslinker)
+
+       * @param csm The cross-link spectrum match containing the hit
+       * @param precursor_mz The precursor mz of the MS/MS spectrum
+       * @param precursor_charge The charge of the precursor
+       */
+      static double computePrecursorError(const OPXLDataStructs::CleavableCrossLinkSpectrumMatch& csm, double precursor_mz, int precursor_charge);
 
       /**
        * @brief Computes the mass error of a precursor mass to a hit
@@ -371,6 +398,15 @@ namespace OpenMS
        * @param precursor_charge The charge of the precursor
        */
       static void isoPeakMeans(OPXLDataStructs::CrossLinkSpectrumMatch& csm, DataArrays::IntegerDataArray& num_iso_peaks_array, std::vector< std::pair< Size, Size > >& matched_spec_linear_alpha, std::vector< std::pair< Size, Size > >& matched_spec_linear_beta, std::vector< std::pair< Size, Size > >& matched_spec_xlinks_alpha, std::vector< std::pair< Size, Size > >& matched_spec_xlinks_beta);
+
+      /**
+      * @brief Computes the mass error of a precursor mass to a hit (Overload for cleavable crosslinkers)
+
+      * @param csm The cross-link spectrum match containing the hit
+      * @param precursor_mz The precursor mz of the MS/MS spectrum
+      * @param precursor_charge The charge of the precursor
+      */
+      static void isoPeakMeans(OPXLDataStructs::CleavableCrossLinkSpectrumMatch& csm, DataArrays::IntegerDataArray& num_iso_peaks_array, std::vector< std::pair< Size, Size > >& matched_spec_linear_alpha, std::vector< std::pair< Size, Size > >& matched_spec_linear_beta, std::vector< std::pair< Size, Size > >& matched_spec_xlinks_alpha, std::vector< std::pair< Size, Size > >& matched_spec_xlinks_beta);
 
       /**
        * @brief Filters the list of candidates for cases that include at least one of the tags in at least one of the two sequences

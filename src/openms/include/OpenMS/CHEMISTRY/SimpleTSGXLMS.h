@@ -157,7 +157,7 @@ namespace OpenMS
 
       /* overload for cleavable cross linker */
 
-      virtual void getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, const AASequence& peptide, Size link_pos, double precursor_mass, const DoubleList& cross_link_masses, int mincharge, int maxcharge, Size link_pos_2 = 0) const;
+      virtual void getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, const AASequence& peptide, Size link_pos, double precursor_mass, const DoubleList& cross_link_fragments, double cross_linker_mass, int mincharge, int maxcharge, Size link_pos_2 = 0) const;
 
       /**
        * @brief Generates fragment ions containing the cross-linker for a pair of peptides.
@@ -182,7 +182,7 @@ namespace OpenMS
 
       /* overload for cleavable cross linker */
 
-      virtual void getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, const OPXLDataStructs::ProteinProteinCrossLink& crosslink, const DoubleList& cross_link_mass, bool frag_alpha, int mincharge, int maxcharge) const;
+      virtual void getXLinkIonSpectrum(std::vector< SimplePeak >& spectrum, const OPXLDataStructs::ProteinProteinCrossLink& crosslink, const DoubleList& cross_link_fragments, double cross_linker_mass, bool frag_alpha, int mincharge, int maxcharge) const;
 
       /// overwrite
       void updateMembers_() override;
@@ -212,7 +212,7 @@ namespace OpenMS
       virtual void addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, double precursor_mass, int charge) const;
 
       //Overload for cleavable cross-linker
-      virtual void addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, const AASequence& peptide, const DoubleList& cross_link_mass, int charge) const;
+      virtual void addPrecursorPeaks_(std::vector< SimplePeak >& spectrum, const AASequence& peptide, const DoubleList& cross_link_fragments, double cross_linker_mass, int charge) const;
 
       /**
        * @brief Adds neutral losses for an ion to a spectrum
@@ -256,11 +256,9 @@ namespace OpenMS
        */
       virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, const AASequence & peptide, Size link_pos, double precursor_mass, Residue::ResidueType res_type, const std::vector< LossIndex > & forward_losses, const std::vector< LossIndex > & backward_losses, int charge, Size link_pos_2 = 0) const;
 
-      /* overload for cleavable cross linker
-       * TODO: Only one linked position is considered atm, for loop links the mass on the second linked position needs to be considered!
-       */
+      /* overload for cleavable cross linker */
 
-      virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, const AASequence & peptide, Size link_pos, const DoubleList& cross_link_mass, Residue::ResidueType res_type, const std::vector< LossIndex > & forward_losses, const std::vector< LossIndex > & backward_losses, int charge, Size link_pos_2 = 0) const;
+      virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, const AASequence & peptide, Size link_pos, const DoubleList& cross_link_fragments, double cross_linker_mass, Residue::ResidueType res_type, const std::vector< LossIndex > & forward_losses, const std::vector< LossIndex > & backward_losses, int charge, Size link_pos_2 = 0) const;
 
       /**
        * @brief Adds cross-linked ions of a specific ion type and charge to a spectrum
@@ -281,6 +279,8 @@ namespace OpenMS
       virtual void addXLinkIonPeaks_(std::vector< SimplePeak >& spectrum, const OPXLDataStructs::ProteinProteinCrossLink & crosslink, bool frag_alpha, Residue::ResidueType res_type, const std::vector< LossIndex > & forward_losses, const std::vector< LossIndex > & backward_losses, const LossIndex & losses_peptide2, int charge) const;
 
       /* overload for cleavable cross linker not needed */
+
+      virtual void addXLinkUnfracturedPepPeaks_(std::vector< SimplePeak >& spectrum, const AASequence & peptide, int charge, const DoubleList& cross_link_fragments, double cross_linker_mass) const;
 
       /**
        * @brief Calculates sets of possible neutral losses for each position in the given peptide

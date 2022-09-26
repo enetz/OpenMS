@@ -102,7 +102,7 @@ using namespace OpenMS;
     // Loop through the peptides, apply filter, and assign cross-link types
     for (PeptideIdentification& pep_id : peptide_ids)
     {
-      if (pep_id.getHits().size() < 1)
+      if (pep_id.getHits().empty())
       {
         continue;
       }
@@ -186,35 +186,27 @@ using namespace OpenMS;
     // Generate Histograms of the scores for each class
     // Use cumulative histograms to count the number of scores above consecutive thresholds
     std::map< String, Math::Histogram<> >  cum_histograms;
-#pragma omp parallel for
-    //for (const auto &[current_class, current_scores] : scores)
-    for (Size i = 0; i < scores.size(); ++i)
+    for (const auto &class_scores: scores)
     {
-      auto it = scores.begin();
-      std::advance(it, i);
-      //std::vector< double > current_scores = class_scores.second;
-      std::vector<double>& current_scores = it->second;
+      std::vector< double > current_scores = class_scores.second;
 
       Math::Histogram<> histogram(this->min_score_, this->max_score_, arg_binsize_);
       Math::Histogram<>::getCumulativeHistogram(current_scores.begin(), current_scores.end(), true, true, histogram);
-#pragma omp critical (cum_histograms_access)
-      {
-        cum_histograms[it->first] = histogram;
-      }
+      cum_histograms[class_scores.first] = histogram;
     }
 
     std::cout << "Calculating Score Distributions..." << std::endl;
     // Calculate FDR for interlinks
     std::vector< double > fdr_interlinks;
-    fdr_xprophet_(cum_histograms, crosslink_class_interlinks_, crosslink_class_interdecoys_, crosslink_class_fulldecoysinterlinks_, fdr_interlinks, false);
+    this->fdr_xprophet_(cum_histograms, crosslink_class_interlinks_, crosslink_class_interdecoys_, crosslink_class_fulldecoysinterlinks_, fdr_interlinks, false);
 
     // Calculate FDR for intralinks
     std::vector< double > fdr_intralinks;
-    fdr_xprophet_(cum_histograms, crosslink_class_intralinks_, crosslink_class_intradecoys_, crosslink_class_fulldecoysintralinks_, fdr_intralinks, false);
+    this->fdr_xprophet_(cum_histograms, crosslink_class_intralinks_, crosslink_class_intradecoys_, crosslink_class_fulldecoysintralinks_, fdr_intralinks, false);
 
     // Calculate FDR for monolinks and looplinks
     std::vector< double > fdr_monolinks;
-    fdr_xprophet_(cum_histograms, crosslink_class_monolinks_, crosslink_class_monodecoys_, "", fdr_monolinks, true);
+    this->fdr_xprophet_(cum_histograms, crosslink_class_monolinks_, crosslink_class_monodecoys_, "", fdr_monolinks, true);
 
     // Determine whether qTransform should be performed (and consequently the score type)
     // bool arg_no_qvalues = getFlag_(param_no_qvalues_);
@@ -224,19 +216,15 @@ using namespace OpenMS;
     {
       std::cout << "Performing qFDR transformation..." << std::endl;
 
-      std::vector<double> qfdr_interlinks;
-      std::vector<double> qfdr_intralinks;
-      std::vector<double> qfdr_monolinks;
+      std::vector< double > qfdr_interlinks;
+      this->calc_qfdr_(fdr_interlinks, qfdr_interlinks);
 
-#pragma omp parallel sections
-      {
-#pragma omp section
-          calc_qfdr_(fdr_interlinks, qfdr_interlinks);
-#pragma omp section
-          calc_qfdr_(fdr_intralinks, qfdr_intralinks);
-#pragma omp section
-          calc_qfdr_(fdr_monolinks, qfdr_monolinks);
-      }
+      std::vector< double > qfdr_intralinks;
+      this->calc_qfdr_(fdr_intralinks, qfdr_intralinks);
+
+      std::vector< double > qfdr_monolinks;
+      this->calc_qfdr_(fdr_monolinks, qfdr_monolinks);
+
       fdr_interlinks = qfdr_interlinks;
       fdr_intralinks = qfdr_intralinks;
       fdr_monolinks = qfdr_monolinks;
@@ -321,7 +309,7 @@ using namespace OpenMS;
     for (Size i = 0; i < peptide_ids.size(); ++i)
     {
       PeptideIdentification &pep_id = peptide_ids[i];
-      if (pep_id.getHits().size() < 1)
+      if (pep_id.getHits().empty())
       {
         continue;
       }
@@ -509,14 +497,7 @@ using namespace OpenMS;
 
   void XFDRAlgorithm::calc_qfdr_(const std::vector< double > &fdr, std::vector< double > &qfdr)
   {
-    qfdr.reserve(fdr.size());
-    qfdr[0] = fdr[0];
-    for (Size i = 1; i < fdr.size(); ++i)
-    {
-      qfdr[i] = fdr[i] < qfdr[i - 1] ? fdr[i] : qfdr[i - 1];
-    }
-    /*
-#pragma omp parallel for
+    qfdr.resize(fdr.size());
     for (Int i = fdr.size() - 1; i >= 0; --i)
     {
       double current_fdr = fdr[i];
@@ -529,10 +510,8 @@ using namespace OpenMS;
           smallest_fdr = fdr_to_check;
         }
       }
-#pragma omp critical (qfdr_access)
       qfdr[i] = smallest_fdr < current_fdr ? smallest_fdr : current_fdr;
     }
-     */
   }
 
   void XFDRAlgorithm::findTopUniqueHits_(std::vector<PeptideIdentification>& peptide_ids)

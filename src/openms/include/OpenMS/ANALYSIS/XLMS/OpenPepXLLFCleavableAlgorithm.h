@@ -135,7 +135,7 @@ namespace OpenMS
         ExitCodes run(PeakMap& unprocessed_spectra, std::vector<FASTAFile::FASTAEntry>& fasta_db, std::vector<ProteinIdentification>& protein_ids, std::vector<PeptideIdentification>& peptide_ids, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > >& all_top_csms, PeakMap& spectra);
 
     private:
-        enum BetaFilter {NONE, LOOSE, STRICT};
+        enum FilterMode {NONE, LOOSE, STRICT};
 
 
         void updateMembers_() override;
@@ -159,10 +159,11 @@ namespace OpenMS
         DoubleList cross_link_mass_mono_link_;
         DoubleList cross_link_mass_fragments_;
         String cross_link_name_;
+        StringList cross_link_fragments_labels_;
+        StringList mono_link_labels_;
 
-        bool pre_filter_spectra_;
-        BetaFilter beta_filter_;
-        bool discard_filtered_out_;
+        FilterMode alpha_filter_;
+        FilterMode beta_filter_;
 
         Size min_linear_fragments_;
         Size min_xlink_fragments_;
@@ -191,10 +192,10 @@ namespace OpenMS
         // The weights are adapted from the xQuest algorithm (O. Rinner et al., 2008, "Identification of cross-linked peptides from large sequence databases"),
         // they were determined by an Linear Discriminant Analysis on CID fragmentation data.
         // The match-odds score does not work very well on HCD data and label-free cross-linkers (has the maximal possible value very often), so its weight was drastically reduced here.
-        static constexpr double xcorrx_weight = 2.488;
-        static constexpr double xcorrc_weight = 21.279;
-        static constexpr double match_odds_weight = 1.973;
-        static constexpr double wTIC_weight = 12.829;
-        static constexpr double intsum_weight = 1.8;
+        const double xcorrx_weight = 2.488;
+        const double xcorrc_weight = 21.279;
+        const double match_odds_weight = 1.973;
+        const double wTIC_weight = 12.829;
+        const double intsum_weight = 1.8;
     };
 }
