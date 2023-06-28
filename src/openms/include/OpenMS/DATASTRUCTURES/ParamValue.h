@@ -38,6 +38,7 @@
 #include <cstddef> // for ptrdiff_t
 #include <string>
 #include <vector>
+#include <cstddef>
 
 
 namespace OpenMS

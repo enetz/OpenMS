@@ -258,6 +258,7 @@ public:
       Size incUntil(BinSizeType val, bool inclusive, ValueType increment = 1)
       {
         Size bin_index = this->valueToBin(val);
+        //printf("bin_index: %zu\n", bin_index);
         for (Size i = 0; i < bin_index; ++i)
         {
          this->bins_[i] += increment;

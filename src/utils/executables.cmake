@@ -39,6 +39,7 @@ NovorAdapter
 NucleicAcidSearchEngine
 OpenMSDatabasesInfo
 OpenMSInfo
+OpenPepXLLFCleavable
 PeakPickerIterative
 PSMFeatureExtractor
 QCCalculator

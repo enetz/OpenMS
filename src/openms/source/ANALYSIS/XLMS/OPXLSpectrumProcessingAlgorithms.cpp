@@ -361,12 +361,12 @@ namespace OpenMS
   }
 
   void OPXLSpectrumProcessingAlgorithms::getSpectrumAlignmentSimple(
-    std::vector<std::pair<Size, Size> > & alignment,
-    double fragment_mass_tolerance,
-    bool fragment_mass_tolerance_unit_ppm,
-    const std::vector< SimpleTSGXLMS::SimplePeak >& theo_spectrum,
-    const PeakSpectrum& exp_spectrum,
-    const DataArrays::IntegerDataArray& exp_charges)
+          std::vector<std::pair<Size, Size> > & alignment,
+          double fragment_mass_tolerance,
+          bool fragment_mass_tolerance_unit_ppm,
+          const std::vector< SimpleTSGXLMS::SimplePeak >& theo_spectrum,
+          const PeakSpectrum& exp_spectrum,
+          const DataArrays::IntegerDataArray& exp_charges)
   {
     alignment.clear();
     const Size n_t(theo_spectrum.size());
@@ -480,7 +480,7 @@ namespace OpenMS
         while (e < n_e - 1);
 
         // search in tolerance window for an experimental peak closer to theoretical one
-        alignment.emplace_back(std::make_pair(t, closest_exp_peak));
+        alignment.emplace_back(t, closest_exp_peak);
         e = closest_exp_peak + 1;  // advance experimental peak to 1-after the best match
         ++t; // advance theoretical peak
       }
@@ -495,4 +495,98 @@ namespace OpenMS
     }
   }
 
+  void OPXLSpectrumProcessingAlgorithms::getMatchedXLinkPeakPairs(vector<std::pair<Size, Size>> aligned_peaks,
+                                                                  const MSSpectrum &spectrum, Size &singles,
+                                                                  Size &pairs, double& singles_int, double& pairs_int,
+                                                                  double mass_diff, double fragment_tolerance, bool fragment_tolerance_ppm,
+                                                                  int max_charge)
+  {
+    PeakSpectrum::IntegerDataArray exp_charges;
+    if (!spectrum.getIntegerDataArrays().empty())
+    {
+      exp_charges = spectrum.getIntegerDataArrays()[0];
+    }
+
+    pairs = 0;
+    singles = 0;
+    pairs_int = 0.0;
+    singles_int = 0.0;
+    auto last_peak = aligned_peaks.end() - 3;
+    for (int charge = 1; charge <= max_charge; ++charge)
+    {
+      for (Size i = 0; i < aligned_peaks.size(); ++i)
+      {
+        auto first_peak = aligned_peaks.begin() + i;
+        if (!exp_charges.empty())
+        {
+          auto c = exp_charges[first_peak->second];
+          while (first_peak < last_peak && c && c != charge)
+          {
+            ++first_peak;
+            c = exp_charges[first_peak->second];
+          }
+          if (c && c != charge)
+          {
+            break;
+          }
+        }
+        auto second_peak = first_peak + 1;
+
+        while (second_peak < aligned_peaks.end())
+        {
+          if (!exp_charges.empty())
+          {
+            auto c = exp_charges[second_peak->second];
+            while (second_peak < aligned_peaks.end() - 1 && c && c != charge)
+            {
+              ++second_peak;
+              c = exp_charges[second_peak->second];
+            }
+            if (c && c != charge)
+            {
+              break;
+            }
+          }
+          double diff = (spectrum[second_peak->second].getMZ() - spectrum[first_peak->second].getMZ()) * charge;
+          double first_peak_error;
+          double second_peak_error;
+          if (fragment_tolerance_ppm)
+          {
+            first_peak_error = (spectrum[first_peak->second].getMZ() - Constants::PROTON_MASS_U) * charge * 1e-6 * fragment_tolerance;
+            second_peak_error = (spectrum[second_peak->second].getMZ() - Constants::PROTON_MASS_U) * charge * 1e-6 * fragment_tolerance;
+          } else
+          {
+            first_peak_error = fragment_tolerance;
+            second_peak_error = fragment_tolerance;
+          }
+          double max_error = std::sqrt(std::pow(first_peak_error, 2) + std::pow(second_peak_error, 2));
+          if (diff > mass_diff - max_error && diff < mass_diff + max_error)
+          {
+            pairs += 1;
+
+            pairs_int += spectrum[second_peak->second].getIntensity();
+            pairs_int += spectrum[first_peak->second].getIntensity();
+            aligned_peaks.erase(second_peak);
+            aligned_peaks.erase(first_peak);
+            break;
+          } else if (diff > mass_diff + max_error)
+          {
+            break;
+          }
+          ++second_peak;
+        }
+        //We can break if there is only one peak remaining
+        if (aligned_peaks.size() < 2)
+        {
+          break;
+        }
+      }
+    }
+    //only single peaks remain
+    singles = aligned_peaks.size();
+    for (auto& peak : aligned_peaks)
+    {
+      singles_int += spectrum[peak.second].getIntensity();
+    }
+  }
 }
