@@ -135,7 +135,7 @@ namespace OpenMS
         ExitCodes run(PeakMap& unprocessed_spectra, std::vector<FASTAFile::FASTAEntry>& fasta_db, std::vector<ProteinIdentification>& protein_ids, std::vector<PeptideIdentification>& peptide_ids, std::vector< std::vector< OPXLDataStructs::CrossLinkSpectrumMatch > >& all_top_csms, PeakMap& spectra);
 
     private:
-        enum FilterMode {NONE, LOOSE, STRICT};
+        enum FilterMode {NONE, LOOSE, STRINGENT, NUMBER_OF_FILTER_MODES};
 
 
         void updateMembers_() override;

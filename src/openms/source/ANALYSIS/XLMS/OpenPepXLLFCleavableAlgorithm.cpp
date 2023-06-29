@@ -34,6 +34,7 @@
 
 #include <OpenMS/ANALYSIS/XLMS/OpenPepXLLFCleavableAlgorithm.h>
 #include <OpenMS/CHEMISTRY/ModificationsDB.h>
+#include <OpenMS/CHEMISTRY/ProteaseDB.h>
 #include <OpenMS/ANALYSIS/XLMS/OPXLSpectrumProcessingAlgorithms.h>
 #include <OpenMS/ANALYSIS/XLMS/OPXLHelper.h>
 #include <OpenMS/ANALYSIS/XLMS/XQuestScores.h>
@@ -186,15 +187,18 @@ using namespace OpenMS;
     if (filter_str == "None")
     {
       beta_filter_ = NONE;
-    } else if(filter_str == "Loose")
+    }
+    else if(filter_str == "Loose")
     {
       beta_filter_ = LOOSE;
-    } else
-    {
-      beta_filter_ = STRICT;
     }
+    else
+    {
+      beta_filter_ = STRINGENT;
+    }
+  
     filter_str = param_.getValue("algorithm:alpha_filter").toString();
-    alpha_filter_ = filter_str == "Loose" ? LOOSE : STRICT;
+    alpha_filter_ = filter_str == "Loose" ? LOOSE : STRINGENT;
 
     number_top_hits_ = static_cast<Int>(param_.getValue("algorithm:number_top_hits"));
     deisotope_mode_ = static_cast<String>(param_.getValue("algorithm:deisotope").toString());
@@ -449,89 +453,85 @@ using namespace OpenMS;
       cout << "Processing spectrum " << spectrum_counter << " / " << spectra.size() << " |\tSpectrum ID: " << spectrum.getNativeID() << "\t| at: " << DateTime::now().getTime() << endl;
 
       vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates;
+      list<OPXLDataStructs::PeptideCandidate> alpha_candidates;
+      vector<pair<double, double> > fragment_combinations = {{cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]}};
+      if (alpha_filter_ == LOOSE)
       {
-        list<OPXLDataStructs::PeptideCandidate> alpha_candidates;
-        vector<pair<double, double> > fragment_combinations = {{cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]}};
-        if (alpha_filter_ == LOOSE)
-        {
-          fragment_combinations.emplace_back(0, cross_link_mass_fragments_[0]);
-          fragment_combinations.emplace_back(0, cross_link_mass_fragments_[1]);
-        }
-        OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
-                                             fragment_combinations,
-                                             fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
-                                             max_charge, alpha_candidates);
+        fragment_combinations.emplace_back(0, cross_link_mass_fragments_[0]);
+        fragment_combinations.emplace_back(0, cross_link_mass_fragments_[1]);
+      }
+      OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
+                                           fragment_combinations,
+                                           fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
+                                           max_charge, alpha_candidates);
 
 #ifdef DEBUG_OPENPEPXLLFALGO
-        OPENMS_LOG_DEBUG << "Peptides: " << filtered_peptide_masses.size() << " Alpha candidates: "
+      OPENMS_LOG_DEBUG << "Peptides: " << filtered_peptide_masses.size() << " Alpha candidates: "
                          << alpha_candidates.size() << endl;
 #endif
-        if (alpha_candidates.empty())
+      if (alpha_candidates.empty())
+      {
+        continue;
+      }
+      vector<OPXLDataStructs::PeptideCandidate> alpha_vec(alpha_candidates.begin(), alpha_candidates.end());
+      vector<OPXLDataStructs::PeptideCandidate> beta_vec;
+      double min_precursor_mass = precursor_mass - static_cast<double>(precursor_correction_steps_.back()) * Constants::C13C12_MASSDIFF_U;
+      if (beta_filter_ == alpha_filter_)
+      {
+        //When its the same mode we just need to restrict the alpha candidates with the smallest and biggest possible masses to get the beta candidates
+        auto first_beta = lower_bound(alpha_vec.begin(), alpha_vec.end(),
+                                      min_precursor_mass - alpha_candidates.back().peptide->peptide_mass -
+                                      cross_link_mass_ - max_peptide_allowed_error,
+                                      OPXLDataStructs::PeptideCandidateComparator());
+        auto last_beta = upper_bound(first_beta, alpha_vec.end(),
+                                     precursor_mass - alpha_candidates.front().peptide->peptide_mass -
+                                     cross_link_mass_ + max_peptide_allowed_error,
+                                     OPXLDataStructs::PeptideCandidateComparator());
+        beta_vec.assign(first_beta, last_beta);
+      } else
+      {
+        //Determine beta candidates depending on the chosen mode
+        list<OPXLDataStructs::PeptideCandidate> beta_candidates;
+        if (beta_filter_ == NONE)
         {
-          continue;
-        }
-        vector<OPXLDataStructs::PeptideCandidate> alpha_vec(alpha_candidates.begin(), alpha_candidates.end());
-        vector<OPXLDataStructs::PeptideCandidate> beta_vec;
-
-        double min_precursor_mass = precursor_mass - static_cast<double>(precursor_correction_steps_.back()) * Constants::C13C12_MASSDIFF_U;
-
-        if (beta_filter_ == alpha_filter_)
-        {
-          //When its the same mode we just need to restrict the alpha candidates with the smallest and biggest possible masses to get the beta candidates
-          auto first_beta = lower_bound(alpha_vec.begin(), alpha_vec.end(),
-                                        min_precursor_mass - alpha_candidates.back().peptide->peptide_mass -
-                                        cross_link_mass_ - max_peptide_allowed_error,
-                                        OPXLDataStructs::PeptideCandidateComparator());
-          auto last_beta = upper_bound(first_beta, alpha_vec.end(),
-                                       precursor_mass - alpha_candidates.front().peptide->peptide_mass -
-                                       cross_link_mass_ + max_peptide_allowed_error,
-                                       OPXLDataStructs::PeptideCandidateComparator());
-          beta_vec.assign(first_beta, last_beta);
+          OPXLHelper::filterPeptideCandidates(spectrum, filtered_peptide_masses,
+                                              {cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]},
+                                              fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
+                                              max_charge, beta_candidates);
         } else
         {
-          //Determine beta candidates depending on the chosen mode
-          list<OPXLDataStructs::PeptideCandidate> beta_candidates;
-          if (beta_filter_ == NONE)
+          fragment_combinations = {{cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]}};
+          if (beta_filter_ == LOOSE)
           {
-            OPXLHelper::filterPeptideCandidates(spectrum, filtered_peptide_masses,
-                                                {cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]},
-                                                fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
-                                                max_charge, beta_candidates);
-          } else
-          {
-            fragment_combinations = {{cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]}};
-            if (beta_filter_ == LOOSE)
-            {
-              fragment_combinations.emplace_back(0, cross_link_mass_fragments_[0]);
-              fragment_combinations.emplace_back(0, cross_link_mass_fragments_[1]);
-            }
-            OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
-                                                 fragment_combinations,
-                                                 fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
-                                                 max_charge, beta_candidates);
+            fragment_combinations.emplace_back(0, cross_link_mass_fragments_[0]);
+            fragment_combinations.emplace_back(0, cross_link_mass_fragments_[1]);
           }
-          beta_vec.assign(beta_candidates.begin(), beta_candidates.end());
-          //Further constrain the beta candidates depending on the smallest and biggest alpha candidates
-          auto first_beta = lower_bound(beta_vec.begin(), beta_vec.end(),
-                                        min_precursor_mass - alpha_vec.back().peptide->peptide_mass -
-                                        cross_link_mass_ - max_peptide_allowed_error, OPXLDataStructs::PeptideCandidateComparator());
-          auto last_beta = upper_bound(first_beta, beta_vec.end(),
-                                       precursor_mass - alpha_vec.front().peptide->peptide_mass -
-                                       cross_link_mass_ + max_peptide_allowed_error, OPXLDataStructs::PeptideCandidateComparator());
-          beta_vec.assign(first_beta, last_beta);
+          OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
+                                               fragment_combinations,
+                                               fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
+                                               max_charge, beta_candidates);
         }
+        beta_vec.assign(beta_candidates.begin(), beta_candidates.end());
+        //Further constrain the beta candidates depending on the smallest and biggest alpha candidates
+        auto first_beta = lower_bound(beta_vec.begin(), beta_vec.end(),
+                                      min_precursor_mass - alpha_vec.back().peptide->peptide_mass -
+                                      cross_link_mass_ - max_peptide_allowed_error, OPXLDataStructs::PeptideCandidateComparator());
+        auto last_beta = upper_bound(first_beta, beta_vec.end(),
+                                     precursor_mass - alpha_vec.front().peptide->peptide_mass -
+                                     cross_link_mass_ + max_peptide_allowed_error, OPXLDataStructs::PeptideCandidateComparator());
+        beta_vec.assign(first_beta, last_beta);
+      }
 #ifdef DEBUG_OPENPEPXLLFALGO
-          OPENMS_LOG_DEBUG << " Beta candidates: " << beta_vec.size() << endl;
+      OPENMS_LOG_DEBUG << " Beta candidates: " << beta_vec.size() << endl;
 #endif
-          cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
+      cross_link_candidates = OPXLHelper::collectPrecursorCandidates(precursor_correction_steps_, precursor_mass,
                                                                          precursor_mass_tolerance_,
                                                                          precursor_mass_tolerance_unit_ppm_,
                                                                          alpha_vec, beta_vec,
                                                                          cross_link_mass_, cross_link_mass_mono_link_,
                                                                          cross_link_residue1_, cross_link_residue2_,
                                                                          cross_link_name_, use_sequence_tags_,
-                                                                         tags);
-      }
+                                                                         tags);      
       all_candidates_count += cross_link_candidates.size();
 
 #ifdef DEBUG_OPENPEPXLLFALGO
@@ -559,8 +559,9 @@ using namespace OpenMS;
       }
 
 #pragma omp parallel for schedule(guided)
-      for (auto& candidate : cross_link_candidates)
+      for(SignedSize i = 0; i < cross_link_candidates.size(); i++)
       {
+        OPXLDataStructs::ProteinProteinCrossLink& candidate = cross_link_candidates[i];
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_linear_alpha;
         theoretical_spec_linear_alpha.reserve(1500);
         std::vector< SimpleTSGXLMS::SimplePeak > theoretical_spec_linear_beta;
