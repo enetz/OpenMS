@@ -301,11 +301,13 @@ namespace OpenMS
 
         first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
         last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+        int i_first = std::distance(alpha_peptides.begin(), first_loop);
+        int i_last = std::distance(alpha_peptides.begin(), last_loop);
 
 #pragma omp parallel for
-        for (auto alpha_it = first_loop; alpha_it < last_loop; ++alpha_it)
+        for(int i = i_first; i < i_last; ++i)
         {
-          const String& seq_first = alpha_it->peptide->unmodified_seq;
+          const String& seq_first = alpha_peptides[i].peptide->unmodified_seq;
           // test if this peptide could have loop-links: one cross-link with both sides attached to the same peptide
           bool first_res = false; // is there a residue the first side of the linker can attach to?
           bool second_res = false; // is there a residue the second side of the linker can attach to?
@@ -334,12 +336,12 @@ namespace OpenMS
           if (first_res && second_res)
           {
             // Monoisotopic weight of the peptide + cross-linker
-            double cross_linked_peptide_mass = alpha_it->peptide->peptide_mass + cross_link_mass;
+            double cross_linked_peptide_mass = alpha_peptides[i].peptide->peptide_mass + cross_link_mass;
 
 #pragma omp critical (mass_to_candidates_access)
             {
               mass_to_candidates.emplace_back(cross_linked_peptide_mass,
-                                              &*alpha_it, nullptr);
+                                              &alpha_peptides[i], nullptr);
               precursor_correction_positions.push_back(pm);
             }
           }
@@ -355,17 +357,19 @@ namespace OpenMS
           // so we can use the results from the last search as a new lower bounds for both searches again
           first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
           last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+          i_first = std::distance(alpha_peptides.begin(), first_mono);
+          i_last = std::distance(alpha_peptides.begin(), last_mono);
 
 #pragma omp parallel for
-          for (auto alpha_it = first_mono; alpha_it < last_mono; ++alpha_it)
+          for(int i = i_first; i < i_last; ++i)
           {
             // Monoisotopic weight of the peptide + cross-linker
-            double cross_linked_peptide_mass = alpha_it->peptide->peptide_mass + mono_link_mass;
+            double cross_linked_peptide_mass = alpha_peptides[i].peptide->peptide_mass + mono_link_mass;
 
 #pragma omp critical (mass_to_candidates_access)
             {
               mass_to_candidates.emplace_back(cross_linked_peptide_mass,
-                                              &*alpha_it, nullptr);
+                                              &alpha_peptides[i], nullptr);
               precursor_correction_positions.push_back(pm);
             }
           } // end of loop over candidates for a specific mono-link mass
@@ -380,13 +384,15 @@ namespace OpenMS
 
         max_peptide_mass = precursor_mass - cross_link_mass - beta_peptides[0].peptide->peptide_mass + allowed_error;
         last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+        i_first = 0;
+        i_last = std::distance(alpha_peptides.begin(), last_alpha);
 
 #pragma omp parallel for
-        for (auto alpha_it = alpha_peptides.begin(); alpha_it < last_alpha; ++alpha_it)
+        for(int i = i_first; i < i_last; ++i)
         {
           // Constrain search for beta
-          double min_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_it->peptide->peptide_mass - allowed_error;
-          double max_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_it->peptide->peptide_mass + allowed_error;
+          double min_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_peptides[i].peptide->peptide_mass - allowed_error;
+          double max_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_peptides[i].peptide->peptide_mass + allowed_error;
 
           auto first_beta = lower_bound(beta_peptides.begin(), beta_peptides.end(), min_peptide_mass_beta, OPXLDataStructs::PeptideCandidateComparator());
           auto last_beta = upper_bound(beta_peptides.begin(), beta_peptides.end(), max_peptide_mass_beta, OPXLDataStructs::PeptideCandidateComparator());
@@ -399,12 +405,12 @@ namespace OpenMS
           for (auto beta_it = first_beta; beta_it < last_beta; ++beta_it)
           {
             // Monoisotopic weight of the first peptide + the second peptide + cross-linker
-            double cross_linked_pair_mass = alpha_it->peptide->peptide_mass + beta_it->peptide->peptide_mass + cross_link_mass;
+            double cross_linked_pair_mass = alpha_peptides[i].peptide->peptide_mass + beta_it->peptide->peptide_mass + cross_link_mass;
 
 #pragma omp critical (mass_to_candidates_access)
             {
               mass_to_candidates.emplace_back(cross_linked_pair_mass,
-                                              &*alpha_it, &*beta_it);
+                                              &alpha_peptides[i], &*beta_it);
               precursor_correction_positions.push_back(pm);
             }
           } // end of loop over betas
@@ -2258,7 +2264,6 @@ namespace OpenMS
 
         for (const auto& masses : fragment_masses)
         {
-          bool added = false;
           double expected_diff = masses.second - masses.first;
           if (expected_diff > diff - max_error && expected_diff < diff + max_error)
           {
@@ -2295,14 +2300,7 @@ namespace OpenMS
             {
               break;
             }
-            //added = true;
-            //break;
           }
-          /*
-          if (added) {
-            break;
-          }
-           */
         }
         if (diff > (fragment_masses.back().second - fragment_masses.back().first) || second_peak == last_peak)
         {
@@ -2749,7 +2747,7 @@ namespace OpenMS
 
       // brute force string comparisons for now, faster than Aho-Corasick for small tag sets
 #pragma omp parallel for
-      for (int i = 0; i < static_cast<int>(candidates.size()); ++i)
+      for (SignedSize i = 0; i < candidates.size(); ++i)
       {
         // iterate over copies, so that we can reverse them
         for (std::string tag : tags)
@@ -2789,7 +2787,7 @@ namespace OpenMS
 
       // brute force string comparisons for now, faster than Aho-Corasick for small tag sets
 #pragma omp parallel for
-      for (uint32_t i = 0; i < candidates.size(); ++i)
+      for (SignedSize i = 0; i < candidates.size(); ++i)
       {
         // iterate over copies, so that we can reverse them
         for (std::string tag : tags)
