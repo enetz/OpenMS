@@ -610,13 +610,13 @@ using namespace OpenMS;
         if (candidate.getType() == OPXLDataStructs::CROSS)
         {
           theoretical_spec_xlinks_beta.reserve(1500);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, candidate, cross_link_mass_fragments_,
-                                                cross_link_mass_, true, 1, max_charge);
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_beta, candidate, cross_link_mass_fragments_,
-                                                cross_link_mass_, false, 1, max_charge);
+          specGen_mainscore.getXLinkIonSpectrumCleavable(theoretical_spec_xlinks_alpha, candidate, cross_link_mass_fragments_,
+                                                true, 1, max_charge);
+          specGen_mainscore.getXLinkIonSpectrumCleavable(theoretical_spec_xlinks_beta, candidate, cross_link_mass_fragments_,
+                                                false, 1, max_charge);
         } else
         {
-          specGen_mainscore.getXLinkIonSpectrum(theoretical_spec_xlinks_alpha, *candidate.alpha, candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_, candidate.cross_linker_mass, 1, max_charge, link_pos_B);
+          specGen_mainscore.getXLinkIonSpectrumCleavable(theoretical_spec_xlinks_alpha, *candidate.alpha, candidate.cross_link_position.first, precursor_mass, cross_link_mass_fragments_, 1, max_charge, link_pos_B);
         }
 
         if (theoretical_spec_xlinks_alpha.empty() || (type_is_cross_link && theoretical_spec_xlinks_beta.empty()))
