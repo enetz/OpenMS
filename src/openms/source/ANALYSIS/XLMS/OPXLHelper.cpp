@@ -1505,7 +1505,6 @@ namespace OpenMS
       ph_alpha.setMetaValue("precursor_signal_proportion", top_csms_spectrum[i].precursor_signal_proportion);
       ph_alpha.setMetaValue("precursor_target_peak_count", top_csms_spectrum[i].precursor_target_peak_count);
       ph_alpha.setMetaValue("precursor_residual_peak_count", top_csms_spectrum[i].precursor_residual_peak_count);
-      ph_alpha.setMetaValue("precursor_correction", top_csms_spectrum[i].precursor_correction);
 
       ph_alpha.setMetaValue("selected", "false");
 
@@ -1820,7 +1819,6 @@ namespace OpenMS
       ph_alpha.setMetaValue("precursor_signal_proportion", top_csms_spectrum[i].precursor_signal_proportion);
       ph_alpha.setMetaValue("precursor_target_peak_count", top_csms_spectrum[i].precursor_target_peak_count);
       ph_alpha.setMetaValue("precursor_residual_peak_count", top_csms_spectrum[i].precursor_residual_peak_count);
-      ph_alpha.setMetaValue("precursor_correction", top_csms_spectrum[i].precursor_correction);
 
       ph_alpha.setMetaValue("selected", "false");
 
