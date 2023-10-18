@@ -447,7 +447,7 @@ namespace OpenMS
         }
       };
 
-      struct PeptideCandidate {
+      struct CleavableXLMSPeptideCandidate {
           const AASeqWithMass* peptide;
           uint32_t first_peak_index;
           uint32_t second_peak_index;
@@ -455,16 +455,16 @@ namespace OpenMS
           double second_peak_pep_error;
       };
 
-      struct PeptideCandidateComparator {
-          bool operator() (const PeptideCandidate& a, const PeptideCandidate& b)
+      struct CleavableXLMSPeptideCandidateComparator {
+          bool operator() (const CleavableXLMSPeptideCandidate& a, const CleavableXLMSPeptideCandidate& b)
           {
             return a.peptide->peptide_mass < b.peptide->peptide_mass;
           }
-          bool operator() (const PeptideCandidate& a, double b)
+          bool operator() (const CleavableXLMSPeptideCandidate& a, double b)
           {
             return a.peptide->peptide_mass < b;
           }
-          bool operator() (double a, const PeptideCandidate& b)
+          bool operator() (double a, const CleavableXLMSPeptideCandidate& b)
           {
             return a < b.peptide->peptide_mass;
           }
@@ -473,9 +473,9 @@ namespace OpenMS
       struct XLCPrecursor
       {
           double precursor_mass;
-          const PeptideCandidate* alpha;
-          const PeptideCandidate* beta;
-          XLCPrecursor(double set_mass, const PeptideCandidate* set_alpha, const PeptideCandidate* set_beta) :
+          const CleavableXLMSPeptideCandidate* alpha;
+          const CleavableXLMSPeptideCandidate* beta;
+          XLCPrecursor(double set_mass, const CleavableXLMSPeptideCandidate* set_alpha, const CleavableXLMSPeptideCandidate* set_beta) :
             precursor_mass(set_mass), alpha(set_alpha), beta(set_beta) {};
       };
 

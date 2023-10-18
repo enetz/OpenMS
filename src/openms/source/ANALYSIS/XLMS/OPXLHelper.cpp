@@ -249,8 +249,8 @@ namespace OpenMS
     return mass_to_candidates;
   }
 
-    vector<OPXLDataStructs::XLCPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::PeptideCandidate>& alpha_peptides,
-                                                                                  const vector<OPXLDataStructs::PeptideCandidate>& beta_peptides,
+    vector<OPXLDataStructs::XLCPrecursor> OPXLHelper::enumerateCrossLinksAndMasses(const vector<OPXLDataStructs::CleavableXLMSPeptideCandidate>& alpha_peptides,
+                                                                                  const vector<OPXLDataStructs::CleavableXLMSPeptideCandidate>& beta_peptides,
                                                                                   double cross_link_mass,
                                                                                   const DoubleList& cross_link_mass_mono_link,
                                                                                   const StringList& cross_link_residue1,
@@ -267,7 +267,7 @@ namespace OpenMS
 
       // compute a very conservative total upper bound, based on the heaviest possible linear peptide
       // can be used instead of alpha_peptides.end() in all cases for this precursor mass
-      auto conservative_upper_bound = upper_bound(alpha_peptides.cbegin(), alpha_peptides.cend(), max_precursor, OPXLDataStructs::PeptideCandidateComparator());
+      auto conservative_upper_bound = upper_bound(alpha_peptides.cbegin(), alpha_peptides.cend(), max_precursor, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
 
       // initialize additional iterators
       // the upper bounds for a precursor mass can be used as the lower bounds
@@ -299,8 +299,8 @@ namespace OpenMS
         double min_peptide_mass = precursor_mass - cross_link_mass - allowed_error;
         double max_peptide_mass = precursor_mass - cross_link_mass + allowed_error;
 
-        first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
-        last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+        first_loop = lower_bound(first_loop, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
+        last_loop = upper_bound(last_loop, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
         int i_first = std::distance(alpha_peptides.begin(), first_loop);
         int i_last = std::distance(alpha_peptides.begin(), last_loop);
 
@@ -355,8 +355,8 @@ namespace OpenMS
 
           // mono-link masses are sorted in descending order
           // so we can use the results from the last search as a new lower bounds for both searches again
-          first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
-          last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+          first_mono = lower_bound(first_mono, conservative_upper_bound, min_peptide_mass, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
+          last_mono = upper_bound(last_mono, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
           i_first = std::distance(alpha_peptides.begin(), first_mono);
           i_last = std::distance(alpha_peptides.begin(), last_mono);
 
@@ -383,7 +383,7 @@ namespace OpenMS
         // maximal mass: difference between precursor mass and the smallest beta_peptide + cross-linker
 
         max_peptide_mass = precursor_mass - cross_link_mass - beta_peptides[0].peptide->peptide_mass + allowed_error;
-        last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::PeptideCandidateComparator());
+        last_alpha = upper_bound(last_alpha, conservative_upper_bound, max_peptide_mass, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
         i_first = 0;
         i_last = std::distance(alpha_peptides.begin(), last_alpha);
 
@@ -394,8 +394,8 @@ namespace OpenMS
           double min_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_peptides[i].peptide->peptide_mass - allowed_error;
           double max_peptide_mass_beta = precursor_mass - cross_link_mass - alpha_peptides[i].peptide->peptide_mass + allowed_error;
 
-          auto first_beta = lower_bound(beta_peptides.begin(), beta_peptides.end(), min_peptide_mass_beta, OPXLDataStructs::PeptideCandidateComparator());
-          auto last_beta = upper_bound(beta_peptides.begin(), beta_peptides.end(), max_peptide_mass_beta, OPXLDataStructs::PeptideCandidateComparator());
+          auto first_beta = lower_bound(beta_peptides.begin(), beta_peptides.end(), min_peptide_mass_beta, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
+          auto last_beta = upper_bound(beta_peptides.begin(), beta_peptides.end(), max_peptide_mass_beta, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
 
           if (first_beta == last_beta)
           {
@@ -909,7 +909,7 @@ namespace OpenMS
                                                                                   const DoubleList & cross_link_mass_mono_link,
                                                                                   const std::vector< double >& spectrum_precursor_vector,
                                                                                   const std::vector< double >& allowed_error_vector,
-                                                                                  String cross_link_name)
+                                                                                  const String& cross_link_name)
     {
       bool n_term_linker = false;
       bool c_term_linker = false;
@@ -2211,11 +2211,11 @@ namespace OpenMS
     return new_peptide_ids;
   }
 
-  void OPXLHelper::collectPeptideCandidates(const PeakSpectrum &spectrum,
+  void OPXLHelper::collectCleavableXLMSPeptideCandidates(const PeakSpectrum &spectrum,
                                             const vector<OPXLDataStructs::AASeqWithMass> &peptides,
                                             const vector<pair<double, double> >& fragment_masses,
                                             double max_fragment_error, bool max_fragment_error_ppm, int max_charge,
-                                            list<OPXLDataStructs::PeptideCandidate> &peptide_candidates)
+                                            list<OPXLDataStructs::CleavableXLMSPeptideCandidate> &peptide_candidates)
   {
     PeakSpectrum::IntegerDataArray exp_charges;
     if (!spectrum.getIntegerDataArrays().empty())
@@ -2251,7 +2251,7 @@ namespace OpenMS
       }
       if (second_peak > last_peak) continue;
 
-      std::vector<OPXLDataStructs::PeptideCandidate> new_candidates;
+      std::vector<OPXLDataStructs::CleavableXLMSPeptideCandidate> new_candidates;
 
       while (first_peak < last_peak)
       {
@@ -2327,7 +2327,7 @@ namespace OpenMS
         }
       }
       if (new_candidates.empty()) continue;
-      sort(new_candidates.begin(), new_candidates.end(), OPXLDataStructs::PeptideCandidateComparator());
+      sort(new_candidates.begin(), new_candidates.end(), OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
 #pragma omp critical (peptide_candidates_access)
       {
         if (peptide_candidates.empty())
@@ -2379,11 +2379,11 @@ namespace OpenMS
     }
   }
 
-  void OPXLHelper::filterPeptideCandidates(const PeakSpectrum &spectrum,
+  void OPXLHelper::filterCleavableXLMSPeptideCandidates(const PeakSpectrum &spectrum,
                                            const vector<OPXLDataStructs::AASeqWithMass> &peptides,
                                             const DoubleList& fragment_masses, double max_fragment_error,
                                             bool max_fragment_error_ppm, int max_charge,
-                                            list<OPXLDataStructs::PeptideCandidate> &peptide_candidates)
+                                            list<OPXLDataStructs::CleavableXLMSPeptideCandidate> &peptide_candidates)
   {
     PeakSpectrum::IntegerDataArray exp_charges;
     if (!spectrum.getIntegerDataArrays().empty())
@@ -2394,7 +2394,7 @@ namespace OpenMS
 #pragma omp parallel for
     for (int charge = max_charge; charge > 0; --charge)
     {
-      vector<OPXLDataStructs::PeptideCandidate> new_candidates;
+      vector<OPXLDataStructs::CleavableXLMSPeptideCandidate> new_candidates;
 
       for (Size i = 0; i < spectrum.size(); ++i)
       {
@@ -2426,7 +2426,7 @@ namespace OpenMS
         }
       }
       if (new_candidates.empty()) continue;
-      std::sort(new_candidates.begin(), new_candidates.end(), OPXLDataStructs::PeptideCandidateComparator());
+      std::sort(new_candidates.begin(), new_candidates.end(), OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
 #pragma omp critical (peptide_candidates_access)
       {
         if (peptide_candidates.empty())
@@ -2541,8 +2541,8 @@ namespace OpenMS
                                                                                                   double precursor_mass,
                                                                                                   double precursor_mass_tolerance,
                                                                                                   bool precursor_mass_tolerance_unit_ppm,
-                                                                                                  const std::vector<OPXLDataStructs::PeptideCandidate>& alpha_peptide_masses,
-                                                                                                  const std::vector<OPXLDataStructs::PeptideCandidate>& beta_peptide_masses,
+                                                                                                  const std::vector<OPXLDataStructs::CleavableXLMSPeptideCandidate>& alpha_peptide_masses,
+                                                                                                  const std::vector<OPXLDataStructs::CleavableXLMSPeptideCandidate>& beta_peptide_masses,
                                                                                                   double cross_link_mass,
                                                                                                   const DoubleList& cross_link_mass_mono_link,
                                                                                                   const StringList& cross_link_residue1,

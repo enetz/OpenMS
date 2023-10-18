@@ -52,9 +52,9 @@ using namespace OpenMS;
 //-------------------------------------------------------------
 
 /**
-  @page TOPP_OpenPepXLLF OpenPepXLLF
+  @page TOPP_OpenPepXLLFCleavable OpenPepXLLFCleavable
 
-  @brief Search for cross-linked peptide pairs in tandem MS spectra
+  @brief Search for cross-linked peptide pairs in tandem MS spectra, with CID-cleavable cross-linkers
 
   This tool performs a search for cross-links in the given mass spectra.
 

@@ -107,10 +107,10 @@ using namespace OpenMS;
     defaults_.setValue("cross_linker:residue2", std::vector<std::string>({"K", "S", "T", "Y", "N-term"}), "Comma separated residues, that the second side of a bifunctional cross-linker can attach to");
     defaults_.setValue("cross_linker:mass", 196.08479222, "Mass of the light cross-linker, linking two residues on one or two peptides");
     defaults_.setValue("cross_linker:mass_mono_link", std::vector<double>{213.1113, 214.0954, 317.1587}, "Possible masses of the linker, when attached to only one peptide");
-    defaults_.setValue("cross_linker:mass_fragments", std::vector<double>{85.05276383, 111.03202839}, "Masses of the cleaved cross linker");
-    defaults_.setValue("cross_linker:name", "DSBU", "Name of the searched cross-link, used to resolve ambiguity of equal masses (e.g. DSS or BS3)");
-    defaults_.setValue("cross_linker:fragments_labels", std::vector<std::string>{"Bu", "BuUr"}, "The labels for the cross linker fragments that are used in the peak annotations (have to be in the same order as the weights)");
-    defaults_.setValue("cross_linker:mono_link_labels", std::vector<std::string>{"NH3", "H2O", "Tris"}, "The labels for the different mono link weights (have to be in the same order as the weights)");
+    defaults_.setValue("cross_linker:mono_link_labels", std::vector<std::string>{"NH3", "H2O", "Tris"}, "The labels for the different mono link masses (have to be in the same order as the masses)");
+    defaults_.setValue("cross_linker:fragment_masses", std::vector<double>{85.05276383, 111.03202839}, "The masses of cross-linker fragments left behind after the cleavage of the cross-linker");
+    defaults_.setValue("cross_linker:fragment_labels", std::vector<std::string>{"Bu", "BuUr"}, "The labels for the cross-linker fragments, used in the peak annotations. They have to be in the same order as the fragment masses)");
+    defaults_.setValue("cross_linker:name", "DSBU", "Name of the searched cross-linker, used to resolve ambiguity of equal masses (e.g. DSS or BS3)");
     defaults_.setSectionDescription("cross_linker", "Description of the cross-linker reagent");
 
     defaults_.setValue("algorithm:min_linear_fragments", 2, "Minimum number of linear fragments per peptide");
@@ -169,9 +169,9 @@ using namespace OpenMS;
     cross_link_residue2_ = ListUtils::toStringList<std::string>(param_.getValue("cross_linker:residue2"));
     cross_link_mass_ = static_cast<double>(param_.getValue("cross_linker:mass"));
     cross_link_mass_mono_link_ = param_.getValue("cross_linker:mass_mono_link");
-    cross_link_mass_fragments_ = param_.getValue("cross_linker:mass_fragments");
+    cross_link_mass_fragments_ = param_.getValue("cross_linker:fragment_masses");
     cross_link_name_ = static_cast<String>(param_.getValue("cross_linker:name").toString());
-    cross_link_fragments_labels_ = ListUtils::toStringList<std::string>(param_.getValue("cross_linker:fragments_labels"));
+    cross_link_fragments_labels_ = ListUtils::toStringList<std::string>(param_.getValue("cross_linker:fragment_labels"));
     mono_link_labels_ = ListUtils::toStringList<std::string>(param_.getValue("cross_linker:mono_link_labels"));
 
     fixedModNames_ = ListUtils::toStringList<std::string>(param_.getValue("modifications:fixed"));
@@ -453,14 +453,14 @@ using namespace OpenMS;
       cout << "Processing spectrum " << spectrum_counter << " / " << spectra.size() << " |\tSpectrum ID: " << spectrum.getNativeID() << "\t| at: " << DateTime::now().getTime() << endl;
 
       vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates;
-      list<OPXLDataStructs::PeptideCandidate> alpha_candidates;
+      list<OPXLDataStructs::CleavableXLMSPeptideCandidate> alpha_candidates;
       vector<pair<double, double> > fragment_combinations = {{cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]}};
       if (alpha_filter_ == LOOSE)
       {
         fragment_combinations.emplace_back(0, cross_link_mass_fragments_[0]);
         fragment_combinations.emplace_back(0, cross_link_mass_fragments_[1]);
       }
-      OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
+      OPXLHelper::collectCleavableXLMSPeptideCandidates(spectrum, filtered_peptide_masses,
                                            fragment_combinations,
                                            fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
                                            max_charge, alpha_candidates);
@@ -473,8 +473,8 @@ using namespace OpenMS;
       {
         continue;
       }
-      vector<OPXLDataStructs::PeptideCandidate> alpha_vec(alpha_candidates.begin(), alpha_candidates.end());
-      vector<OPXLDataStructs::PeptideCandidate> beta_vec;
+      vector<OPXLDataStructs::CleavableXLMSPeptideCandidate> alpha_vec(alpha_candidates.begin(), alpha_candidates.end());
+      vector<OPXLDataStructs::CleavableXLMSPeptideCandidate> beta_vec;
       double min_precursor_mass = precursor_mass - static_cast<double>(precursor_correction_steps_.back()) * Constants::C13C12_MASSDIFF_U;
       if (beta_filter_ == alpha_filter_)
       {
@@ -482,19 +482,19 @@ using namespace OpenMS;
         auto first_beta = lower_bound(alpha_vec.begin(), alpha_vec.end(),
                                       min_precursor_mass - alpha_candidates.back().peptide->peptide_mass -
                                       cross_link_mass_ - max_peptide_allowed_error,
-                                      OPXLDataStructs::PeptideCandidateComparator());
+                                      OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
         auto last_beta = upper_bound(first_beta, alpha_vec.end(),
                                      precursor_mass - alpha_candidates.front().peptide->peptide_mass -
                                      cross_link_mass_ + max_peptide_allowed_error,
-                                     OPXLDataStructs::PeptideCandidateComparator());
+                                     OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
         beta_vec.assign(first_beta, last_beta);
       } else
       {
         //Determine beta candidates depending on the chosen mode
-        list<OPXLDataStructs::PeptideCandidate> beta_candidates;
+        list<OPXLDataStructs::CleavableXLMSPeptideCandidate> beta_candidates;
         if (beta_filter_ == NONE)
         {
-          OPXLHelper::filterPeptideCandidates(spectrum, filtered_peptide_masses,
+          OPXLHelper::filterCleavableXLMSPeptideCandidates(spectrum, filtered_peptide_masses,
                                               {cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]},
                                               fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
                                               max_charge, beta_candidates);
@@ -506,7 +506,7 @@ using namespace OpenMS;
             fragment_combinations.emplace_back(0, cross_link_mass_fragments_[0]);
             fragment_combinations.emplace_back(0, cross_link_mass_fragments_[1]);
           }
-          OPXLHelper::collectPeptideCandidates(spectrum, filtered_peptide_masses,
+          OPXLHelper::collectCleavableXLMSPeptideCandidates(spectrum, filtered_peptide_masses,
                                                fragment_combinations,
                                                fragment_mass_tolerance_xlinks_, fragment_mass_tolerance_unit_ppm_,
                                                max_charge, beta_candidates);
@@ -515,10 +515,10 @@ using namespace OpenMS;
         //Further constrain the beta candidates depending on the smallest and biggest alpha candidates
         auto first_beta = lower_bound(beta_vec.begin(), beta_vec.end(),
                                       min_precursor_mass - alpha_vec.back().peptide->peptide_mass -
-                                      cross_link_mass_ - max_peptide_allowed_error, OPXLDataStructs::PeptideCandidateComparator());
+                                      cross_link_mass_ - max_peptide_allowed_error, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
         auto last_beta = upper_bound(first_beta, beta_vec.end(),
                                      precursor_mass - alpha_vec.front().peptide->peptide_mass -
-                                     cross_link_mass_ + max_peptide_allowed_error, OPXLDataStructs::PeptideCandidateComparator());
+                                     cross_link_mass_ + max_peptide_allowed_error, OPXLDataStructs::CleavableXLMSPeptideCandidateComparator());
         beta_vec.assign(first_beta, last_beta);
       }
 #ifdef DEBUG_OPENPEPXLLFALGO

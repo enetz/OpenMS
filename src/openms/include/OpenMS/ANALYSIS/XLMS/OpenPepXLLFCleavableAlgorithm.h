@@ -127,8 +127,6 @@ namespace OpenMS
          * @param fasta_db The protein database containing targets and decoys
          * @param protein_ids A result vector containing search settings. Should contain one PeptideIdentification.
          * @param peptide_ids A result vector containing cross-link spectrum matches as PeptideIdentifications and PeptideHits. Should be empty.
-         * @param preprocessed_pair_spectra A result structure containing linear and cross-linked ion spectra. Will be overwritten. This is only necessary for writing out xQuest type spectrum files.
-         * @param spectrum_pairs A result vector containing paired spectra indices. Should be empty. This is only necessary for writing out xQuest type spectrum files.
          * @param all_top_csms A result vector containing cross-link spectrum matches as CrossLinkSpectrumMatches. Should be empty. This is only necessary for writing out xQuest type spectrum files.
          * @param spectra A result vector containing the input spectra after preprocessing and filtering. Should be empty. This is only necessary for writing out xQuest type spectrum files.
          */

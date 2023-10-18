@@ -128,11 +128,9 @@ namespace OpenMS
              * @param singles_int This will contain the intensity of all single peaks
              * @param pairs_int This will contain the intensity of all peak pairs
              * @param mass_diff Expected mass difference between a peak pair
-             * @param fragment_tolerance
-             * @param fragment_tolerance_ppm
-             * @param max_charge
-             * @param losses_added
-             * @param isotopes_added
+             * @param fragment_tolerance Tolerance for fragment matching
+             * @param fragment_tolerance_ppm  Whether the tolerance is in ppm or Da (true for ppm)
+             * @param max_charge The maximal considered fragment charge
              */
             static void getMatchedXLinkPeakPairs(std::vector<std::pair<Size, Size> > aligned_peaks,
                                                  const MSSpectrum& spectrum,
