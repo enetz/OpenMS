@@ -60,6 +60,7 @@ NoiseFilterGaussian
 NoiseFilterSGolay
 OpenPepXL
 OpenPepXLLF
+OpenPepXLLFCleavable
 OpenSwathAnalyzer
 OpenSwathAssayGenerator
 OpenSwathChromatogramExtractor
