@@ -2,7 +2,7 @@ from Types cimport *
 from OPXLDataStructs cimport *
 from AASequence cimport *
 
-cdef extern from "<OpenMS/ANALYSIS/XLMS/OPXLDataStructs.h>" namespace "OpenMS":
+cdef extern from "<OpenMS/ANALYSIS/XLMS/OPXLDataStructs.h>" namespace "OpenMS::OPXLDataStructs":
 
     cdef cppclass AASeqWithMass "OpenMS::OPXLDataStructs::AASeqWithMass":
 
