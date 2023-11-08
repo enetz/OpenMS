@@ -341,11 +341,11 @@ namespace OpenMS
        */
 
       static void collectCleavableXLMSPeptideCandidates(const PeakSpectrum& spectrum,
-                                           const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
-                                           const std::vector<std::pair<double, double> >& fragment_masses,
+                                           const std::vector< OPXLDataStructs::AASeqWithMass >& peptides,
+                                           const std::vector< std::pair<double, double> >& fragment_masses,
                                            double max_fragment_error, bool max_fragment_error_ppm,
                                            int max_charge,
-                                           std::list<OPXLDataStructs::CleavableXLMSPeptideCandidate>& peptide_candidates);
+                                           std::vector< OPXLDataStructs::CleavableXLMSPeptideCandidate >& peptide_candidates);
 
       /**
        * @brief filters peptide candidates by masses from CID-cleaved cross-link fragment pairs
@@ -359,11 +359,11 @@ namespace OpenMS
        * @param peptide_candidates The found peptides get stored here, sorted by peptide mass (can already contain candidates)
        */
       static void filterCleavableXLMSPeptideCandidates(const PeakSpectrum& spectrum,
-                                          const std::vector<OPXLDataStructs::AASeqWithMass>& peptides,
+                                          const std::vector< OPXLDataStructs::AASeqWithMass >& peptides,
                                            const DoubleList& fragment_masses,
                                            double max_fragment_error, bool max_fragment_error_ppm,
                                            int max_charge,
-                                           std::list<OPXLDataStructs::CleavableXLMSPeptideCandidate>& peptide_candidates);
+                                           std::vector< OPXLDataStructs::CleavableXLMSPeptideCandidate >& peptide_candidates);
 
       /**
        * @brief Searches for cross-link candidates for a MS/MS spectrum

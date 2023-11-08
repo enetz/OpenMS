@@ -453,7 +453,7 @@ using namespace OpenMS;
       cout << "Processing spectrum " << spectrum_counter << " / " << spectra.size() << " |\tSpectrum ID: " << spectrum.getNativeID() << "\t| at: " << DateTime::now().getTime() << endl;
 
       vector< OPXLDataStructs::ProteinProteinCrossLink > cross_link_candidates;
-      list<OPXLDataStructs::CleavableXLMSPeptideCandidate> alpha_candidates;
+      vector<OPXLDataStructs::CleavableXLMSPeptideCandidate> alpha_candidates;
       vector<pair<double, double> > fragment_combinations = {{cross_link_mass_fragments_[0], cross_link_mass_fragments_[1]}};
       if (alpha_filter_ == LOOSE)
       {
@@ -491,7 +491,7 @@ using namespace OpenMS;
       } else
       {
         //Determine beta candidates depending on the chosen mode
-        list<OPXLDataStructs::CleavableXLMSPeptideCandidate> beta_candidates;
+        vector<OPXLDataStructs::CleavableXLMSPeptideCandidate> beta_candidates;
         if (beta_filter_ == NONE)
         {
           OPXLHelper::filterCleavableXLMSPeptideCandidates(spectrum, filtered_peptide_masses,

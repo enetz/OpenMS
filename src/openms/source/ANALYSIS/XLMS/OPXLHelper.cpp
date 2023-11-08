@@ -2212,10 +2212,10 @@ namespace OpenMS
   }
 
   void OPXLHelper::collectCleavableXLMSPeptideCandidates(const PeakSpectrum &spectrum,
-                                            const vector<OPXLDataStructs::AASeqWithMass> &peptides,
-                                            const vector<pair<double, double> >& fragment_masses,
+                                            const vector< OPXLDataStructs::AASeqWithMass > &peptides,
+                                            const vector< pair<double, double> >& fragment_masses,
                                             double max_fragment_error, bool max_fragment_error_ppm, int max_charge,
-                                            list<OPXLDataStructs::CleavableXLMSPeptideCandidate> &peptide_candidates)
+                                            vector< OPXLDataStructs::CleavableXLMSPeptideCandidate > &peptide_candidates)
   {
     PeakSpectrum::IntegerDataArray exp_charges;
     if (!spectrum.getIntegerDataArrays().empty())
@@ -2380,10 +2380,10 @@ namespace OpenMS
   }
 
   void OPXLHelper::filterCleavableXLMSPeptideCandidates(const PeakSpectrum &spectrum,
-                                           const vector<OPXLDataStructs::AASeqWithMass> &peptides,
+                                           const vector< OPXLDataStructs::AASeqWithMass > &peptides,
                                             const DoubleList& fragment_masses, double max_fragment_error,
                                             bool max_fragment_error_ppm, int max_charge,
-                                            list<OPXLDataStructs::CleavableXLMSPeptideCandidate> &peptide_candidates)
+                                            vector< OPXLDataStructs::CleavableXLMSPeptideCandidate > &peptide_candidates)
   {
     PeakSpectrum::IntegerDataArray exp_charges;
     if (!spectrum.getIntegerDataArrays().empty())
