@@ -50,8 +50,8 @@ namespace OpenMS
         std::pair<SignedSize, SignedSize> cross_link_position; ///< index in alpha, beta or between alpha, alpha in loop-links
         double cross_linker_mass = 0;
         String cross_linker_name;
-        ResidueModification::TermSpecificity term_spec_alpha;
-        ResidueModification::TermSpecificity term_spec_beta;
+        ResidueModification::TermSpecificity term_spec_alpha = ResidueModification::TermSpecificity::ANYWHERE;
+        ResidueModification::TermSpecificity term_spec_beta = ResidueModification::TermSpecificity::ANYWHERE;
         int precursor_correction = 0;
         uint32_t first_peak_index_alpha = 0;
         uint32_t second_peak_index_alpha = 0;
@@ -341,9 +341,9 @@ namespace OpenMS
        */
       struct XLPrecursor
       {
-        float precursor_mass;
-        unsigned int alpha_index;
-        unsigned int beta_index;
+        float precursor_mass = 0;
+        unsigned int alpha_index = 0;
+        unsigned int beta_index = 0;
         String alpha_seq;
         String beta_seq;
       };
@@ -394,7 +394,7 @@ namespace OpenMS
        */
       struct AASeqWithMass
       {
-        double peptide_mass;
+        double peptide_mass = 0;
         AASequence peptide_seq;
         PeptidePosition position;
         String unmodified_seq;
@@ -422,11 +422,11 @@ namespace OpenMS
       };
 
       struct CleavableXLMSPeptideCandidate {
-          const AASeqWithMass* peptide;
-          uint32_t first_peak_index;
-          uint32_t second_peak_index;
-          double first_peak_pep_error;
-          double second_peak_pep_error;
+          const AASeqWithMass* peptide = nullptr;
+          uint32_t first_peak_index = 0;
+          uint32_t second_peak_index = 0;
+          double first_peak_pep_error = 0;
+          double second_peak_pep_error = 0;
       };
 
       struct CleavableXLMSPeptideCandidateComparator {
@@ -446,9 +446,9 @@ namespace OpenMS
 
       struct XLCPrecursor
       {
-          double precursor_mass;
-          const CleavableXLMSPeptideCandidate* alpha;
-          const CleavableXLMSPeptideCandidate* beta;
+          double precursor_mass = 0;
+          const CleavableXLMSPeptideCandidate* alpha = nullptr;
+          const CleavableXLMSPeptideCandidate* beta = nullptr;
           XLCPrecursor(double set_mass, const CleavableXLMSPeptideCandidate* set_alpha, const CleavableXLMSPeptideCandidate* set_beta) :
             precursor_mass(set_mass), alpha(set_alpha), beta(set_beta) {};
       };

@@ -43,3 +43,14 @@ cdef extern from "<OpenMS/ANALYSIS/XLMS/OPXLSpectrumProcessingAlgorithms.h>" nam
                                             const libcpp_vector[ SimplePeak ]& theo_spectrum,
                                             const MSSpectrum& exp_spectrum,
                                             const IntegerDataArray& exp_charges) except + nogil 
+
+        void getMatchedXLinkPeakPairs(libcpp_vector[ libcpp_pair[ size_t, size_t ] ] aligned_peaks,
+                                                 const MSSpectrum& spectrum,
+                                                 size_t& singles,
+                                                 size_t& pairs,
+                                                 double& singles_int,
+                                                 double& pairs_int,
+                                                 double mass_diff,
+                                                 double fragment_tolerance,
+                                                 bool fragment_tolerance_ppm,
+                                                 int max_charge) nogil except +
